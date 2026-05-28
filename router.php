@@ -203,18 +203,26 @@ function loadTokens(): string {
 
 // Mirror of the client's buildDocument: tokens + definitions (registered once)
 // in <head>, usage in <body>. 'component' centers a single element on a grid
-// backdrop; 'page' lays the composition out in normal document flow.
+// backdrop; pages/layouts own the full canvas.
 function buildDocument(string $usage, array $definitions, string $mode): string {
     $body = $mode === 'page'
-        ? "body {
-            margin: 0; padding: 40px;
-            display: flex; flex-direction: column; align-items: flex-start; gap: 24px;
-            font-family: system-ui, sans-serif; color: var(--text); background: var(--surface);
+        ? "html, body { min-height: 100%; }
+          body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: var(--font-sans, system-ui, sans-serif);
+            color: var(--text);
+            background: var(--surface-soft, var(--surface));
+          }
+          body > * {
+            display: block;
+            min-height: 100vh;
           }"
-        : "body {
+        : "html, body { min-height: 100%; }
+          body {
             margin: 0; min-height: 100vh;
             display: grid; place-items: center; padding: 40px;
-            font-family: system-ui, sans-serif;
+            font-family: var(--font-sans, system-ui, sans-serif);
             background: #fafafa;
             background-image:
               linear-gradient(#0000000a 1px, transparent 1px),

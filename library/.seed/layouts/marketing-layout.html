@@ -1,0 +1,58 @@
+<!-- name: Marketing layout -->
+<template id="x-marketing-layout-tpl">
+  <style>
+    :host { display: block; }
+    .shell {
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--accent, #2563eb) 8%, transparent), transparent 360px),
+        var(--surface-soft, #f6f8fb);
+      color: var(--text, #172026);
+      font-family: var(--font-sans, system-ui, sans-serif);
+    }
+    .wrap {
+      width: min(1120px, calc(100vw - 40px));
+      margin: 0 auto;
+    }
+    main {
+      display: grid;
+      gap: clamp(44px, 7vw, 88px);
+      padding-bottom: 64px;
+    }
+    footer {
+      padding: 28px 0 42px;
+      color: var(--text-muted, #5f6f7a);
+      font-size: 14px;
+      border-top: 1px solid var(--border, #d9e2ea);
+    }
+  </style>
+  <div class="shell">
+    <div class="wrap">
+      <slot name="header"></slot>
+      <main>
+        <slot></slot>
+      </main>
+      <footer>
+        <slot name="footer">Built with the component workbench.</slot>
+      </footer>
+    </div>
+  </div>
+</template>
+
+<script>
+  customElements.define('x-marketing-layout', class extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;
+      const tpl = document.getElementById('x-marketing-layout-tpl');
+      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
+    }
+  });
+</script>
+
+<script type="text/html" data-usage>
+<x-marketing-layout>
+  <x-site-header slot="header"></x-site-header>
+  <x-hero-section></x-hero-section>
+  <x-cta-panel></x-cta-panel>
+</x-marketing-layout>
+</script>

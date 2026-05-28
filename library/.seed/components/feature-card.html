@@ -1,0 +1,61 @@
+<!-- name: Feature card -->
+<template id="x-feature-card-tpl">
+  <style>
+    :host { display: block; }
+    article {
+      height: 100%;
+      padding: 22px;
+      border: 1px solid var(--border, #d9e2ea);
+      border-radius: var(--radius, 16px);
+      background: var(--surface, #fff);
+      color: var(--text, #172026);
+      box-shadow: 0 1px 0 rgba(23,32,38,.03);
+      font-family: var(--font-sans, system-ui, sans-serif);
+    }
+    .icon {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      margin-bottom: 18px;
+      border-radius: var(--radius-sm, 8px);
+      background: color-mix(in srgb, var(--accent, #2563eb) 12%, white);
+      color: var(--accent, #2563eb);
+      font-weight: 800;
+    }
+    h3 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+    p {
+      margin: 0;
+      color: var(--text-muted, #5f6f7a);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+  </style>
+  <article>
+    <div class="icon"><slot name="icon">01</slot></div>
+    <h3><slot name="title">Service card</slot></h3>
+    <p><slot name="body">Describe a focused customer outcome, not a generic capability.</slot></p>
+  </article>
+</template>
+
+<script>
+  customElements.define('x-feature-card', class extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;
+      const tpl = document.getElementById('x-feature-card-tpl');
+      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
+    }
+  });
+</script>
+
+<script type="text/html" data-usage>
+<x-feature-card>
+  <span slot="icon">01</span>
+  <span slot="title">Positioning sprint</span>
+  <span slot="body">Clarify the offer, audience, proof, and page structure before design begins.</span>
+</x-feature-card>
+</script>

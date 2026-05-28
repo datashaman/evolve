@@ -1,0 +1,142 @@
+<!-- name: Home -->
+<template id="x-home-page-tpl">
+  <style>
+    :host { display: block; }
+    .services {
+      display: grid;
+      gap: 18px;
+    }
+    .section-head {
+      display: grid;
+      gap: 10px;
+      max-width: 680px;
+    }
+    .section-head p,
+    .metric p {
+      margin: 0;
+      color: var(--text-muted, #5f6f7a);
+      font: 16px/1.65 var(--font-sans, system-ui, sans-serif);
+    }
+    h2 {
+      margin: 0;
+      color: var(--text, #172026);
+      font: 740 clamp(30px, 4vw, 46px)/1.05 var(--font-sans, system-ui, sans-serif);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .proof {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      padding: 22px;
+      border: 1px solid var(--border, #d9e2ea);
+      border-radius: var(--radius, 16px);
+      background: var(--surface, #fff);
+    }
+    .metric strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text, #172026);
+      font: 780 34px/1 var(--font-sans, system-ui, sans-serif);
+    }
+    @media (max-width: 820px) {
+      .grid,
+      .proof { grid-template-columns: 1fr; }
+    }
+  </style>
+  <x-marketing-layout>
+    <x-site-header slot="header">
+      <span slot="brand">Northstar Studio</span>
+      <a slot="nav" href="#services">Services</a>
+      <a slot="nav" href="#proof">Proof</a>
+      <a slot="nav" href="#contact">Contact</a>
+      <span slot="action">Plan the site</span>
+    </x-site-header>
+
+    <x-hero-section>
+      <span slot="eyebrow">Website systems for service teams</span>
+      <span slot="title">A lean site scaffold that already behaves like a real project.</span>
+      <span slot="body">This seed gives you a credible home page, reusable sections, shared tokens, and componentized HTML you can reshape into your own offer.</span>
+      <span slot="primary">Start from this scaffold</span>
+      <span slot="secondary">Review the sections</span>
+      <div slot="aside" class="proof">
+        <div class="metric">
+          <strong>6</strong>
+          <p>HTML-backed artifacts</p>
+        </div>
+        <div class="metric">
+          <strong>3</strong>
+          <p>Library types sharing one model</p>
+        </div>
+        <div class="metric">
+          <strong>1</strong>
+          <p>Token file controlling the theme</p>
+        </div>
+      </div>
+    </x-hero-section>
+
+    <section id="services" class="services">
+      <div class="section-head">
+        <h2>Everything starts as a component.</h2>
+        <p>Components, layouts, and pages all use template, style, script, and usage HTML. Composition stays visible and editable.</p>
+      </div>
+      <div class="grid">
+        <x-feature-card>
+          <span slot="icon">01</span>
+          <span slot="title">Offer clarity</span>
+          <span slot="body">Structure the page around the customer problem, service promise, and next step.</span>
+        </x-feature-card>
+        <x-feature-card>
+          <span slot="icon">02</span>
+          <span slot="title">Reusable sections</span>
+          <span slot="body">Edit once, reuse across pages, and keep the site system small enough to understand.</span>
+        </x-feature-card>
+        <x-feature-card>
+          <span slot="icon">03</span>
+          <span slot="title">Token-driven theme</span>
+          <span slot="body">Adjust color, spacing, radius, and typography without hunting through every artifact.</span>
+        </x-feature-card>
+      </div>
+    </section>
+
+    <section id="proof" class="proof">
+      <div class="metric">
+        <strong>HTML</strong>
+        <p>Pages compose layouts and components with ordinary custom-element markup.</p>
+      </div>
+      <div class="metric">
+        <strong>CSS</strong>
+        <p>Design tokens flow into every shadow root through the host document.</p>
+      </div>
+      <div class="metric">
+        <strong>JS</strong>
+        <p>Each artifact owns its registration and behavior alongside its template.</p>
+      </div>
+    </section>
+
+    <x-cta-panel id="contact">
+      <span slot="title">Make this your starting point.</span>
+      <span slot="body">Rename the brand, update the service cards, tune the tokens, and extend the library with real sections.</span>
+      <span slot="action">hello@northstar.test</span>
+    </x-cta-panel>
+
+    <span slot="footer">Northstar Studio. A seeded workbench site scaffold.</span>
+  </x-marketing-layout>
+</template>
+
+<script>
+  customElements.define('x-home-page', class extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;
+      const tpl = document.getElementById('x-home-page-tpl');
+      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
+    }
+  });
+</script>
+
+<script type="text/html" data-usage>
+<x-home-page></x-home-page>
+</script>

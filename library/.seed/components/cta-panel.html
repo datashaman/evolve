@@ -1,0 +1,70 @@
+<!-- name: CTA panel -->
+<template id="x-cta-panel-tpl">
+  <style>
+    :host { display: block; }
+    section {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: center;
+      padding: clamp(26px, 5vw, 44px);
+      border-radius: var(--radius-lg, 22px);
+      background: var(--text, #172026);
+      color: white;
+      font-family: var(--font-sans, system-ui, sans-serif);
+    }
+    h2 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 1.05;
+    }
+    p {
+      margin: 12px 0 0;
+      max-width: 620px;
+      color: rgba(255,255,255,.72);
+      font-size: 16px;
+      line-height: 1.65;
+    }
+    a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 46px;
+      padding: 0 18px;
+      border-radius: var(--radius-sm, 8px);
+      background: white;
+      color: var(--text, #172026);
+      font-weight: 750;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    @media (max-width: 720px) {
+      section { grid-template-columns: 1fr; }
+      a { justify-content: center; }
+    }
+  </style>
+  <section id="contact">
+    <div>
+      <h2><slot name="title">Ready to turn this into your site?</slot></h2>
+      <p><slot name="body">Swap the copy, adjust tokens, and extend the components into a complete production-ready system.</slot></p>
+    </div>
+    <a href="mailto:hello@example.com"><slot name="action">hello@example.com</slot></a>
+  </section>
+</template>
+
+<script>
+  customElements.define('x-cta-panel', class extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;
+      const tpl = document.getElementById('x-cta-panel-tpl');
+      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
+    }
+  });
+</script>
+
+<script type="text/html" data-usage>
+<x-cta-panel>
+  <span slot="title">Book a focused site sprint.</span>
+  <span slot="body">Use the seed as a realistic baseline for a studio, consultant, or productized service.</span>
+  <span slot="action">Start the brief</span>
+</x-cta-panel>
+</script>
