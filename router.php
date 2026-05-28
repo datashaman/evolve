@@ -13,16 +13,35 @@
 
 const COMPONENTS_DIR = __DIR__ . '/library/components';
 const PAGES_DIR      = __DIR__ . '/library/pages';
+const SEED_DIR       = __DIR__ . '/library/.seed';
 
 $uri    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($uri === '/api/library') {
     header('Content-Type: application/json');
-    if ($method === 'GET')  { echo json_encode(readLibrary()); exit; }
+    if ($method === 'GET')  { ensureSeeded(); echo json_encode(readLibrary()); exit; }
     if ($method === 'PUT')  { echo json_encode(writeLibrary(json_decode(file_get_contents('php://input'), true) ?: [])); exit; }
     http_response_code(405);
     echo json_encode(['error' => 'method not allowed']);
+    exit;
+}
+
+// Reset the sample components and tokens to their canonical seed (overwrites
+// matching ids, adds missing; custom components and all pages are left alone).
+if ($uri === '/api/reset' && $method === 'POST') {
+    header('Content-Type: application/json');
+    seedComponents();
+    seedTokens();
+    echo json_encode(readLibrary());
+    exit;
+}
+
+// Write the shared design tokens (read via /library/tokens.css).
+if ($uri === '/api/tokens' && $method === 'PUT') {
+    writeIfChanged(__DIR__ . '/library/tokens.css', file_get_contents('php://input'));
+    header('Content-Type: application/json');
+    echo json_encode(['ok' => true]);
     exit;
 }
 
@@ -60,6 +79,40 @@ echo 'Not found';
 
 function safeId(string $id): string {
     return preg_replace('/[^a-z0-9-]/', '', strtolower($id));
+}
+
+// Copy canonical seed component files into the live library (overwrite matching
+// ids, add missing). The single source of truth for the samples is library/.seed.
+function seedComponents(): void {
+    @mkdir(COMPONENTS_DIR, 0777, true);
+    foreach (glob(SEED_DIR . '/components/*.html') as $src) {
+        writeIfChanged(COMPONENTS_DIR . '/' . basename($src), file_get_contents($src));
+    }
+}
+
+function seedPages(): void {
+    @mkdir(PAGES_DIR, 0777, true);
+    foreach (glob(SEED_DIR . '/pages/*.json') as $src) {
+        writeIfChanged(PAGES_DIR . '/' . basename($src), file_get_contents($src));
+    }
+}
+
+function seedTokens(): void {
+    $src = SEED_DIR . '/tokens.css';
+    if (is_file($src)) {
+        writeIfChanged(__DIR__ . '/library/tokens.css', file_get_contents($src));
+    }
+}
+
+// First run: an empty library gets the full canonical seed.
+function ensureSeeded(): void {
+    if (!glob(COMPONENTS_DIR . '/*.html') && !glob(PAGES_DIR . '/*.json')) {
+        seedComponents();
+        seedPages();
+    }
+    if (!is_file(__DIR__ . '/library/tokens.css')) {
+        seedTokens();
+    }
 }
 
 function readLibrary(): array {

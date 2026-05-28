@@ -103,6 +103,7 @@
     .panel textarea:focus { outline: none; }
     #def { flex-grow: 2; }
     #usage { flex-grow: 1; border-top: 1px solid #3f3f46; }
+    #tokens { flex: 1; }
     .panel-bar {
       display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: #111;
     }
@@ -143,6 +144,7 @@
     <span class="kind" id="kind">component</span>
     <input id="name" class="name" placeholder="name" />
     <button id="btn-edit">Edit</button>
+    <button id="btn-tokens">Tokens</button>
     <button id="btn-reload">Reload</button>
     <span class="spacer"></span>
     <button id="btn-open" title="Open the real route in a new tab">Open ↗</button>
@@ -155,7 +157,7 @@
         <header>
           <span>Components</span>
           <span class="actions">
-            <button id="btn-restore" title="Reset sample components to defaults">⟲</button>
+            <button id="btn-restore" title="Reset sample components and tokens to defaults">⟲</button>
             <button id="btn-new-component" title="New component">+</button>
           </span>
         </header>
@@ -209,147 +211,29 @@
           <button class="btn-apply" id="btn-done">Done</button>
         </div>
       </div>
+
+      <!-- Token editor -->
+      <div class="panel" id="token-editor">
+        <div class="editor-fields">
+          <div class="field-label">Tokens <span>— library/tokens.css, shared by previews and real routes</span></div>
+          <textarea id="tokens" spellcheck="false"></textarea>
+        </div>
+        <div class="panel-bar">
+          <span class="hint">Changes preview live; apply writes tokens.css.</span>
+          <button class="btn-cancel" id="btn-token-cancel">Cancel</button>
+          <button class="btn-apply" id="btn-token-apply">Apply</button>
+        </div>
+      </div>
     </main>
   </div>
 
   <script>
     const API = '/api/library';
 
-    // Each component carries a `definition` (registered once) and `usage`
-    // (clean markup that pages compose). The host shell injects definitions
-    // into <head>, so usage is just custom-element tags — no per-fragment
-    // define, no guard.
-    const SEED = [
-      {
-        id: 'card', kind: 'component', name: 'Card', tag: 'x-card',
-        definition: `<template id="x-card-tpl">
-  <style>
-    :host { display: block; }
-    .card { max-width: 320px; padding: var(--space-lg, 20px);
-      border-radius: var(--radius, 14px); background: var(--surface, #fff);
-      box-shadow: 0 4px 20px rgba(0,0,0,.08); }
-    h2 { margin: 0 0 var(--space-sm, 8px); color: var(--text, #18181b);
-      font: 600 1.25rem system-ui, sans-serif; }
-    p { margin: 0 0 var(--space-lg, 20px); color: var(--text-muted, #52525b);
-      font: 1rem/1.5 system-ui, sans-serif; }
-    .cta { font: inherit; padding: var(--space-sm, 8px) var(--space-lg, 20px);
-      border: 0; border-radius: var(--radius-sm, 8px);
-      background: var(--accent, #6366f1); color: #fff; cursor: pointer; }
-  </style>
-  <div class="card">
-    <h2><slot name="title">Card</slot></h2>
-    <p><slot name="body"></slot></p>
-    <button class="cta"><slot name="action">Action</slot></button>
-  </div>
-</template>
-
-<script>
-  customElements.define('x-card', class extends HTMLElement {
-    connectedCallback() {
-      if (this.shadowRoot) return;
-      const tpl = document.getElementById('x-card-tpl');
-      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
-    }
-  });
-<\/script>`,
-        usage: `<x-card>
-  <span slot="title">Card component</span>
-  <span slot="body">A self-contained unit, styled with shared tokens so it
-     looks the same wherever a page composes it.</span>
-</x-card>`
-      },
-      {
-        id: 'button', kind: 'component', name: 'Button', tag: 'x-button',
-        definition: `<template id="x-button-tpl">
-  <style>
-    button { font: 600 15px system-ui, sans-serif;
-      padding: var(--space-sm, 8px) var(--space-lg, 20px);
-      border: 0; border-radius: var(--radius-sm, 8px);
-      background: var(--accent, #6366f1); color: #fff; cursor: pointer; }
-    button:hover { filter: brightness(1.08); }
-  </style>
-  <button><slot>Button</slot></button>
-</template>
-
-<script>
-  customElements.define('x-button', class extends HTMLElement {
-    connectedCallback() {
-      if (this.shadowRoot) return;
-      const tpl = document.getElementById('x-button-tpl');
-      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
-    }
-  });
-<\/script>`,
-        usage: `<x-button>Primary button</x-button>`
-      },
-      {
-        id: 'badge', kind: 'component', name: 'Badge', tag: 'x-badge',
-        definition: `<template id="x-badge-tpl">
-  <style>
-    :host { display: inline-block; }
-    .badge { display: inline-block; font: 600 12px system-ui, sans-serif;
-      padding: 4px 10px; border-radius: 999px;
-      background: color-mix(in srgb, var(--accent, #6366f1) 15%, white);
-      color: var(--accent, #6366f1); }
-  </style>
-  <span class="badge"><slot>Badge</slot></span>
-</template>
-
-<script>
-  customElements.define('x-badge', class extends HTMLElement {
-    connectedCallback() {
-      if (this.shadowRoot) return;
-      const tpl = document.getElementById('x-badge-tpl');
-      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
-    }
-  });
-<\/script>`,
-        usage: `<x-badge>New</x-badge>`
-      },
-      {
-        id: 'counter', kind: 'component', name: 'Counter', tag: 'x-counter',
-        definition: `<template id="x-counter-tpl">
-  <style>
-    .counter { display: inline-flex; align-items: center; gap: 14px;
-      font: 600 18px system-ui, sans-serif; }
-    button { font: inherit; width: 38px; height: 38px; cursor: pointer;
-      border: 0; border-radius: var(--radius-sm, 8px);
-      background: var(--accent, #6366f1); color: #fff; }
-    button:hover { filter: brightness(1.08); }
-    output { min-width: 2ch; text-align: center; color: var(--text, #111); }
-  </style>
-  <div class="counter">
-    <button id="dec" aria-label="decrement">−</button>
-    <output id="val"></output>
-    <button id="inc" aria-label="increment">+</button>
-  </div>
-</template>
-
-<script>
-  customElements.define('x-counter', class extends HTMLElement {
-    connectedCallback() {
-      if (this.shadowRoot) return;
-      const root = this.attachShadow({ mode: 'open' });
-      root.append(document.getElementById('x-counter-tpl').content.cloneNode(true));
-      this.out = root.getElementById('val');
-      root.getElementById('inc').onclick = () => this.render(this.count + 1);
-      root.getElementById('dec').onclick = () => this.render(this.count - 1);
-      this.render(Number(this.getAttribute('start') || 0));
-    }
-    render(n) { this.count = n; this.out.textContent = n; }
-  });
-<\/script>`,
-        usage: `<x-counter start="3"></x-counter>`
-      }
-    ];
-
-    const SEED_PAGES = [
-      { id: 'sample-page', kind: 'page', name: 'Sample page', items: ['badge', 'card', 'button', 'counter'] }
-    ];
-
     // Shared design tokens live in library/tokens.css — one source of truth read
     // by both this client preview and the server-rendered /p and /c routes.
     let tokens = '';
+    let savedTokens = '';
 
     // Host shell: tokens + the registry (definitions injected once into <head>),
     // then the usage markup in <body>. 'component' centers a single element on a
@@ -387,28 +271,47 @@ ${usage}
     const frame = document.getElementById('frame');
     const editor = document.getElementById('editor');
     const composer = document.getElementById('composer');
+    const tokenEditor = document.getElementById('token-editor');
     const defInput = document.getElementById('def');
     const usageInput = document.getElementById('usage');
+    const tokensInput = document.getElementById('tokens');
     const nameInput = document.getElementById('name');
     const kindBadge = document.getElementById('kind');
 
     let library = [];
     let selectedId = null;
     let pendingDeleteId = null;
+    let loadError = '';
 
     async function load() {
+      loadError = '';
       try {
         const r = await fetch(API);
         if (r.ok) {
+          const type = r.headers.get('content-type') ?? '';
+          if (!type.includes('application/json')) {
+            throw new Error(`Expected JSON from ${API}, got ${type || 'unknown content type'}`);
+          }
           const d = await r.json();
-          const merged = [
+          return [
             ...(d.components ?? []).map(c => ({ ...c, kind: 'component' })),
             ...(d.pages ?? []).map(p => ({ ...p, kind: 'page' })),
           ];
-          if (merged.length) return merged;
         }
-      } catch (e) { console.error('load failed', e); }
-      return null; // signal: nothing stored yet
+        throw new Error(`HTTP ${r.status}`);
+      } catch (e) {
+        loadError = 'Library failed to load. Start the app with: php -S 127.0.0.1:8000 router.php';
+        console.error('load failed', e);
+      }
+      return [];
+    }
+
+    async function loadTokens() {
+      tokens = await fetch('/library/tokens.css', { cache: 'no-store' })
+        .then(r => r.ok ? r.text() : tokens)
+        .catch(() => tokens);
+      savedTokens = tokens;
+      return tokens;
     }
 
     // Persist the whole library; the backend fans it out to files and removes
@@ -487,8 +390,10 @@ ${usage}
       pl.innerHTML = '';
       components().forEach(c => cl.append(makeItem(c)));
       pages().forEach(p => pl.append(makeItem(p)));
-      document.getElementById('empty-components').hidden = components().length > 0;
-      document.getElementById('empty-pages').hidden = pages().length > 0;
+      document.getElementById('empty-components').textContent = loadError || 'No components yet.';
+      document.getElementById('empty-components').hidden = !loadError && components().length > 0;
+      document.getElementById('empty-pages').textContent = loadError ? '' : 'No pages yet.';
+      document.getElementById('empty-pages').hidden = !!loadError || pages().length > 0;
     }
 
     function renderFrame() {
@@ -499,8 +404,14 @@ ${usage}
     }
 
     function closePanels() {
+      if (tokenEditor.classList.contains('open') && tokens !== savedTokens) {
+        tokens = savedTokens;
+        tokensInput.value = savedTokens;
+        renderFrame();
+      }
       editor.classList.remove('open');
       composer.classList.remove('open');
+      tokenEditor.classList.remove('open');
     }
 
     function select(id) {
@@ -581,18 +492,15 @@ ${usage}
     }
 
     // --- Toolbar actions ---
-    document.getElementById('btn-restore').onclick = () => {
-      // Reset sample components to their seed definitions (adding any missing).
+    document.getElementById('btn-restore').onclick = async () => {
+      // Reset sample components and tokens to the server's canonical seed (library/.seed).
       // Custom components and pages are left untouched.
-      let touched = null;
-      for (const seed of SEED) {
-        const i = library.findIndex(c => c.id === seed.id);
-        if (i >= 0) library[i] = structuredClone(seed);
-        else library.push(structuredClone(seed));
-        touched ??= seed.id;
-      }
-      save();
-      select(touched ?? selectedId);
+      try {
+        await fetch('/api/reset', { method: 'POST' });
+      } catch (e) { console.error('reset failed', e); }
+      await loadTokens();
+      library = await load();
+      select(components()[0]?.id ?? library[0]?.id ?? null);
     };
 
     document.getElementById('btn-new-component').onclick = () => {
@@ -646,12 +554,11 @@ ${usage}
     document.getElementById('btn-edit').onclick = () => {
       const c = selected();
       if (!c) return;
+      closePanels();
       if (c.kind === 'page') {
-        editor.classList.remove('open');
         composer.classList.add('open');
         renderComposer();
       } else {
-        composer.classList.remove('open');
         defInput.value = c.definition;
         usageInput.value = c.usage;
         editor.classList.add('open');
@@ -659,8 +566,26 @@ ${usage}
       }
     };
 
+    document.getElementById('btn-tokens').onclick = () => {
+      closePanels();
+      tokensInput.value = tokens;
+      tokenEditor.classList.add('open');
+      tokensInput.focus();
+    };
+
     document.getElementById('btn-cancel').onclick = () => editor.classList.remove('open');
     document.getElementById('btn-done').onclick = () => composer.classList.remove('open');
+    document.getElementById('btn-token-cancel').onclick = () => {
+      tokens = savedTokens;
+      tokensInput.value = savedTokens;
+      tokenEditor.classList.remove('open');
+      renderFrame();
+    };
+
+    tokensInput.oninput = () => {
+      tokens = tokensInput.value;
+      renderFrame();
+    };
 
     document.getElementById('btn-apply').onclick = () => {
       const c = selected();
@@ -672,7 +597,25 @@ ${usage}
       renderFrame();
     };
 
-    document.getElementById('btn-reload').onclick = renderFrame;
+    document.getElementById('btn-token-apply').onclick = async () => {
+      tokens = tokensInput.value;
+      try {
+        const r = await fetch('/api/tokens', {
+          method: 'PUT',
+          headers: { 'content-type': 'text/css' },
+          body: tokens,
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        savedTokens = tokens;
+      } catch (e) { console.error('token save failed', e); return; }
+      tokenEditor.classList.remove('open');
+      renderFrame();
+    };
+
+    document.getElementById('btn-reload').onclick = async () => {
+      await loadTokens();
+      renderFrame();
+    };
 
     document.getElementById('btn-open').onclick = () => {
       const c = selected();
@@ -695,15 +638,9 @@ ${usage}
     };
 
     (async function init() {
-      tokens = await fetch('/library/tokens.css').then(r => r.ok ? r.text() : '').catch(() => '');
-      const stored = await load();
-      if (stored) {
-        library = stored;
-      } else {
-        // First run: seed the sample library and persist it to disk.
-        library = [...structuredClone(SEED), ...structuredClone(SEED_PAGES)];
-        save();
-      }
+      await loadTokens();
+      // The server seeds an empty library from its canonical .seed on first GET.
+      library = await load();
       selectedId = library[0]?.id ?? null;
       renderLists();
       renderFrame();

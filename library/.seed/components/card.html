@@ -1,0 +1,39 @@
+<!-- name: Card -->
+<template id="x-card-tpl">
+  <style>
+    :host { display: block; }
+    .card { max-width: 320px; padding: var(--space-lg, 20px);
+      border-radius: var(--radius, 14px); background: var(--surface, #fff);
+      box-shadow: 0 4px 20px rgba(0,0,0,.08); }
+    h2 { margin: 0 0 var(--space-sm, 8px); color: var(--text, #18181b);
+      font: 600 1.25rem system-ui, sans-serif; }
+    p { margin: 0 0 var(--space-lg, 20px); color: var(--text-muted, #52525b);
+      font: 1rem/1.5 system-ui, sans-serif; }
+    .cta { font: inherit; padding: var(--space-sm, 8px) var(--space-lg, 20px);
+      border: 0; border-radius: var(--radius-sm, 8px);
+      background: var(--accent, #6366f1); color: #fff; cursor: pointer; }
+  </style>
+  <div class="card">
+    <h2><slot name="title">Card</slot></h2>
+    <p><slot name="body"></slot></p>
+    <button class="cta"><slot name="action">Action</slot></button>
+  </div>
+</template>
+
+<script>
+  customElements.define('x-card', class extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;
+      const tpl = document.getElementById('x-card-tpl');
+      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
+    }
+  });
+</script>
+
+<script type="text/html" data-usage>
+<x-card>
+  <span slot="title">Card component</span>
+  <span slot="body">A self-contained unit, styled with shared tokens so it
+     looks the same wherever a page composes it.</span>
+</x-card>
+</script>
