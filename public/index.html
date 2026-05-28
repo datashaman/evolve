@@ -431,8 +431,8 @@ ${usage}
     const kindBadge = document.getElementById('kind');
 
     let library = [];
-    let selectedId = null;
-    let pendingDeleteId = null;
+    let selectedKey = null;
+    let pendingDeleteKey = null;
     let loadError = '';
     let saveTimer = 0;
     const sourceCollapseKey = 'evolve.source-collapse';
@@ -510,7 +510,14 @@ ${usage}
       localStorage.setItem(sourceCollapseKey, JSON.stringify(state));
       applySourceCollapse();
     }
-    function selected() { return library.find(c => c.id === selectedId) ?? null; }
+    function artifactKey(c) {
+      if (!c) return '';
+      if (c.path) return c.path;
+      const folder = c.kind === 'layout' ? 'layouts' : c.kind === 'page' ? 'pages' : 'components';
+      return `${folder}/${c.id}.html`;
+    }
+
+    function selected() { return library.find(c => artifactKey(c) === selectedKey) ?? null; }
     function components() { return library.filter(c => c.kind === 'component'); }
     function layouts() { return library.filter(c => c.kind === 'layout'); }
     function pages() { return library.filter(c => c.kind === 'page'); }
@@ -834,21 +841,22 @@ ${templateSource}`;
       const li = document.createElement('li');
       if (options.className) li.classList.add(options.className);
       if (Number.isFinite(options.depth)) li.style.setProperty('--depth', options.depth);
-      if (c.id === selectedId) li.className = 'active';
+      const key = artifactKey(c);
+      if (key === selectedKey) li.className = 'active';
       if (options.className) li.classList.add(options.className);
 
-      if (c.id === pendingDeleteId) {
+      if (key === pendingDeleteKey) {
         const label = document.createElement('span');
         label.className = 'label';
         label.textContent = 'Delete?';
         const yes = document.createElement('button');
         yes.className = 'confirm confirm-yes';
         yes.textContent = 'Delete';
-        yes.onclick = (e) => { e.stopPropagation(); remove(c.id); };
+        yes.onclick = (e) => { e.stopPropagation(); remove(key); };
         const no = document.createElement('button');
         no.className = 'confirm confirm-no';
         no.textContent = 'Cancel';
-        no.onclick = (e) => { e.stopPropagation(); pendingDeleteId = null; renderLists(); };
+        no.onclick = (e) => { e.stopPropagation(); pendingDeleteKey = null; renderLists(); };
         li.append(label, yes, no);
         li.onclick = (e) => e.stopPropagation();
       } else {
@@ -865,11 +873,11 @@ ${templateSource}`;
         del.className = 'del';
         del.textContent = '×';
         del.title = 'Delete';
-        del.onclick = (e) => { e.stopPropagation(); pendingDeleteId = c.id; renderLists(); };
+        del.onclick = (e) => { e.stopPropagation(); pendingDeleteKey = key; renderLists(); };
         li.append(label);
         if (meta) li.append(meta);
         li.append(del);
-        li.onclick = () => select(c.id);
+        li.onclick = () => select(artifactKey(c));
       }
       return li;
     }
@@ -994,22 +1002,22 @@ ${templateSource}`;
       tokenEditor.classList.remove('open');
     }
 
-    function select(id) {
-      selectedId = id;
-      pendingDeleteId = null;
+    function select(key) {
+      selectedKey = key;
+      pendingDeleteKey = null;
       closePanels();
       renderLists();
       syncSourceInputs();
       renderFrame();
     }
 
-    function remove(id) {
-      const i = library.findIndex(c => c.id === id);
+    function remove(key) {
+      const i = library.findIndex(c => artifactKey(c) === key);
       if (i === -1) return;
-      pendingDeleteId = null;
-      const wasSelected = selectedId === id;
+      pendingDeleteKey = null;
+      const wasSelected = selectedKey === key;
       library.splice(i, 1);
-      if (wasSelected) selectedId = library[Math.max(0, i - 1)]?.id ?? null;
+      if (wasSelected) selectedKey = artifactKey(library[Math.max(0, i - 1)]);
       save();
       closePanels();
       renderLists();
@@ -1026,14 +1034,14 @@ ${templateSource}`;
       } catch (e) { console.error('reset failed', e); }
       await loadTokens();
       library = await load();
-      select(components()[0]?.id ?? library[0]?.id ?? null);
+      select(artifactKey(components()[0] ?? library[0]));
     };
 
     document.getElementById('btn-new-component').onclick = () => {
       const c = newArtifact('component', 'Untitled component', 'New component');
       library.push(c);
       save();
-      select(c.id);
+      select(artifactKey(c));
       nameInput.focus(); nameInput.select();
     };
 
@@ -1041,7 +1049,7 @@ ${templateSource}`;
       const l = newArtifact('layout', 'Untitled layout', '<slot></slot>');
       library.push(l);
       save();
-      select(l.id);
+      select(artifactKey(l));
       nameInput.focus(); nameInput.select();
     };
 
@@ -1052,14 +1060,20 @@ ${templateSource}`;
       p.layout = '';
       library.push(p);
       save();
-      select(p.id);
+      select(artifactKey(p));
       nameInput.focus(); nameInput.select();
     };
 
     function newArtifact(kind, name, slotContent) {
       const tag = 'x-' + crypto.randomUUID().replace(/-/g, '').slice(0, 8);
+      const id = crypto.randomUUID();
+      const usage = kind === 'layout'
+        ? `<x-layout src="${id}">\n  <part name="main">${slotContent}</part>\n</x-layout>`
+        : kind === 'page'
+          ? '<!-- Served at /untitled-page. -->'
+          : `<x-component src="${id}"></x-component>`;
       return {
-        id: crypto.randomUUID(), kind, name, tag,
+        id, kind, name, tag,
         definition: `<style>
   :host { display: ${kind === 'component' ? 'inline-block' : 'block'}; }
   .box { padding: var(--space-lg, 20px); border-radius: var(--radius, 14px);
@@ -1070,7 +1084,7 @@ ${templateSource}`;
 <template>
   <div class="box">${slotContent}</div>
 </template>`,
-        usage: `<${tag}></${tag}>`
+        usage
       };
     }
 
@@ -1181,7 +1195,7 @@ ${templateSource}`;
       await loadTokens();
       // The server seeds an empty library from its canonical .seed on first GET.
       library = await load();
-      selectedId = library[0]?.id ?? null;
+      selectedKey = artifactKey(library[0]);
       renderLists();
       applySourceCollapse();
       syncSourceInputs();
