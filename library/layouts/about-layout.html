@@ -1,20 +1,14 @@
 <!-- name: About layout -->
 <!-- tag: x-about-layout -->
+<!-- layout: base-layout -->
 <style id="x-about-layout-css" media="not all">
     :host { display: block; }
     .shell {
-      min-height: 100vh;
       background:
         linear-gradient(90deg, color-mix(in srgb, var(--accent, #2563eb) 7%, transparent), transparent 40%),
         var(--surface-soft, #f6f8fb);
-      color: var(--text, #172026);
-      font-family: var(--font-sans, system-ui, sans-serif);
     }
-    .wrap {
-      width: min(1120px, calc(100vw - 40px));
-      margin: 0 auto;
-    }
-    main {
+    .about-main {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
       gap: clamp(28px, 5vw, 64px);
@@ -140,48 +134,33 @@
       font-size: 15px;
       line-height: 1.45;
     }
-    footer {
-      padding: 28px 0 42px;
-      color: var(--text-muted, #5f6f7a);
-      font-size: 14px;
-      border-top: 1px solid var(--border, #d9e2ea);
-    }
     @media (max-width: 860px) {
-      main { grid-template-columns: 1fr; }
+      .about-main { grid-template-columns: 1fr; }
       .aside { position: static; }
       .principles { grid-template-columns: 1fr; }
     }
 </style>
 
 <template id="x-about-layout-tpl">
-  <div class="shell">
-    <div class="wrap">
-      <x-component src="site-header">
-        <span slot="brand">Northstar Studio</span>
-        <x-pages parent="/">
-          <a slot="nav" href="{url}">{title}</a>
-        </x-pages>
-        <a slot="nav" href="#contact">Contact</a>
-        <span slot="action">Start a conversation</span>
-      </x-component>
-      <main>
-        <div class="content">
-          <x-part name="hero" />
-          <x-part name="main" />
-          <x-part name="cta" />
-        </div>
-        <aside class="aside">
-          <p class="aside-title">Studio profile</p>
-          <x-part name="aside">
-            A compact layout for about pages, case-study intros, and credibility-led content.
-          </x-part>
-        </aside>
-      </main>
-      <footer>
-        <x-part name="footer">Built with the component workbench.</x-part>
-      </footer>
-    </div>
-  </div>
+  <part name="action">Start a conversation</part>
+  <part name="main">
+    <main class="about-main">
+      <div class="content">
+        <x-part name="hero" />
+        <x-part name="main" />
+        <x-part name="cta" />
+      </div>
+      <aside class="aside">
+        <p class="aside-title">Studio profile</p>
+        <x-part name="aside">
+          A compact layout for about pages, case-study intros, and credibility-led content.
+        </x-part>
+      </aside>
+    </main>
+  </part>
+  <part name="footer">
+    <x-part name="footer">Built with the component workbench.</x-part>
+  </part>
 </template>
 
 <script type="text/html" data-usage>

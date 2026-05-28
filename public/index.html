@@ -87,12 +87,15 @@
     .sidebar li:hover { background: #3f3f46; }
     .sidebar li.active { background: #4338ca; color: #fff; }
     .sidebar li .label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .sidebar li.page-item { padding-left: calc(12px + var(--depth, 0) * 16px); }
-    .sidebar li.page-item .slug {
+    .sidebar li.page-item,
+    .sidebar li.layout-item { padding-left: calc(12px + var(--depth, 0) * 16px); }
+    .sidebar li.page-item .slug,
+    .sidebar li.layout-item .slug {
       max-width: 86px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       color: #a1a1aa; font-size: 11px;
     }
-    .sidebar li.page-item.active .slug { color: #c7d2fe; }
+    .sidebar li.page-item.active .slug,
+    .sidebar li.layout-item.active .slug { color: #c7d2fe; }
     .sidebar li .del {
       visibility: hidden; border: 0; background: transparent; color: inherit;
       cursor: pointer; font-size: 15px; opacity: .7;
@@ -358,7 +361,7 @@ ${usage}
     function save() {
       const payload = {
         components: components().map(({ id, name, tag, requires, definition, usage }) => ({ id, name, tag, requires, definition, usage })),
-        layouts: layouts().map(({ id, name, tag, requires, definition, usage }) => ({ id, name, tag, requires, definition, usage })),
+        layouts: layouts().map(({ id, name, tag, layout, requires, definition, usage }) => ({ id, name, tag, layout, requires, definition, usage })),
         pages: pages().map(({ id, name, tag, title, slug, layout, requires, definition, usage }) => ({ id, name, tag, title, slug, layout, requires, definition, usage })),
       };
       fetch(API, {
@@ -445,8 +448,7 @@ ${usage}
     function expandLayoutTag(attrs, inner, defs, seen, context) {
       const node = parseCompositionNode('x-layout', attrs);
       const artifact = artifactByRef(layoutRef(node?.getAttribute('src') ?? ''));
-      const template = expandParts(expandUses(artifactTemplate(artifact), defs, seen, context), pageParts(inner), defs, seen, context);
-      return renderArtifactInstance(node, artifact, '', defs, seen, context, template);
+      return renderLayoutChain(artifact, pageParts(inner), '', defs, seen, context);
     }
 
     function parseCompositionNode(tag, attrs) {
@@ -511,7 +513,7 @@ ${usage}
     function expandParts(html, parts, defs, seen, context = {}) {
       const paired = /<x-part\b([^>]*)>((?:(?!<x-part\b).)*?)<\/x-part>/gis;
       let expanded = (html ?? '').replace(paired, (_match, attrs, fallback) => renderPartTag(attrs, fallback, parts, defs, seen, context));
-      return expanded.replace(/<x-part\b([^>]*)\/>/gis, (_match, attrs) => renderPartTag(attrs, '', parts, defs, seen, context));
+      return expanded.replace(/<x-part\b([^>/]*?)\s*\/>/gis, (_match, attrs) => renderPartTag(attrs, '', parts, defs, seen, context));
     }
 
     function renderPartTag(attrs, fallback, parts, defs, seen, context) {
@@ -566,8 +568,33 @@ ${usage}
       const layout = artifactByRef(layoutRef(c.layout));
       const context = { page: c };
       if (!layout) return expandUses(c.definition, defs, seen, context);
-      const template = expandParts(expandUses(artifactTemplate(layout), defs, seen, context), pageParts(c.definition), defs, seen, context);
-      return renderArtifactInstance(parseCompositionNode('x-layout', ''), layout, '', defs, seen, context, template);
+      return renderLayoutChain(layout, pageParts(c.definition), artifactStyle(c), defs, seen, context);
+    }
+
+    function renderLayoutChain(layout, parts, childStyle, defs, seen, context = {}) {
+      let template = expandParts(expandUses(artifactTemplate(layout), defs, seen, context), parts, defs, seen, context);
+
+      if (!layout?.layout) {
+        childStyle = String(childStyle ?? '').trim();
+        if (childStyle) template = `<style>${childStyle}</style>${template}`;
+        return renderArtifactInstance(parseCompositionNode('x-layout', ''), layout, '', defs, seen, context, template);
+      }
+
+      const parent = artifactByRef(layoutRef(layout.layout));
+      if (!parent) {
+        const style = String(childStyle ?? '').trim();
+        if (style) template = `<style>${style}</style>${template}`;
+        return renderArtifactInstance(parseCompositionNode('x-layout', ''), layout, '', defs, seen, context, template);
+      }
+
+      const parentParts = pageParts(template);
+      if (!Object.keys(parentParts).length) parentParts.main = template;
+      const style = [artifactStyle(layout), childStyle].filter(Boolean).join('\n').trim();
+      if (style) {
+        const target = Object.hasOwn(parentParts, 'main') ? 'main' : Object.keys(parentParts)[0];
+        parentParts[target] = `<style>${style}</style>${parentParts[target]}`;
+      }
+      return renderLayoutChain(parent, parentParts, '', defs, seen, context);
     }
 
     // Build the full preview document for any artifact. Authoring tags are
@@ -678,6 +705,36 @@ ${usage}
       return rows;
     }
 
+    function layoutRows() {
+      const indexed = layouts()
+        .map(layout => ({ ...layout, parent: layout.layout ? layoutRef(layout.layout) : '' }))
+        .sort((a, b) => a.path.localeCompare(b.path));
+      const children = new Map();
+      indexed.forEach(layout => {
+        const group = children.get(layout.parent) ?? [];
+        group.push(layout);
+        children.set(layout.parent, group);
+      });
+
+      const rows = [];
+      const seen = new Set();
+      function append(parent, depth) {
+        (children.get(parent) ?? []).forEach(layout => {
+          if (seen.has(layout.id)) return;
+          seen.add(layout.id);
+          rows.push({ layout, depth });
+          append(layout.path, depth + 1);
+        });
+      }
+
+      append('', 0);
+      indexed.forEach(layout => {
+        if (seen.has(layout.id)) return;
+        rows.push({ layout, depth: 0 });
+      });
+      return rows;
+    }
+
     function renderLists() {
       const cl = document.getElementById('list-components');
       const ll = document.getElementById('list-layouts');
@@ -686,7 +743,9 @@ ${usage}
       ll.innerHTML = '';
       pl.innerHTML = '';
       components().forEach(c => cl.append(makeItem(c)));
-      layouts().forEach(l => ll.append(makeItem(l)));
+      layoutRows().forEach(({ layout, depth }) => {
+        ll.append(makeItem(layout, { className: 'layout-item', depth, meta: layout.id }));
+      });
       pageRows().forEach(({ page, depth }) => {
         pl.append(makeItem(page, { className: 'page-item', depth, meta: slugify(page.slug) }));
       });

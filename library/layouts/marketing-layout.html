@@ -1,20 +1,14 @@
 <!-- name: Marketing layout -->
 <!-- tag: x-marketing-layout -->
+<!-- layout: base-layout -->
 <style id="x-marketing-layout-css" media="not all">
     :host { display: block; }
     .shell {
-      min-height: 100vh;
       background:
         linear-gradient(180deg, color-mix(in srgb, var(--accent, #2563eb) 8%, transparent), transparent 360px),
         var(--surface-soft, #f6f8fb);
-      color: var(--text, #172026);
-      font-family: var(--font-sans, system-ui, sans-serif);
     }
-    .wrap {
-      width: min(1120px, calc(100vw - 40px));
-      margin: 0 auto;
-    }
-    main {
+    .marketing-main {
       display: grid;
       gap: clamp(28px, 4vw, 56px);
       padding-bottom: 48px;
@@ -22,35 +16,25 @@
     x-hero-section {
       --hero-block-padding: clamp(28px, 5vw, 64px);
     }
-    footer {
+    .marketing-footer {
       padding: 22px 0 34px;
-      color: var(--text-muted, #5f6f7a);
-      font-size: 14px;
-      border-top: 1px solid var(--border, #d9e2ea);
     }
 </style>
 
 <template id="x-marketing-layout-tpl">
-  <div class="shell">
-    <div class="wrap">
-      <x-component src="site-header">
-        <span slot="brand">Northstar Studio</span>
-        <x-pages parent="/">
-          <a slot="nav" href="{url}">{title}</a>
-        </x-pages>
-        <a slot="nav" href="#contact">Contact</a>
-        <span slot="action">Plan the site</span>
-      </x-component>
-      <main>
-        <x-part name="hero" />
-        <x-part name="main" />
-        <x-part name="cta" />
-      </main>
-      <footer>
-        <x-part name="footer">Built with the component workbench.</x-part>
-      </footer>
+  <part name="action">Plan the site</part>
+  <part name="main">
+    <main class="marketing-main">
+      <x-part name="hero" />
+      <x-part name="main" />
+      <x-part name="cta" />
+    </main>
+  </part>
+  <part name="footer">
+    <div class="marketing-footer">
+      <x-part name="footer">Built with the component workbench.</x-part>
     </div>
-  </div>
+  </part>
 </template>
 
 <script type="text/html" data-usage>

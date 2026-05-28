@@ -1,0 +1,53 @@
+<!-- name: Base layout -->
+<!-- tag: x-base-layout -->
+<style id="x-base-layout-css" media="not all">
+    :host { display: block; }
+    .shell {
+      min-height: 100vh;
+      background: var(--surface-soft, #f6f8fb);
+      color: var(--text, #172026);
+      font-family: var(--font-sans, system-ui, sans-serif);
+    }
+    .wrap {
+      width: min(1120px, calc(100vw - 40px));
+      margin: 0 auto;
+    }
+    footer {
+      padding: 24px 0 38px;
+      color: var(--text-muted, #5f6f7a);
+      font-size: 14px;
+      border-top: 1px solid var(--border, #d9e2ea);
+    }
+</style>
+
+<template id="x-base-layout-tpl">
+  <div class="shell">
+    <div class="wrap">
+      <x-component src="site-header">
+        <span slot="brand">Northstar Studio</span>
+        <x-pages parent="/">
+          <a slot="nav" href="{url}">{title}</a>
+        </x-pages>
+        <a slot="nav" href="#contact">Contact</a>
+        <span slot="action"><x-part name="action">Plan the site</x-part></span>
+      </x-component>
+      <x-part name="main" />
+      <footer>
+        <x-part name="footer">Built with the component workbench.</x-part>
+      </footer>
+    </div>
+  </div>
+</template>
+
+<script type="text/html" data-usage>
+<x-layout src="base-layout">
+  <part name="action">Preview action</part>
+  <part name="main">
+    <main style="padding: 48px 0 72px;">
+      <h1>Base layout preview.</h1>
+      <p>This layout owns the shared site shell, header, navigation, and footer.</p>
+    </main>
+  </part>
+  <part name="footer">Base layout preview footer.</part>
+</x-layout>
+</script>

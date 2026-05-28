@@ -377,7 +377,7 @@ function renderedArtifactParts(array $artifact): array {
     $defs = [];
     $seen = [];
     $context = ['page' => $artifact];
-    $usage = $artifact['layout'] !== ''
+    $usage = $artifact['slug'] !== '' && $artifact['layout'] !== ''
         ? renderPageParts($artifact, $defs, $seen, $context)
         : renderArtifactUsage($artifact, expandUses($artifact['usage'], $defs, $seen, $context), $defs, $seen, $context);
     return [$usage, $defs];
@@ -392,9 +392,34 @@ function renderPageParts(array $page, array &$defs, array &$seen, array $context
     if (!is_file($layoutPath)) return expandUses($page['definition'], $defs, $seen);
 
     $layout = parseComponent(basename($layoutPath, '.html'), file_get_contents($layoutPath));
-    $parts = pageParts($page['definition']);
+    return renderLayoutChain($layout, pageParts($page['definition']), artifactStyle($page), $defs, $seen, $context);
+}
+
+function renderLayoutChain(array $layout, array $parts, string $childStyle, array &$defs, array &$seen, array $context): string {
     $template = expandParts(expandUses(artifactTemplate($layout), $defs, $seen, $context), $parts, $defs, $seen, $context);
-    return renderArtifactInstance($layout, '', '', $defs, $seen, $context, $template);
+
+    if (($layout['layout'] ?? '') === '') {
+        $childStyle = trim($childStyle);
+        if ($childStyle !== '') $template = "<style>{$childStyle}</style>{$template}";
+        return renderArtifactInstance($layout, '', '', $defs, $seen, $context, $template);
+    }
+
+    $parentPath = requiredPath(layoutRef($layout['layout']));
+    if (!is_file($parentPath)) {
+        $style = trim($childStyle);
+        if ($style !== '') $template = "<style>{$style}</style>{$template}";
+        return renderArtifactInstance($layout, '', '', $defs, $seen, $context, $template);
+    }
+
+    $parent = parseComponent(basename($parentPath, '.html'), file_get_contents($parentPath));
+    $parentParts = pageParts($template);
+    if (!$parentParts) $parentParts = ['main' => $template];
+    $style = trim(artifactStyle($layout) . "\n" . $childStyle);
+    if ($style !== '') {
+        $target = array_key_exists('main', $parentParts) ? 'main' : array_key_first($parentParts);
+        $parentParts[$target] = "<style>{$style}</style>" . $parentParts[$target];
+    }
+    return renderLayoutChain($parent, $parentParts, '', $defs, $seen, $context);
 }
 
 function pageParts(string $html): array {
@@ -415,7 +440,7 @@ function expandParts(string $html, array $parts, array &$defs, array &$seen, arr
         return renderPartTag($m[1], $m[2], $parts, $defs, $seen, $context);
     }, $html);
 
-    return preg_replace_callback('#<x-part\b([^>]*)/>#is', function ($m) use ($parts, &$defs, &$seen, $context) {
+    return preg_replace_callback('#<x-part\b([^>/]*?)\s*/>#is', function ($m) use ($parts, &$defs, &$seen, $context) {
         return renderPartTag($m[1], '', $parts, $defs, $seen, $context);
     }, $html);
 }
@@ -558,9 +583,7 @@ function expandLayoutTag(string $attrs, string $inner, array &$defs, array &$see
     if (!is_file($path)) return '';
 
     $artifact = parseComponent(basename($path, '.html'), file_get_contents($path));
-    $attrs = preg_replace('/\s*\bsrc\s*=\s*(["\']).*?\1/i', '', $attrs, 1);
-    $template = expandParts(expandUses(artifactTemplate($artifact), $defs, $seen, $context), pageParts($inner), $defs, $seen, $context);
-    return renderArtifactInstance($artifact, $attrs, '', $defs, $seen, $context, $template);
+    return renderLayoutChain($artifact, pageParts($inner), '', $defs, $seen, $context);
 }
 
 function renderArtifactUsage(array $artifact, string $usage, array &$defs, array &$seen, array $context): string {
