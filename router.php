@@ -275,7 +275,8 @@ function loadTokens(): string {
 // Component previews center a single artifact; pages/layouts own the full canvas.
 function buildDocument(string $usage, array $definitions, string $mode, string $title = 'Component Workbench'): string {
     $body = $mode === 'page'
-        ? "html, body { min-height: 100%; }
+        ? "html { scrollbar-gutter: stable; }
+          html, body { min-height: 100%; }
           body {
             margin: 0;
             min-height: 100vh;
@@ -287,7 +288,8 @@ function buildDocument(string $usage, array $definitions, string $mode, string $
             display: block;
             min-height: 100vh;
           }"
-        : "html, body { min-height: 100%; }
+        : "html { scrollbar-gutter: stable; }
+          html, body { min-height: 100%; }
           body {
             margin: 0; min-height: 100vh;
             display: grid; place-items: center; padding: 40px;
