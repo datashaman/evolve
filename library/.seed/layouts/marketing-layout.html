@@ -32,8 +32,9 @@
     <div class="wrap">
       <x-component src="site-header">
         <span slot="brand">Northstar Studio</span>
-        <a slot="nav" href="#services">Services</a>
-        <a slot="nav" href="#proof">Proof</a>
+        <x-pages parent="/">
+          <a slot="nav" href="{url}">{title}</a>
+        </x-pages>
         <a slot="nav" href="#contact">Contact</a>
         <span slot="action">Plan the site</span>
       </x-component>

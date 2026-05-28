@@ -376,24 +376,25 @@ function pagePathBySlug(string $slug): string {
 function renderedArtifactParts(array $artifact): array {
     $defs = [];
     $seen = [];
+    $context = ['page' => $artifact];
     $usage = $artifact['layout'] !== ''
-        ? renderPageParts($artifact, $defs, $seen)
-        : renderArtifactUsage($artifact, expandUses($artifact['usage'], $defs, $seen), $defs, $seen);
+        ? renderPageParts($artifact, $defs, $seen, $context)
+        : renderArtifactUsage($artifact, expandUses($artifact['usage'], $defs, $seen, $context), $defs, $seen, $context);
     return [$usage, $defs];
 }
 
-function expandPartFallbacks(string $html, array &$defs, array &$seen): string {
-    return expandParts($html, [], $defs, $seen);
+function expandPartFallbacks(string $html, array &$defs, array &$seen, array $context): string {
+    return expandParts($html, [], $defs, $seen, $context);
 }
 
-function renderPageParts(array $page, array &$defs, array &$seen): string {
+function renderPageParts(array $page, array &$defs, array &$seen, array $context): string {
     $layoutPath = requiredPath(layoutRef($page['layout']));
     if (!is_file($layoutPath)) return expandUses($page['definition'], $defs, $seen);
 
     $layout = parseComponent(basename($layoutPath, '.html'), file_get_contents($layoutPath));
     $parts = pageParts($page['definition']);
-    $template = expandParts(expandUses(artifactTemplate($layout), $defs, $seen), $parts, $defs, $seen);
-    return renderArtifactInstance($layout, '', '', $defs, $seen, $template);
+    $template = expandParts(expandUses(artifactTemplate($layout), $defs, $seen, $context), $parts, $defs, $seen, $context);
+    return renderArtifactInstance($layout, '', '', $defs, $seen, $context, $template);
 }
 
 function pageParts(string $html): array {
@@ -408,21 +409,83 @@ function pageParts(string $html): array {
     return $parts;
 }
 
-function expandParts(string $html, array $parts, array &$defs, array &$seen): string {
+function expandParts(string $html, array $parts, array &$defs, array &$seen, array $context): string {
     $paired = '#<x-part\b([^>]*)>((?:(?!<x-part\b).)*?)</x-part>#is';
-    $html = preg_replace_callback($paired, function ($m) use ($parts, &$defs, &$seen) {
-        return renderPartTag($m[1], $m[2], $parts, $defs, $seen);
+    $html = preg_replace_callback($paired, function ($m) use ($parts, &$defs, &$seen, $context) {
+        return renderPartTag($m[1], $m[2], $parts, $defs, $seen, $context);
     }, $html);
 
-    return preg_replace_callback('#<x-part\b([^>]*)/>#is', function ($m) use ($parts, &$defs, &$seen) {
-        return renderPartTag($m[1], '', $parts, $defs, $seen);
+    return preg_replace_callback('#<x-part\b([^>]*)/>#is', function ($m) use ($parts, &$defs, &$seen, $context) {
+        return renderPartTag($m[1], '', $parts, $defs, $seen, $context);
     }, $html);
 }
 
-function renderPartTag(string $attrs, string $fallback, array $parts, array &$defs, array &$seen): string {
+function renderPartTag(string $attrs, string $fallback, array $parts, array &$defs, array &$seen, array $context): string {
     if (!preg_match('/\bname\s*=\s*(["\'])(.*?)\1/i', $attrs, $m)) return '';
     $name = safePartName($m[2]);
-    return expandUses($parts[$name] ?? $fallback, $defs, $seen);
+    return expandUses($parts[$name] ?? $fallback, $defs, $seen, $context);
+}
+
+function expandPages(string $html, array &$defs, array &$seen, array $context): string {
+    $paired = '#<x-pages\b([^>]*)>((?:(?!<x-pages\b).)*?)</x-pages>#is';
+    return preg_replace_callback($paired, function ($m) use (&$defs, &$seen, $context) {
+        $parent = pageParentFromAttrs($m[1], $context);
+        $children = childPages($parent);
+        $out = '';
+        foreach ($children as $page) {
+            $out .= expandUses(renderPageTemplate($m[2], $page), $defs, $seen, ['page' => $page]);
+        }
+        return $out;
+    }, $html);
+}
+
+function pageParentFromAttrs(string $attrs, array $context): string {
+    if (preg_match('/\bparent\s*=\s*(["\'])(.*?)\1/i', $attrs, $m)) {
+        return safeSlug($m[2]);
+    }
+    if (($context['page']['slug'] ?? '') !== '') {
+        return safeSlug($context['page']['slug']);
+    }
+    return '/';
+}
+
+function childPages(string $parent): array {
+    $children = [];
+    foreach (pageIndex() as $page) {
+        if (($page['parent'] ?? '') === $parent) $children[] = $page;
+    }
+    usort($children, fn($a, $b) => strcmp($a['slug'], $b['slug']));
+    return $children;
+}
+
+function pageIndex(): array {
+    $pages = [];
+    foreach (glob(PAGES_DIR . '/*.html') ?: [] as $path) {
+        $page = parseComponent(basename($path, '.html'), file_get_contents($path));
+        if (($page['slug'] ?? '') === '') continue;
+        $page['url'] = $page['slug'];
+        $page['parent'] = parentSlug($page['slug']);
+        $pages[] = $page;
+    }
+    return $pages;
+}
+
+function parentSlug(string $slug): string {
+    $slug = safeSlug($slug);
+    if ($slug === '/') return '';
+    $path = trim($slug, '/');
+    if (!str_contains($path, '/')) return '/';
+    return '/' . dirname($path);
+}
+
+function renderPageTemplate(string $template, array $page): string {
+    $values = [
+        'name' => $page['name'] ?? '',
+        'title' => $page['title'] ?: ($page['name'] ?? ''),
+        'slug' => $page['slug'] ?? '',
+        'url' => $page['url'] ?? ($page['slug'] ?? ''),
+    ];
+    return preg_replace_callback('/\{(name|title|slug|url)\}/', fn($m) => htmlspecialchars($values[$m[1]] ?? '', ENT_QUOTES, 'UTF-8'), $template);
 }
 
 function collectRequiredDefinition(string $ref, array &$defs, array &$seen): void {
@@ -439,28 +502,29 @@ function collectRequiredDefinition(string $ref, array &$defs, array &$seen): voi
     }
 }
 
-function expandUses(string $html, array &$defs, array &$seen): string {
+function expandUses(string $html, array &$defs, array &$seen, array $context): string {
+    $html = expandPages($html, $defs, $seen, $context);
     $paired = '#<(x-use|x-component|x-layout)\b([^>]*)>((?:(?!<x-use\b|<x-component\b|<x-layout\b).)*?)</\1>#is';
     while (preg_match($paired, $html)) {
-        $html = preg_replace_callback($paired, function ($m) use (&$defs, &$seen) {
+        $html = preg_replace_callback($paired, function ($m) use (&$defs, &$seen, $context) {
             return match ($m[1]) {
-                'x-component' => expandComponentTag($m[2], $m[3], $defs, $seen),
-                'x-layout' => expandLayoutTag($m[2], $m[3], $defs, $seen),
-                default => expandUseTag($m[2], $m[3], $defs, $seen),
+                'x-component' => expandComponentTag($m[2], $m[3], $defs, $seen, $context),
+                'x-layout' => expandLayoutTag($m[2], $m[3], $defs, $seen, $context),
+                default => expandUseTag($m[2], $m[3], $defs, $seen, $context),
             };
         }, $html);
     }
 
-    return preg_replace_callback('#<(x-use|x-component|x-layout)\b([^>]*)/>#is', function ($m) use (&$defs, &$seen) {
+    return preg_replace_callback('#<(x-use|x-component|x-layout)\b([^>]*)/>#is', function ($m) use (&$defs, &$seen, $context) {
         return match ($m[1]) {
-            'x-component' => expandComponentTag($m[2], '', $defs, $seen),
-            'x-layout' => expandLayoutTag($m[2], '', $defs, $seen),
-            default => expandUseTag($m[2], '', $defs, $seen),
+            'x-component' => expandComponentTag($m[2], '', $defs, $seen, $context),
+            'x-layout' => expandLayoutTag($m[2], '', $defs, $seen, $context),
+            default => expandUseTag($m[2], '', $defs, $seen, $context),
         };
     }, $html);
 }
 
-function expandUseTag(string $attrs, string $inner, array &$defs, array &$seen): string {
+function expandUseTag(string $attrs, string $inner, array &$defs, array &$seen, array $context): string {
     if (!preg_match('/\bsrc\s*=\s*(["\'])(.*?)\1/i', $attrs, $m)) return '';
 
     $ref = trim(html_entity_decode($m[2], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
@@ -469,10 +533,10 @@ function expandUseTag(string $attrs, string $inner, array &$defs, array &$seen):
 
     $artifact = parseComponent(basename($path, '.html'), file_get_contents($path));
     $attrs = preg_replace('/\s*\bsrc\s*=\s*(["\']).*?\1/i', '', $attrs, 1);
-    return renderArtifactInstance($artifact, $attrs, $inner, $defs, $seen);
+    return renderArtifactInstance($artifact, $attrs, $inner, $defs, $seen, $context);
 }
 
-function expandComponentTag(string $attrs, string $inner, array &$defs, array &$seen): string {
+function expandComponentTag(string $attrs, string $inner, array &$defs, array &$seen, array $context): string {
     if (!preg_match('/\bsrc\s*=\s*(["\'])(.*?)\1/i', $attrs, $m)) return '';
 
     $ref = trim(html_entity_decode($m[2], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
@@ -482,10 +546,10 @@ function expandComponentTag(string $attrs, string $inner, array &$defs, array &$
 
     $artifact = parseComponent(basename($path, '.html'), file_get_contents($path));
     $attrs = preg_replace('/\s*\bsrc\s*=\s*(["\']).*?\1/i', '', $attrs, 1);
-    return renderArtifactInstance($artifact, $attrs, $inner, $defs, $seen);
+    return renderArtifactInstance($artifact, $attrs, $inner, $defs, $seen, $context);
 }
 
-function expandLayoutTag(string $attrs, string $inner, array &$defs, array &$seen): string {
+function expandLayoutTag(string $attrs, string $inner, array &$defs, array &$seen, array $context): string {
     if (!preg_match('/\bsrc\s*=\s*(["\'])(.*?)\1/i', $attrs, $m)) return '';
 
     $ref = trim(html_entity_decode($m[2], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
@@ -495,25 +559,25 @@ function expandLayoutTag(string $attrs, string $inner, array &$defs, array &$see
 
     $artifact = parseComponent(basename($path, '.html'), file_get_contents($path));
     $attrs = preg_replace('/\s*\bsrc\s*=\s*(["\']).*?\1/i', '', $attrs, 1);
-    return renderArtifactInstance($artifact, $attrs, $inner, $defs, $seen);
+    return renderArtifactInstance($artifact, $attrs, $inner, $defs, $seen, $context);
 }
 
-function renderArtifactUsage(array $artifact, string $usage, array &$defs, array &$seen): string {
+function renderArtifactUsage(array $artifact, string $usage, array &$defs, array &$seen, array $context): string {
     $tag = artifactTag($artifact);
     if ($tag === '') return $usage;
 
     $paired = '#<' . preg_quote($tag, '#') . '\b([^>]*)>((?:(?!<' . preg_quote($tag, '#') . '\b).)*?)</' . preg_quote($tag, '#') . '>#is';
-    $usage = preg_replace_callback($paired, function ($m) use ($artifact, &$defs, &$seen) {
+    $usage = preg_replace_callback($paired, function ($m) use ($artifact, &$defs, &$seen, $context) {
         if (preg_match('/^\s*<template\b[^>]*\bshadowrootmode=/i', $m[2])) return $m[0];
-        return renderArtifactInstance($artifact, $m[1], $m[2], $defs, $seen);
+        return renderArtifactInstance($artifact, $m[1], $m[2], $defs, $seen, $context);
     }, $usage);
 
-    return preg_replace_callback('#<' . preg_quote($tag, '#') . '\b([^>]*)/>#is', function ($m) use ($artifact, &$defs, &$seen) {
-        return renderArtifactInstance($artifact, $m[1], '', $defs, $seen);
+    return preg_replace_callback('#<' . preg_quote($tag, '#') . '\b([^>]*)/>#is', function ($m) use ($artifact, &$defs, &$seen, $context) {
+        return renderArtifactInstance($artifact, $m[1], '', $defs, $seen, $context);
     }, $usage);
 }
 
-function renderArtifactInstance(array $artifact, string $attrs, string $inner, array &$defs, array &$seen, ?string $templateOverride = null): string {
+function renderArtifactInstance(array $artifact, string $attrs, string $inner, array &$defs, array &$seen, array $context, ?string $templateOverride = null): string {
     $tag = artifactTag($artifact);
     if ($tag === '') return $inner;
 
@@ -522,8 +586,8 @@ function renderArtifactInstance(array $artifact, string $attrs, string $inner, a
     }
 
     $style = artifactStyle($artifact);
-    $template = $templateOverride ?? expandPartFallbacks(expandUses(artifactTemplate($artifact), $defs, $seen), $defs, $seen);
-    $inner = expandUses($inner, $defs, $seen);
+    $template = $templateOverride ?? expandPartFallbacks(expandUses(artifactTemplate($artifact), $defs, $seen, $context), $defs, $seen, $context);
+    $inner = expandUses($inner, $defs, $seen, $context);
     $attrs = trim($attrs);
     $attrs = $attrs === '' ? '' : ' ' . $attrs;
 

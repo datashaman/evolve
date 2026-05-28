@@ -401,44 +401,45 @@ ${usage}
       return c?.tag ?? '';
     }
 
-    function expandUses(html, defs, seen) {
+    function expandUses(html, defs, seen, context = {}) {
       let expanded = html ?? '';
+      expanded = expandPages(expanded, defs, seen, context);
       const paired = /<(x-use|x-component|x-layout)\b([^>]*)>((?:(?!<x-use\b|<x-component\b|<x-layout\b).)*?)<\/\1>/gis;
       while (paired.test(expanded)) {
         paired.lastIndex = 0;
         expanded = expanded.replace(paired, (_match, tag, attrs, inner) => (
           tag === 'x-component'
-            ? expandComponentTag(attrs, inner, defs, seen)
+            ? expandComponentTag(attrs, inner, defs, seen, context)
             : tag === 'x-layout'
-              ? expandLayoutTag(attrs, inner, defs, seen)
-              : expandUseTag(attrs, inner, defs, seen)
+              ? expandLayoutTag(attrs, inner, defs, seen, context)
+              : expandUseTag(attrs, inner, defs, seen, context)
         ));
       }
       return expanded.replace(/<(x-use|x-component|x-layout)\b([^>]*)\/>/gis, (_match, tag, attrs) => (
         tag === 'x-component'
-          ? expandComponentTag(attrs, '', defs, seen)
+          ? expandComponentTag(attrs, '', defs, seen, context)
           : tag === 'x-layout'
-            ? expandLayoutTag(attrs, '', defs, seen)
-            : expandUseTag(attrs, '', defs, seen)
+            ? expandLayoutTag(attrs, '', defs, seen, context)
+            : expandUseTag(attrs, '', defs, seen, context)
       ));
     }
 
-    function expandUseTag(attrs, inner, defs, seen) {
+    function expandUseTag(attrs, inner, defs, seen, context) {
       const node = parseCompositionNode('x-use', attrs);
       const artifact = artifactByRef(node?.getAttribute('src') ?? '');
-      return renderArtifactInstance(node, artifact, inner, defs, seen);
+      return renderArtifactInstance(node, artifact, inner, defs, seen, context);
     }
 
-    function expandComponentTag(attrs, inner, defs, seen) {
+    function expandComponentTag(attrs, inner, defs, seen, context) {
       const node = parseCompositionNode('x-component', attrs);
       const artifact = artifactByRef(componentRef(node?.getAttribute('src') ?? ''));
-      return renderArtifactInstance(node, artifact, inner, defs, seen);
+      return renderArtifactInstance(node, artifact, inner, defs, seen, context);
     }
 
-    function expandLayoutTag(attrs, inner, defs, seen) {
+    function expandLayoutTag(attrs, inner, defs, seen, context) {
       const node = parseCompositionNode('x-layout', attrs);
       const artifact = artifactByRef(layoutRef(node?.getAttribute('src') ?? ''));
-      return renderArtifactInstance(node, artifact, inner, defs, seen);
+      return renderArtifactInstance(node, artifact, inner, defs, seen, context);
     }
 
     function parseCompositionNode(tag, attrs) {
@@ -447,7 +448,7 @@ ${usage}
       return tpl.content.firstElementChild;
     }
 
-    function renderArtifactInstance(node, artifact, inner, defs, seen, templateOverride = null) {
+    function renderArtifactInstance(node, artifact, inner, defs, seen, context = {}, templateOverride = null) {
       if (!artifact) return '';
 
       collectDefinition(artifact, defs, seen);
@@ -459,12 +460,12 @@ ${usage}
         .map(attr => ` ${attr.name}="${escapeHtml(attr.value)}"`)
         .join('');
       const style = artifactStyle(artifact);
-      const template = templateOverride ?? expandPartFallbacks(expandUses(artifactTemplate(artifact), defs, seen), defs, seen);
-      const children = expandUses(inner, defs, seen);
+      const template = templateOverride ?? expandPartFallbacks(expandUses(artifactTemplate(artifact), defs, seen, context), defs, seen, context);
+      const children = expandUses(inner, defs, seen, context);
       return `<${tag}${passthrough}><template shadowrootmode="open"><style>${style}</style>${template}</template>${children}</${tag}>`;
     }
 
-    function renderArtifactUsage(c, usage, defs, seen) {
+    function renderArtifactUsage(c, usage, defs, seen, context = {}) {
       const tag = artifactTag(c);
       if (!tag) return usage;
       const paired = new RegExp(`<${tag}\\b([^>]*)>((?:(?!<${tag}\\b).)*?)<\\/${tag}>`, 'gis');
@@ -472,11 +473,11 @@ ${usage}
       rendered = rendered.replace(paired, (_match, attrs, inner) => {
         if (/^\s*<template\b[^>]*\bshadowrootmode=/i.test(inner)) return _match;
         const node = parseCompositionNode(tag, attrs);
-        return renderArtifactInstance(node, c, inner, defs, seen);
+        return renderArtifactInstance(node, c, inner, defs, seen, context);
       });
       return rendered.replace(new RegExp(`<${tag}\\b([^>]*)\\/>`, 'gis'), (_match, attrs) => {
         const node = parseCompositionNode(tag, attrs);
-        return renderArtifactInstance(node, c, '', defs, seen);
+        return renderArtifactInstance(node, c, '', defs, seen, context);
       });
     }
 
@@ -500,27 +501,66 @@ ${usage}
       return parts;
     }
 
-    function expandParts(html, parts, defs, seen) {
+    function expandParts(html, parts, defs, seen, context = {}) {
       const paired = /<x-part\b([^>]*)>((?:(?!<x-part\b).)*?)<\/x-part>/gis;
-      let expanded = (html ?? '').replace(paired, (_match, attrs, fallback) => renderPartTag(attrs, fallback, parts, defs, seen));
-      return expanded.replace(/<x-part\b([^>]*)\/>/gis, (_match, attrs) => renderPartTag(attrs, '', parts, defs, seen));
+      let expanded = (html ?? '').replace(paired, (_match, attrs, fallback) => renderPartTag(attrs, fallback, parts, defs, seen, context));
+      return expanded.replace(/<x-part\b([^>]*)\/>/gis, (_match, attrs) => renderPartTag(attrs, '', parts, defs, seen, context));
     }
 
-    function renderPartTag(attrs, fallback, parts, defs, seen) {
+    function renderPartTag(attrs, fallback, parts, defs, seen, context) {
       const node = parseCompositionNode('x-part', attrs);
       const name = safePartName(node?.getAttribute('name'));
-      return expandUses(parts[name] ?? fallback, defs, seen);
+      return expandUses(parts[name] ?? fallback, defs, seen, context);
     }
 
-    function expandPartFallbacks(html, defs, seen) {
-      return expandParts(html, {}, defs, seen);
+    function expandPartFallbacks(html, defs, seen, context = {}) {
+      return expandParts(html, {}, defs, seen, context);
+    }
+
+    function expandPages(html, defs, seen, context = {}) {
+      const paired = /<x-pages\b([^>]*)>((?:(?!<x-pages\b).)*?)<\/x-pages>/gis;
+      return (html ?? '').replace(paired, (_match, attrs, inner) => {
+        const parent = pageParentFromAttrs(attrs, context);
+        return childPages(parent).map(page => expandUses(renderPageTemplate(inner, page), defs, seen, { page })).join('');
+      });
+    }
+
+    function pageParentFromAttrs(attrs, context = {}) {
+      const node = parseCompositionNode('x-pages', attrs);
+      return slugify(node?.getAttribute('parent') ?? context.page?.slug ?? '/');
+    }
+
+    function childPages(parent) {
+      return pages()
+        .map(page => ({ ...page, url: page.slug, parent: parentSlug(page.slug) }))
+        .filter(page => page.parent === parent)
+        .sort((a, b) => a.slug.localeCompare(b.slug));
+    }
+
+    function parentSlug(slug) {
+      const clean = slugify(slug);
+      if (clean === '/') return '';
+      const parts = clean.replace(/^\/+|\/+$/g, '').split('/');
+      if (parts.length <= 1) return '/';
+      return '/' + parts.slice(0, -1).join('/');
+    }
+
+    function renderPageTemplate(template, page) {
+      const values = {
+        name: page.name ?? '',
+        title: page.title || page.name || '',
+        slug: page.slug ?? '',
+        url: page.url ?? page.slug ?? '',
+      };
+      return String(template ?? '').replace(/\{(name|title|slug|url)\}/g, (_match, key) => escapeHtml(values[key] ?? ''));
     }
 
     function renderPageWithLayout(c, defs, seen) {
       const layout = artifactByRef(layoutRef(c.layout));
-      if (!layout) return expandUses(c.definition, defs, seen);
-      const template = expandParts(expandUses(artifactTemplate(layout), defs, seen), pageParts(c.definition), defs, seen);
-      return renderArtifactInstance(parseCompositionNode('x-layout', ''), layout, '', defs, seen, template);
+      const context = { page: c };
+      if (!layout) return expandUses(c.definition, defs, seen, context);
+      const template = expandParts(expandUses(artifactTemplate(layout), defs, seen, context), pageParts(c.definition), defs, seen, context);
+      return renderArtifactInstance(parseCompositionNode('x-layout', ''), layout, '', defs, seen, context, template);
     }
 
     // Build the full preview document for any artifact. Authoring tags are
@@ -531,7 +571,7 @@ ${usage}
       const seen = new Set();
       const usage = c.kind === 'page' && c.layout
         ? renderPageWithLayout(c, defs, seen)
-        : renderArtifactUsage(c, expandUses(c.usage, defs, seen), defs, seen);
+        : renderArtifactUsage(c, expandUses(c.usage, defs, seen, { page: c }), defs, seen, { page: c });
       return buildDocument(usage, defs, c.kind === 'component' ? 'component' : 'page', c.title || c.name);
     }
 
