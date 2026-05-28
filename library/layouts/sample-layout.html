@@ -1,0 +1,46 @@
+<!-- name: Sample layout -->
+<template id="x-sample-layout-tpl">
+  <style>
+    :host { display: block; }
+    .layout {
+      display: grid;
+      gap: var(--space-lg, 20px);
+      align-items: start;
+      max-width: 720px;
+    }
+    .cluster {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm, 8px);
+      align-items: center;
+    }
+  </style>
+  <main class="layout">
+    <div class="cluster">
+      <slot name="badge"></slot>
+      <slot name="actions"></slot>
+    </div>
+    <slot></slot>
+  </main>
+</template>
+
+<script>
+  customElements.define('x-sample-layout', class extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;
+      const tpl = document.getElementById('x-sample-layout-tpl');
+      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
+    }
+  });
+</script>
+
+<script type="text/html" data-usage>
+<x-sample-layout>
+  <x-badge slot="badge">Layout</x-badge>
+  <x-button slot="actions">Action</x-button>
+  <x-card>
+    <span slot="title">Layout component</span>
+    <span slot="body">Layouts are components too: template, style, script, and HTML usage.</span>
+  </x-card>
+</x-sample-layout>
+</script>

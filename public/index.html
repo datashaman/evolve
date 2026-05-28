@@ -114,28 +114,6 @@
     .btn-apply { background: #22c55e; color: #052e16; }
     .btn-cancel { background: #3f3f46; color: #fafafa; }
 
-    .composer-cols { flex: 1; display: flex; min-height: 0; color: #e4e4e7; }
-    .composer-cols .col { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 16px; }
-    .composer-cols .col + .col { border-left: 1px solid #3f3f46; }
-    .composer-cols h4 { margin: 0 0 12px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #a1a1aa; }
-    .composer-cols ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-    .composer-cols .row {
-      display: flex; align-items: center; gap: 6px;
-      padding: 8px 10px; border-radius: 8px; background: #27272a; font-size: 13px;
-    }
-    .composer-cols .row .label { flex: 1; }
-    .composer-cols .row button {
-      font: inherit; border: 0; border-radius: 6px; cursor: pointer;
-      width: 24px; height: 24px; background: #3f3f46; color: #fafafa;
-    }
-    .composer-cols .row button:disabled { opacity: .3; cursor: default; }
-    .composer-cols .add {
-      display: flex; align-items: center; gap: 6px;
-      width: 100%; text-align: left;
-      padding: 8px 10px; margin-bottom: 6px; border: 0; border-radius: 8px;
-      background: #27272a; color: #e4e4e7; font: inherit; font-size: 13px; cursor: pointer;
-    }
-    .composer-cols .add:hover { background: #3f3f46; }
   </style>
 </head>
 <body>
@@ -157,12 +135,22 @@
         <header>
           <span>Components</span>
           <span class="actions">
-            <button id="btn-restore" title="Reset sample components and tokens to defaults">⟲</button>
+            <button id="btn-restore" title="Reset sample artifacts and tokens to defaults">⟲</button>
             <button id="btn-new-component" title="New component">+</button>
           </span>
         </header>
         <ul id="list-components"></ul>
         <div class="empty" id="empty-components" hidden>No components yet.</div>
+      </section>
+      <section>
+        <header>
+          <span>Layouts</span>
+          <span class="actions">
+            <button id="btn-new-layout" title="New layout">+</button>
+          </span>
+        </header>
+        <ul id="list-layouts"></ul>
+        <div class="empty" id="empty-layouts" hidden>No layouts yet.</div>
       </section>
       <section>
         <header>
@@ -191,24 +179,6 @@
           <span class="hint">Shared design tokens are available as var(--accent) etc.</span>
           <button class="btn-cancel" id="btn-cancel">Cancel</button>
           <button class="btn-apply" id="btn-apply">Apply</button>
-        </div>
-      </div>
-
-      <!-- Page composer -->
-      <div class="panel" id="composer">
-        <div class="composer-cols">
-          <div class="col">
-            <h4>In this page</h4>
-            <ol id="page-items"></ol>
-          </div>
-          <div class="col">
-            <h4>Add component</h4>
-            <div id="page-available"></div>
-          </div>
-        </div>
-        <div class="panel-bar">
-          <span class="hint">Changes apply live as you add, remove, or reorder.</span>
-          <button class="btn-apply" id="btn-done">Done</button>
         </div>
       </div>
 
@@ -270,7 +240,6 @@ ${usage}
 
     const frame = document.getElementById('frame');
     const editor = document.getElementById('editor');
-    const composer = document.getElementById('composer');
     const tokenEditor = document.getElementById('token-editor');
     const defInput = document.getElementById('def');
     const usageInput = document.getElementById('usage');
@@ -295,6 +264,7 @@ ${usage}
           const d = await r.json();
           return [
             ...(d.components ?? []).map(c => ({ ...c, kind: 'component' })),
+            ...(d.layouts ?? []).map(l => ({ ...l, kind: 'layout' })),
             ...(d.pages ?? []).map(p => ({ ...p, kind: 'page' })),
           ];
         }
@@ -319,7 +289,8 @@ ${usage}
     function save() {
       const payload = {
         components: components().map(({ id, name, definition, usage }) => ({ id, name, definition, usage })),
-        pages: pages().map(({ id, name, items }) => ({ id, name, items })),
+        layouts: layouts().map(({ id, name, definition, usage }) => ({ id, name, definition, usage })),
+        pages: pages().map(({ id, name, definition, usage }) => ({ id, name, definition, usage })),
       };
       fetch(API, {
         method: 'PUT',
@@ -329,25 +300,18 @@ ${usage}
     }
     function selected() { return library.find(c => c.id === selectedId) ?? null; }
     function components() { return library.filter(c => c.kind === 'component'); }
+    function layouts() { return library.filter(c => c.kind === 'layout'); }
     function pages() { return library.filter(c => c.kind === 'page'); }
 
-    // Build the full preview document for a component or page, gathering the
-    // definitions it needs (deduped) and the usage markup.
+    function definitions() {
+      return [...components(), ...layouts(), ...pages()].map(c => c.definition);
+    }
+
+    // Build the full preview document for any artifact. Definitions for all
+    // artifacts are loaded so HTML can compose custom elements directly.
     function documentFor(c) {
       if (!c) return '';
-      if (c.kind === 'page') {
-        const seen = new Set();
-        const defs = [];
-        const usages = [];
-        for (const id of c.items) {
-          const comp = library.find(x => x.id === id && x.kind === 'component');
-          if (!comp) continue;
-          usages.push(comp.usage);
-          if (!seen.has(comp.id)) { seen.add(comp.id); defs.push(comp.definition); }
-        }
-        return buildDocument(usages.join('\n'), defs, 'page');
-      }
-      return buildDocument(c.usage, [c.definition], 'component');
+      return buildDocument(c.usage, definitions(), c.kind === 'component' ? 'component' : 'page');
     }
 
     function makeItem(c) {
@@ -385,13 +349,18 @@ ${usage}
 
     function renderLists() {
       const cl = document.getElementById('list-components');
+      const ll = document.getElementById('list-layouts');
       const pl = document.getElementById('list-pages');
       cl.innerHTML = '';
+      ll.innerHTML = '';
       pl.innerHTML = '';
       components().forEach(c => cl.append(makeItem(c)));
+      layouts().forEach(l => ll.append(makeItem(l)));
       pages().forEach(p => pl.append(makeItem(p)));
       document.getElementById('empty-components').textContent = loadError || 'No components yet.';
       document.getElementById('empty-components').hidden = !loadError && components().length > 0;
+      document.getElementById('empty-layouts').textContent = loadError ? '' : 'No layouts yet.';
+      document.getElementById('empty-layouts').hidden = !!loadError || layouts().length > 0;
       document.getElementById('empty-pages').textContent = loadError ? '' : 'No pages yet.';
       document.getElementById('empty-pages').hidden = !!loadError || pages().length > 0;
     }
@@ -410,7 +379,6 @@ ${usage}
         renderFrame();
       }
       editor.classList.remove('open');
-      composer.classList.remove('open');
       tokenEditor.classList.remove('open');
     }
 
@@ -428,10 +396,6 @@ ${usage}
       pendingDeleteId = null;
       const wasSelected = selectedId === id;
       library.splice(i, 1);
-      // A page may reference this component — drop those references.
-      for (const p of pages()) {
-        if (p.items) p.items = p.items.filter(x => x !== id);
-      }
       if (wasSelected) selectedId = library[Math.max(0, i - 1)]?.id ?? null;
       save();
       closePanels();
@@ -439,62 +403,10 @@ ${usage}
       renderFrame();
     }
 
-    // --- Page composer ---
-    function renderComposer() {
-      const page = selected();
-      if (!page || page.kind !== 'page') return;
-
-      const itemsEl = document.getElementById('page-items');
-      itemsEl.innerHTML = '';
-      page.items.forEach((id, idx) => {
-        const c = library.find(x => x.id === id);
-        const row = document.createElement('li');
-        row.className = 'row';
-        const label = document.createElement('span');
-        label.className = 'label';
-        label.textContent = c ? c.name : '(missing)';
-        const up = document.createElement('button');
-        up.textContent = '↑'; up.disabled = idx === 0;
-        up.onclick = () => moveItem(idx, -1);
-        const down = document.createElement('button');
-        down.textContent = '↓'; down.disabled = idx === page.items.length - 1;
-        down.onclick = () => moveItem(idx, 1);
-        const rm = document.createElement('button');
-        rm.textContent = '×';
-        rm.onclick = () => { page.items.splice(idx, 1); save(); renderFrame(); renderComposer(); };
-        row.append(label, up, down, rm);
-        itemsEl.append(row);
-      });
-
-      const avail = document.getElementById('page-available');
-      avail.innerHTML = '';
-      const comps = components();
-      if (!comps.length) {
-        avail.innerHTML = '<div style="color:#71717a;font-size:13px">No components to add.</div>';
-      }
-      comps.forEach(c => {
-        const btn = document.createElement('button');
-        btn.className = 'add';
-        btn.textContent = '+ ' + c.name;
-        btn.onclick = () => { page.items.push(c.id); save(); renderFrame(); renderComposer(); };
-        avail.append(btn);
-      });
-    }
-
-    function moveItem(idx, dir) {
-      const page = selected();
-      const j = idx + dir;
-      if (j < 0 || j >= page.items.length) return;
-      [page.items[idx], page.items[j]] = [page.items[j], page.items[idx]];
-      save();
-      renderFrame();
-      renderComposer();
-    }
-
     // --- Toolbar actions ---
     document.getElementById('btn-restore').onclick = async () => {
-      // Reset sample components and tokens to the server's canonical seed (library/.seed).
-      // Custom components and pages are left untouched.
+      // Reset sample artifacts and tokens to the server's canonical seed (library/.seed).
+      // Custom artifacts are left untouched.
       try {
         await fetch('/api/reset', { method: 'POST' });
       } catch (e) { console.error('reset failed', e); }
@@ -504,17 +416,41 @@ ${usage}
     };
 
     document.getElementById('btn-new-component').onclick = () => {
+      const c = newArtifact('component', 'Untitled component', 'New component');
+      library.push(c);
+      save();
+      select(c.id);
+      nameInput.focus(); nameInput.select();
+    };
+
+    document.getElementById('btn-new-layout').onclick = () => {
+      const l = newArtifact('layout', 'Untitled layout', '<slot></slot>');
+      library.push(l);
+      save();
+      select(l.id);
+      nameInput.focus(); nameInput.select();
+    };
+
+    document.getElementById('btn-new-page').onclick = () => {
+      const p = newArtifact('page', 'Untitled page', '<slot></slot>');
+      library.push(p);
+      save();
+      select(p.id);
+      nameInput.focus(); nameInput.select();
+    };
+
+    function newArtifact(kind, name, slotContent) {
       const tag = 'x-' + crypto.randomUUID().replace(/-/g, '').slice(0, 8);
-      const c = {
-        id: crypto.randomUUID(), kind: 'component', name: 'Untitled', tag,
+      return {
+        id: crypto.randomUUID(), kind, name, tag,
         definition: `<template id="${tag}-tpl">
   <style>
-    :host { display: inline-block; }
+    :host { display: ${kind === 'component' ? 'inline-block' : 'block'}; }
     .box { padding: var(--space-lg, 20px); border-radius: var(--radius, 14px);
       background: var(--surface, #fff); color: var(--text, #18181b);
       box-shadow: 0 4px 20px rgba(0,0,0,.08); font: 1rem system-ui, sans-serif; }
   </style>
-  <div class="box"><slot>New component</slot></div>
+  <div class="box">${slotContent}</div>
 </template>
 
 <script>
@@ -526,22 +462,9 @@ ${usage}
     }
   });
 <\/script>`,
-        usage: `<${tag}>New component</${tag}>`
+        usage: `<${tag}></${tag}>`
       };
-      library.push(c);
-      save();
-      select(c.id);
-      nameInput.focus(); nameInput.select();
-    };
-
-    document.getElementById('btn-new-page').onclick = () => {
-      const p = { id: crypto.randomUUID(), kind: 'page', name: 'Untitled page', items: [] };
-      library.push(p);
-      save();
-      select(p.id);
-      composer.classList.add('open');
-      renderComposer();
-    };
+    }
 
     nameInput.oninput = () => {
       const c = selected();
@@ -555,15 +478,10 @@ ${usage}
       const c = selected();
       if (!c) return;
       closePanels();
-      if (c.kind === 'page') {
-        composer.classList.add('open');
-        renderComposer();
-      } else {
-        defInput.value = c.definition;
-        usageInput.value = c.usage;
-        editor.classList.add('open');
-        defInput.focus();
-      }
+      defInput.value = c.definition;
+      usageInput.value = c.usage;
+      editor.classList.add('open');
+      defInput.focus();
     };
 
     document.getElementById('btn-tokens').onclick = () => {
@@ -574,7 +492,6 @@ ${usage}
     };
 
     document.getElementById('btn-cancel').onclick = () => editor.classList.remove('open');
-    document.getElementById('btn-done').onclick = () => composer.classList.remove('open');
     document.getElementById('btn-token-cancel').onclick = () => {
       tokens = savedTokens;
       tokensInput.value = savedTokens;
@@ -620,7 +537,8 @@ ${usage}
     document.getElementById('btn-open').onclick = () => {
       const c = selected();
       if (!c) return;
-      window.open(`/${c.kind === 'page' ? 'p' : 'c'}/${c.id}`, '_blank');
+      const route = c.kind === 'page' ? 'p' : c.kind === 'layout' ? 'l' : 'c';
+      window.open(`/${route}/${c.id}`, '_blank');
     };
 
     document.getElementById('btn-export').onclick = () => {

@@ -1,0 +1,35 @@
+<!-- name: Sample page -->
+<template id="x-sample-page-tpl">
+  <style>
+    :host { display: block; }
+    .page {
+      display: grid;
+      gap: var(--space-lg, 20px);
+    }
+  </style>
+  <div class="page">
+    <x-sample-layout>
+      <x-badge slot="badge">Page</x-badge>
+      <x-button slot="actions">Primary button</x-button>
+      <x-card>
+        <span slot="title">Page component</span>
+        <span slot="body">Pages are components too, so composition is just HTML.</span>
+      </x-card>
+      <x-counter start="3"></x-counter>
+    </x-sample-layout>
+  </div>
+</template>
+
+<script>
+  customElements.define('x-sample-page', class extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;
+      const tpl = document.getElementById('x-sample-page-tpl');
+      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
+    }
+  });
+</script>
+
+<script type="text/html" data-usage>
+<x-sample-page></x-sample-page>
+</script>

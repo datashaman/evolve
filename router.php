@@ -4,14 +4,16 @@
 //
 // The library lives as real files on disk:
 //   library/components/<id>.html   definition + an inert usage block
-//   library/pages/<id>.json        { name, items: [componentId, ...] }
+//   library/layouts/<id>.html      definition + an inert usage block
+//   library/pages/<id>.html        definition + an inert usage block
 //
 // API:
-//   GET  /api/library  -> { components: [...], pages: [...] }
-//   PUT  /api/library  -> body { components, pages }; writes files,
+//   GET  /api/library  -> { components: [...], layouts: [...], pages: [...] }
+//   PUT  /api/library  -> body { components, layouts, pages }; writes files,
 //                         deletes any that are no longer present.
 
 const COMPONENTS_DIR = __DIR__ . '/library/components';
+const LAYOUTS_DIR    = __DIR__ . '/library/layouts';
 const PAGES_DIR      = __DIR__ . '/library/pages';
 const SEED_DIR       = __DIR__ . '/library/.seed';
 
@@ -27,11 +29,11 @@ if ($uri === '/api/library') {
     exit;
 }
 
-// Reset the sample components and tokens to their canonical seed (overwrites
-// matching ids, adds missing; custom components and all pages are left alone).
+// Reset the sample artifacts and tokens to their canonical seed (overwrites
+// matching ids, adds missing; custom artifacts are left alone).
 if ($uri === '/api/reset' && $method === 'POST') {
     header('Content-Type: application/json');
-    seedComponents();
+    seedArtifacts();
     seedTokens();
     echo json_encode(readLibrary());
     exit;
@@ -45,8 +47,9 @@ if ($uri === '/api/tokens' && $method === 'PUT') {
     exit;
 }
 
-// Real, visitable routes: a single component preview or a composed page.
+// Real, visitable routes: every library entry is an HTML-backed artifact.
 if (preg_match('#^/c/([a-z0-9-]+)$#', $uri, $m)) { renderComponentRoute($m[1]); exit; }
+if (preg_match('#^/l/([a-z0-9-]+)$#', $uri, $m)) { renderLayoutRoute($m[1]); exit; }
 if (preg_match('#^/p/([a-z0-9-]+)$#', $uri, $m)) { renderPageRoute($m[1]); exit; }
 
 // Serve the shared tokens (and anything else read-only under /library/).
@@ -81,19 +84,14 @@ function safeId(string $id): string {
     return preg_replace('/[^a-z0-9-]/', '', strtolower($id));
 }
 
-// Copy canonical seed component files into the live library (overwrite matching
+// Copy canonical seed artifact files into the live library (overwrite matching
 // ids, add missing). The single source of truth for the samples is library/.seed.
-function seedComponents(): void {
-    @mkdir(COMPONENTS_DIR, 0777, true);
-    foreach (glob(SEED_DIR . '/components/*.html') as $src) {
-        writeIfChanged(COMPONENTS_DIR . '/' . basename($src), file_get_contents($src));
-    }
-}
-
-function seedPages(): void {
-    @mkdir(PAGES_DIR, 0777, true);
-    foreach (glob(SEED_DIR . '/pages/*.json') as $src) {
-        writeIfChanged(PAGES_DIR . '/' . basename($src), file_get_contents($src));
+function seedArtifacts(): void {
+    foreach (artifactDirs() as $kind => $dir) {
+        @mkdir($dir, 0777, true);
+        foreach (glob(SEED_DIR . "/{$kind}s/*.html") ?: [] as $src) {
+            writeIfChanged($dir . '/' . basename($src), file_get_contents($src));
+        }
     }
 }
 
@@ -106,9 +104,8 @@ function seedTokens(): void {
 
 // First run: an empty library gets the full canonical seed.
 function ensureSeeded(): void {
-    if (!glob(COMPONENTS_DIR . '/*.html') && !glob(PAGES_DIR . '/*.json')) {
-        seedComponents();
-        seedPages();
+    if (!glob(COMPONENTS_DIR . '/*.html') && !glob(LAYOUTS_DIR . '/*.html') && !glob(PAGES_DIR . '/*.html')) {
+        seedArtifacts();
     }
     if (!is_file(__DIR__ . '/library/tokens.css')) {
         seedTokens();
@@ -116,50 +113,48 @@ function ensureSeeded(): void {
 }
 
 function readLibrary(): array {
-    $components = [];
-    foreach (glob(COMPONENTS_DIR . '/*.html') as $path) {
-        $components[] = parseComponent(basename($path, '.html'), file_get_contents($path));
-    }
-    $pages = [];
-    foreach (glob(PAGES_DIR . '/*.json') as $path) {
-        $data = json_decode(file_get_contents($path), true) ?: [];
-        $pages[] = [
-            'id'    => basename($path, '.json'),
-            'name'  => $data['name'] ?? basename($path, '.json'),
-            'items' => $data['items'] ?? [],
-        ];
-    }
-    return ['components' => $components, 'pages' => $pages];
+    return [
+        'components' => readArtifacts(COMPONENTS_DIR),
+        'layouts'    => readArtifacts(LAYOUTS_DIR),
+        'pages'      => readArtifacts(PAGES_DIR),
+    ];
 }
 
 function writeLibrary(array $payload): array {
-    @mkdir(COMPONENTS_DIR, 0777, true);
-    @mkdir(PAGES_DIR, 0777, true);
-
-    $keepComponents = [];
-    foreach ($payload['components'] ?? [] as $c) {
-        $id = safeId($c['id'] ?? '');
-        if ($id === '') continue;
-        $keepComponents[$id] = true;
-        writeIfChanged(COMPONENTS_DIR . "/$id.html", serializeComponent($c));
-    }
-    foreach (glob(COMPONENTS_DIR . '/*.html') as $path) {
-        if (empty($keepComponents[basename($path, '.html')])) unlink($path);
-    }
-
-    $keepPages = [];
-    foreach ($payload['pages'] ?? [] as $p) {
-        $id = safeId($p['id'] ?? '');
-        if ($id === '') continue;
-        $keepPages[$id] = true;
-        $json = json_encode(['name' => $p['name'] ?? $id, 'items' => $p['items'] ?? []], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        writeIfChanged(PAGES_DIR . "/$id.json", $json . "\n");
-    }
-    foreach (glob(PAGES_DIR . '/*.json') as $path) {
-        if (empty($keepPages[basename($path, '.json')])) unlink($path);
-    }
-
+    writeArtifacts(COMPONENTS_DIR, $payload['components'] ?? []);
+    writeArtifacts(LAYOUTS_DIR, $payload['layouts'] ?? []);
+    writeArtifacts(PAGES_DIR, $payload['pages'] ?? []);
     return ['ok' => true];
+}
+
+function artifactDirs(): array {
+    return [
+        'component' => COMPONENTS_DIR,
+        'layout'    => LAYOUTS_DIR,
+        'page'      => PAGES_DIR,
+    ];
+}
+
+function readArtifacts(string $dir): array {
+    $artifacts = [];
+    foreach (glob($dir . '/*.html') ?: [] as $path) {
+        $artifacts[] = parseComponent(basename($path, '.html'), file_get_contents($path));
+    }
+    return $artifacts;
+}
+
+function writeArtifacts(string $dir, array $artifacts): void {
+    @mkdir($dir, 0777, true);
+    $keep = [];
+    foreach ($artifacts as $artifact) {
+        $id = safeId($artifact['id'] ?? '');
+        if ($id === '') continue;
+        $keep[$id] = true;
+        writeIfChanged($dir . "/$id.html", serializeComponent($artifact));
+    }
+    foreach (glob($dir . '/*.html') ?: [] as $path) {
+        if (empty($keep[basename($path, '.html')])) unlink($path);
+    }
 }
 
 // Only touch a file when its contents actually change, so git diffs stay clean.
@@ -242,31 +237,33 @@ function buildDocument(string $usage, array $definitions, string $mode): string 
 }
 
 function renderComponentRoute(string $id): void {
-    $id = safeId($id);
-    $path = COMPONENTS_DIR . "/$id.html";
-    if (!is_file($path)) { http_response_code(404); echo 'Component not found'; return; }
-    $c = parseComponent($id, file_get_contents($path));
-    header('Content-Type: text/html');
-    echo buildDocument($c['usage'], [$c['definition']], 'component');
+    renderArtifactRoute($id, COMPONENTS_DIR, 'component', 'Component not found');
+}
+
+function renderLayoutRoute(string $id): void {
+    renderArtifactRoute($id, LAYOUTS_DIR, 'page', 'Layout not found');
 }
 
 function renderPageRoute(string $id): void {
-    $id = safeId($id);
-    $path = PAGES_DIR . "/$id.json";
-    if (!is_file($path)) { http_response_code(404); echo 'Page not found'; return; }
-    $page = json_decode(file_get_contents($path), true) ?: [];
+    renderArtifactRoute($id, PAGES_DIR, 'page', 'Page not found');
+}
 
-    $seen = [];
-    $defs = [];
-    $usages = [];
-    foreach ($page['items'] ?? [] as $itemId) {
-        $itemId = safeId($itemId);
-        $cpath = COMPONENTS_DIR . "/$itemId.html";
-        if (!is_file($cpath)) continue; // referenced component was deleted
-        $c = parseComponent($itemId, file_get_contents($cpath));
-        $usages[] = $c['usage'];
-        if (empty($seen[$itemId])) { $seen[$itemId] = true; $defs[] = $c['definition']; }
-    }
+function renderArtifactRoute(string $id, string $dir, string $mode, string $notFound): void {
+    $id = safeId($id);
+    $path = $dir . "/$id.html";
+    if (!is_file($path)) { http_response_code(404); echo $notFound; return; }
+    $artifact = parseComponent($id, file_get_contents($path));
+
     header('Content-Type: text/html');
-    echo buildDocument(implode("\n", $usages), $defs, 'page');
+    echo buildDocument($artifact['usage'], allDefinitions(), $mode);
+}
+
+function allDefinitions(): array {
+    $defs = [];
+    foreach (artifactDirs() as $dir) {
+        foreach (readArtifacts($dir) as $artifact) {
+            $defs[] = $artifact['definition'];
+        }
+    }
+    return $defs;
 }
