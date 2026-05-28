@@ -1,5 +1,5 @@
 <!-- name: Marketing layout -->
-<!-- requires: components/site-header.html, components/hero-section.html, components/cta-panel.html -->
+<!-- requires: components/site-header.html -->
 <style id="x-marketing-layout-css" media="not all">
     :host { display: block; }
     .shell {
@@ -30,7 +30,13 @@
 <template id="x-marketing-layout-tpl">
   <div class="shell">
     <div class="wrap">
-      <slot name="header"></slot>
+      <x-site-header>
+        <span slot="brand">Northstar Studio</span>
+        <a slot="nav" href="#services">Services</a>
+        <a slot="nav" href="#proof">Proof</a>
+        <a slot="nav" href="#contact">Contact</a>
+        <span slot="action">Plan the site</span>
+      </x-site-header>
       <main>
         <slot></slot>
       </main>
@@ -47,8 +53,8 @@
 
 <script type="text/html" data-usage>
 <x-marketing-layout>
-  <x-site-header slot="header"></x-site-header>
-  <x-hero-section></x-hero-section>
-  <x-cta-panel></x-cta-panel>
+  <x-component src="hero-section"></x-component>
+  <x-component src="cta-panel"></x-component>
+  <span slot="footer">Example footer content for the marketing layout.</span>
 </x-marketing-layout>
 </script>

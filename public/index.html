@@ -31,6 +31,26 @@
       padding: 5px 10px; border: 1px solid #3f3f46; border-radius: 6px;
       background: #27272a; color: #fafafa; min-width: 160px;
     }
+    .toolbar .page-meta {
+      display: none; align-items: center; gap: 6px;
+    }
+    .toolbar .page-meta.visible { display: flex; }
+    .toolbar .page-field {
+      display: flex; align-items: center; gap: 6px;
+      padding: 0 6px 0 8px; border: 1px solid #3f3f46; border-radius: 6px;
+      background: #27272a; color: #fafafa;
+    }
+    .toolbar .page-field span {
+      color: #a1a1aa; font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .toolbar .page-meta input {
+      font: inherit; font-size: 13px;
+      padding: 5px 0; border: 0;
+      background: transparent; color: #fafafa;
+    }
+    .toolbar .page-meta input:focus { outline: none; }
+    .toolbar .page-meta #page-title { width: 220px; }
+    .toolbar .page-meta #page-slug { width: 120px; }
     .toolbar button {
       font: inherit; font-size: 13px;
       padding: 5px 12px; border: 1px solid #3f3f46; border-radius: 6px;
@@ -103,6 +123,7 @@
     .panel textarea:focus { outline: none; }
     #def { flex-grow: 2; }
     #usage { flex-grow: 1; border-top: 1px solid #3f3f46; }
+    #requires { flex: 0 0 86px; border-bottom: 1px solid #3f3f46; }
     #tokens { flex: 1; }
     .panel-bar {
       display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: #111;
@@ -121,6 +142,16 @@
     <h1>Component Workbench</h1>
     <span class="kind" id="kind">component</span>
     <input id="name" class="name" placeholder="name" />
+    <span class="page-meta" id="page-meta">
+      <label class="page-field">
+        <span>Title</span>
+        <input id="page-title" />
+      </label>
+      <label class="page-field">
+        <span>Slug</span>
+        <input id="page-slug" />
+      </label>
+    </span>
     <button id="btn-edit">Edit</button>
     <button id="btn-tokens">Tokens</button>
     <button id="btn-reload">Reload</button>
@@ -170,6 +201,8 @@
       <!-- Component editor: definition (registered once) + usage (composed) -->
       <div class="panel" id="editor">
         <div class="editor-fields">
+          <div class="field-label">Requires <span>— one library-relative file path per line</span></div>
+          <textarea id="requires" spellcheck="false"></textarea>
           <div class="field-label">Definition <span>— template + style + script, registered once in the host shell</span></div>
           <textarea id="def" spellcheck="false"></textarea>
           <div class="field-label">Usage <span>— example markup; this is what pages compose</span></div>
@@ -208,7 +241,7 @@
     // Host shell: tokens + the registry (definitions injected once into <head>),
     // then the usage markup in <body>. 'component' centers a single element on a
     // grid backdrop; pages/layouts own the full canvas.
-    function buildDocument(usage, definitions, mode) {
+    function buildDocument(usage, definitions, mode, title = 'Component Workbench Preview') {
       const body = mode === 'page'
         ? `html, body { min-height: 100%; }
           body {
@@ -237,6 +270,7 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <title>${escapeHtml(title)}</title>
   <style>${tokens} ${body}</style>
   <script>
     window.defineArtifact = (tag, templateId, styleId) => {
@@ -264,10 +298,14 @@ ${usage}
     const frame = document.getElementById('frame');
     const editor = document.getElementById('editor');
     const tokenEditor = document.getElementById('token-editor');
+    const requiresInput = document.getElementById('requires');
     const defInput = document.getElementById('def');
     const usageInput = document.getElementById('usage');
     const tokensInput = document.getElementById('tokens');
     const nameInput = document.getElementById('name');
+    const pageMeta = document.getElementById('page-meta');
+    const pageTitleInput = document.getElementById('page-title');
+    const pageSlugInput = document.getElementById('page-slug');
     const kindBadge = document.getElementById('kind');
 
     let library = [];
@@ -313,7 +351,7 @@ ${usage}
       const payload = {
         components: components().map(({ id, name, requires, definition, usage }) => ({ id, name, requires, definition, usage })),
         layouts: layouts().map(({ id, name, requires, definition, usage }) => ({ id, name, requires, definition, usage })),
-        pages: pages().map(({ id, name, requires, definition, usage }) => ({ id, name, requires, definition, usage })),
+        pages: pages().map(({ id, name, title, slug, requires, definition, usage }) => ({ id, name, title, slug, requires, definition, usage })),
       };
       fetch(API, {
         method: 'PUT',
@@ -330,27 +368,125 @@ ${usage}
       return [...components(), ...layouts(), ...pages()].find(c => c.path === ref) ?? null;
     }
 
-    function definitionsFor(c) {
-      const defs = [];
-      const seen = new Set();
-      function collect(ref) {
-        if (!ref || seen.has(ref)) return;
-        seen.add(ref);
-        const artifact = artifactByRef(ref);
-        if (!artifact) return;
-        (artifact.requires ?? []).forEach(collect);
-        defs.push(artifact.definition);
+    function componentRef(src) {
+      let ref = String(src ?? '').trim().replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\/+|\/+$/g, '');
+      if (!ref || ref.includes('..')) return '';
+      if (ref.startsWith('components/')) ref = ref.slice('components/'.length);
+      if (ref.endsWith('.html')) ref = ref.slice(0, -5);
+      return `components/${ref}.html`;
+    }
+
+    function layoutRef(src) {
+      let ref = String(src ?? '').trim().replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\/+|\/+$/g, '');
+      if (!ref || ref.includes('..')) return '';
+      if (ref.startsWith('layouts/')) ref = ref.slice('layouts/'.length);
+      if (ref.endsWith('.html')) ref = ref.slice(0, -5);
+      return `layouts/${ref}.html`;
+    }
+
+    function collectDefinition(c, defs, seen) {
+      if (!c?.path || seen.has(c.path)) return;
+      seen.add(c.path);
+      (c.requires ?? []).forEach(ref => collectDefinition(artifactByRef(ref), defs, seen));
+      defs.push(expandUses(c.definition, defs, seen));
+    }
+
+    function artifactTag(c) {
+      return c?.definition?.match(/defineArtifact\(\s*['"]([a-z][a-z0-9-]*)['"]/i)?.[1] ?? '';
+    }
+
+    function expandUses(html, defs, seen) {
+      let expanded = html ?? '';
+      const paired = /<(x-use|x-component|x-layout)\b([^>]*)>((?:(?!<x-use\b|<x-component\b|<x-layout\b).)*?)<\/\1>/gis;
+      while (paired.test(expanded)) {
+        paired.lastIndex = 0;
+        expanded = expanded.replace(paired, (_match, tag, attrs, inner) => (
+          tag === 'x-component'
+            ? expandComponentTag(attrs, inner, defs, seen)
+            : tag === 'x-layout'
+              ? expandLayoutTag(attrs, inner, defs, seen)
+              : expandUseTag(attrs, inner, defs, seen)
+        ));
       }
-      (c.requires ?? []).forEach(collect);
-      defs.push(c.definition);
-      return defs;
+      return expanded.replace(/<(x-use|x-component|x-layout)\b([^>]*)\/?>/gis, (_match, tag, attrs) => (
+        tag === 'x-component'
+          ? expandComponentTag(attrs, '', defs, seen)
+          : tag === 'x-layout'
+            ? expandLayoutTag(attrs, '', defs, seen)
+            : expandUseTag(attrs, '', defs, seen)
+      ));
+    }
+
+    function expandUseTag(attrs, inner, defs, seen) {
+      const node = parseCompositionNode('x-use', attrs);
+      const artifact = artifactByRef(node?.getAttribute('src') ?? '');
+      return expandArtifactTag(node, artifact, inner, defs, seen);
+    }
+
+    function expandComponentTag(attrs, inner, defs, seen) {
+      const node = parseCompositionNode('x-component', attrs);
+      const artifact = artifactByRef(componentRef(node?.getAttribute('src') ?? ''));
+      return expandArtifactTag(node, artifact, inner, defs, seen);
+    }
+
+    function expandLayoutTag(attrs, inner, defs, seen) {
+      const node = parseCompositionNode('x-layout', attrs);
+      const artifact = artifactByRef(layoutRef(node?.getAttribute('src') ?? ''));
+      return expandArtifactTag(node, artifact, inner, defs, seen);
+    }
+
+    function parseCompositionNode(tag, attrs) {
+      const tpl = document.createElement('template');
+      tpl.innerHTML = `<${tag} ${attrs}></${tag}>`;
+      return tpl.content.firstElementChild;
+    }
+
+    function expandArtifactTag(node, artifact, inner, defs, seen) {
+      if (!artifact) return '';
+
+      collectDefinition(artifact, defs, seen);
+      const tag = artifactTag(artifact);
+      if (!tag) return inner;
+
+      const passthrough = [...node.attributes]
+        .filter(attr => attr.name !== 'src')
+        .map(attr => ` ${attr.name}="${escapeHtml(attr.value)}"`)
+        .join('');
+      return `<${tag}${passthrough}>${inner}</${tag}>`;
     }
 
     // Build the full preview document for any artifact. Definitions for all
     // required artifacts are loaded so HTML can compose custom elements directly.
     function documentFor(c) {
       if (!c) return '';
-      return buildDocument(c.usage, definitionsFor(c), c.kind === 'component' ? 'component' : 'page');
+      const defs = [];
+      const seen = new Set();
+      (c.requires ?? []).forEach(ref => collectDefinition(artifactByRef(ref), defs, seen));
+      defs.push(expandUses(c.definition, defs, seen));
+      const usage = expandUses(c.usage, defs, seen);
+      return buildDocument(usage, defs, c.kind === 'component' ? 'component' : 'page', c.title || c.name);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      }[ch]));
+    }
+
+    function slugify(value) {
+      const slug = String(value ?? '')
+        .toLowerCase()
+        .trim()
+        .replace(/\\/g, '/')
+        .replace(/[^a-z0-9/-]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/\/+/g, '/');
+      if (!slug || slug === '/') return '/';
+      return '/' + slug.replace(/^\/+|\/+$/g, '').replace(/^-+|-+$/g, '');
     }
 
     function makeItem(c) {
@@ -408,6 +544,9 @@ ${usage}
       const c = selected();
       kindBadge.textContent = c ? c.kind : '—';
       nameInput.value = c ? c.name : '';
+      pageMeta.classList.toggle('visible', c?.kind === 'page');
+      pageTitleInput.value = c?.kind === 'page' ? (c.title ?? c.name ?? '') : '';
+      pageSlugInput.value = c?.kind === 'page' ? (c.slug || '/') : '';
       frame.srcdoc = documentFor(c);
     }
 
@@ -472,6 +611,8 @@ ${usage}
 
     document.getElementById('btn-new-page').onclick = () => {
       const p = newArtifact('page', 'Untitled page', '<slot></slot>');
+      p.title = 'Untitled page';
+      p.slug = '/untitled-page';
       library.push(p);
       save();
       select(p.id);
@@ -508,10 +649,27 @@ ${usage}
       renderLists();
     };
 
+    pageTitleInput.oninput = () => {
+      const c = selected();
+      if (!c || c.kind !== 'page') return;
+      c.title = pageTitleInput.value;
+      save();
+      renderFrame();
+    };
+
+    pageSlugInput.oninput = () => {
+      const c = selected();
+      if (!c || c.kind !== 'page') return;
+      c.slug = slugify(pageSlugInput.value);
+      pageSlugInput.value = c.slug;
+      save();
+    };
+
     document.getElementById('btn-edit').onclick = () => {
       const c = selected();
       if (!c) return;
       closePanels();
+      requiresInput.value = (c.requires ?? []).join('\n');
       defInput.value = c.definition;
       usageInput.value = c.usage;
       editor.classList.add('open');
@@ -541,6 +699,7 @@ ${usage}
     document.getElementById('btn-apply').onclick = () => {
       const c = selected();
       if (!c) return;
+      c.requires = requiresInput.value.split(/\n|,/).map(s => s.trim()).filter(Boolean);
       c.definition = defInput.value;
       c.usage = usageInput.value;
       save();
@@ -571,7 +730,12 @@ ${usage}
     document.getElementById('btn-open').onclick = () => {
       const c = selected();
       if (!c) return;
-      const route = c.kind === 'page' ? 'p' : c.kind === 'layout' ? 'l' : 'c';
+      if (c.kind === 'page') {
+        const slug = slugify(c.slug);
+        window.open(slug, '_blank');
+        return;
+      }
+      const route = c.kind === 'layout' ? 'l' : 'c';
       window.open(`/${route}/${c.id}`, '_blank');
     };
 

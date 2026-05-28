@@ -1,5 +1,6 @@
 <!-- name: Home -->
-<!-- requires: layouts/marketing-layout.html, components/site-header.html, components/hero-section.html, components/feature-card.html, components/cta-panel.html -->
+<!-- title: Evolve Studio -->
+<!-- slug: / -->
 <style id="x-home-page-css" media="not all">
     :host { display: block; }
     .services {
@@ -49,16 +50,8 @@
 </style>
 
 <template id="x-home-page-tpl">
-  <x-marketing-layout>
-    <x-site-header slot="header">
-      <span slot="brand">Northstar Studio</span>
-      <a slot="nav" href="#services">Services</a>
-      <a slot="nav" href="#proof">Proof</a>
-      <a slot="nav" href="#contact">Contact</a>
-      <span slot="action">Plan the site</span>
-    </x-site-header>
-
-    <x-hero-section>
+  <x-layout src="marketing-layout">
+    <x-component src="hero-section">
       <span slot="eyebrow">Website systems for service teams</span>
       <span slot="title">A lean site scaffold that already behaves like a real project.</span>
       <span slot="body">This seed gives you a credible home page, reusable sections, shared tokens, and componentized HTML you can reshape into your own offer.</span>
@@ -78,7 +71,7 @@
           <p>Token file controlling the theme</p>
         </div>
       </div>
-    </x-hero-section>
+    </x-component>
 
     <section id="services" class="services">
       <div class="section-head">
@@ -86,21 +79,21 @@
         <p>Components, layouts, and pages all use template, style, script, and usage HTML. Composition stays visible and editable.</p>
       </div>
       <div class="grid">
-        <x-feature-card>
+        <x-component src="feature-card">
           <span slot="icon">01</span>
           <span slot="title">Offer clarity</span>
           <span slot="body">Structure the page around the customer problem, service promise, and next step.</span>
-        </x-feature-card>
-        <x-feature-card>
+        </x-component>
+        <x-component src="feature-card">
           <span slot="icon">02</span>
           <span slot="title">Reusable sections</span>
           <span slot="body">Edit once, reuse across pages, and keep the site system small enough to understand.</span>
-        </x-feature-card>
-        <x-feature-card>
+        </x-component>
+        <x-component src="feature-card">
           <span slot="icon">03</span>
           <span slot="title">Token-driven theme</span>
           <span slot="body">Adjust color, spacing, radius, and typography without hunting through every artifact.</span>
-        </x-feature-card>
+        </x-component>
       </div>
     </section>
 
@@ -119,14 +112,14 @@
       </div>
     </section>
 
-    <x-cta-panel id="contact">
+    <x-component src="cta-panel" id="contact">
       <span slot="title">Make this your starting point.</span>
       <span slot="body">Rename the brand, update the service cards, tune the tokens, and extend the library with real sections.</span>
       <span slot="action">hello@northstar.test</span>
-    </x-cta-panel>
+    </x-component>
 
     <span slot="footer">Northstar Studio. A seeded workbench site scaffold.</span>
-  </x-marketing-layout>
+  </x-layout>
 </template>
 
 <script>
