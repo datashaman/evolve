@@ -1,6 +1,6 @@
-<!-- name: Base layout -->
-<!-- tag: x-base-layout -->
-<style id="x-base-layout-css" media="not all">
+<!-- name: Base -->
+<!-- tag: x-base -->
+<style>
     :host { display: block; }
     .shell {
       min-height: 100vh;
@@ -20,7 +20,7 @@
     }
 </style>
 
-<template id="x-base-layout-tpl">
+<template>
   <div class="shell">
     <div class="wrap">
       <x-component src="site-header">
@@ -40,7 +40,7 @@
 </template>
 
 <script type="text/html" data-usage>
-<x-layout src="base-layout">
+<x-layout src="base">
   <part name="action">Preview action</part>
   <part name="main">
     <main style="padding: 48px 0 72px;">

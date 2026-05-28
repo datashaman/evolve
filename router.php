@@ -193,7 +193,6 @@ function serializeComponent(array $c): string {
     $title      = $c['title'] ?? '';
     $slug       = array_key_exists('slug', $c) ? safeSlug($c['slug']) : '';
     $layout     = safeLayoutName($c['layout'] ?? '');
-    $requires   = array_values(array_filter($c['requires'] ?? []));
     $definition = rtrim($c['definition'] ?? '');
     $usage      = trim($c['usage'] ?? '');
     $header = "<!-- name: {$name} -->\n";
@@ -208,9 +207,6 @@ function serializeComponent(array $c): string {
     }
     if ($layout !== '') {
         $header .= "<!-- layout: {$layout} -->\n";
-    }
-    if ($requires) {
-        $header .= '<!-- requires: ' . implode(', ', $requires) . " -->\n";
     }
     return "{$header}{$definition}\n\n<script type=\"text/html\" data-usage>\n{$usage}\n</script>\n";
 }
@@ -236,10 +232,6 @@ function parseComponent(string $id, string $content): array {
     if (preg_match('/<!--\s*layout:\s*(.*?)\s*-->/', $content, $m)) {
         $layout = safeLayoutName($m[1]);
     }
-    $requires = [];
-    if (preg_match('/<!--\s*requires:\s*(.*?)\s*-->/', $content, $m)) {
-        $requires = array_values(array_filter(array_map('trim', explode(',', $m[1]))));
-    }
     $usage = '';
     if (preg_match('/<script type="text\/html" data-usage>\s*([\s\S]*?)\s*<\/script>\s*$/', $content, $m)) {
         $usage = $m[1];
@@ -251,7 +243,6 @@ function parseComponent(string $id, string $content): array {
     $definition = preg_replace('/<!--\s*title:.*?-->\s*/', '', $definition, 1);
     $definition = preg_replace('/<!--\s*slug:.*?-->\s*/', '', $definition, 1);
     $definition = preg_replace('/<!--\s*layout:.*?-->\s*/', '', $definition, 1);
-    $definition = preg_replace('/<!--\s*requires:.*?-->\s*/', '', $definition, 1);
     $definition = preg_replace('/<script type="text\/html" data-usage>[\s\S]*?<\/script>\s*$/', '', $definition);
     return [
         'id'         => $id,
@@ -260,7 +251,6 @@ function parseComponent(string $id, string $content): array {
         'title'      => $title,
         'slug'       => $slug,
         'layout'     => $layout,
-        'requires'   => $requires,
         'definition' => trim($definition),
         'usage'      => $usage,
     ];
@@ -515,20 +505,6 @@ function renderPageTemplate(string $template, array $page): string {
     return preg_replace_callback('/\{(name|title|slug|url)\}/', fn($m) => htmlspecialchars($values[$m[1]] ?? '', ENT_QUOTES, 'UTF-8'), $template);
 }
 
-function collectRequiredDefinition(string $ref, array &$defs, array &$seen): void {
-    $ref = trim($ref);
-    if ($ref === '' || isset($seen[$ref])) return;
-    $seen[$ref] = true;
-
-    $path = requiredPath($ref);
-    if (!is_file($path)) return;
-
-    $artifact = parseComponent(basename($path, '.html'), file_get_contents($path));
-    foreach ($artifact['requires'] ?? [] as $childRef) {
-        collectRequiredDefinition($childRef, $defs, $seen);
-    }
-}
-
 function expandUses(string $html, array &$defs, array &$seen, array $context): string {
     $html = expandPages($html, $defs, $seen, $context);
     $paired = '#<(x-use|x-component|x-layout)\b([^>]*)>((?:(?!<x-use\b|<x-component\b|<x-layout\b).)*?)</\1>#is';
@@ -606,10 +582,6 @@ function renderArtifactUsage(array $artifact, string $usage, array &$defs, array
 function renderArtifactInstance(array $artifact, string $attrs, string $inner, array &$defs, array &$seen, array $context, ?string $templateOverride = null): string {
     $tag = artifactTag($artifact);
     if ($tag === '') return $inner;
-
-    foreach ($artifact['requires'] ?? [] as $ref) {
-        collectRequiredDefinition($ref, $defs, $seen);
-    }
 
     $style = artifactStyle($artifact);
     $template = $templateOverride ?? expandPartFallbacks(expandUses(artifactTemplate($artifact), $defs, $seen, $context), $defs, $seen, $context);

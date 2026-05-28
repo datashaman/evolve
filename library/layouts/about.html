@@ -1,7 +1,7 @@
-<!-- name: About layout -->
-<!-- tag: x-about-layout -->
-<!-- layout: base-layout -->
-<style id="x-about-layout-css" media="not all">
+<!-- name: About -->
+<!-- tag: x-about -->
+<!-- layout: base -->
+<style>
     :host { display: block; }
     .shell {
       background:
@@ -141,7 +141,7 @@
     }
 </style>
 
-<template id="x-about-layout-tpl">
+<template>
   <part name="action">Start a conversation</part>
   <part name="main">
     <main class="about-main">
@@ -164,7 +164,7 @@
 </template>
 
 <script type="text/html" data-usage>
-<x-layout src="about-layout">
+<x-layout src="about">
   <part name="hero">
     <section class="intro">
       <p class="eyebrow">Layout preview</p>

@@ -52,11 +52,14 @@
     .toolbar .page-meta #page-title { width: 220px; }
     .toolbar .page-meta #page-slug { width: 120px; }
     .toolbar button {
-      font: inherit; font-size: 13px;
-      padding: 5px 12px; border: 1px solid #3f3f46; border-radius: 6px;
-      background: #27272a; color: #fafafa; cursor: pointer;
+      font: inherit; font-size: 13px; font-weight: 650;
+      min-height: 32px; padding: 0 12px; border: 1px solid #3f3f46; border-radius: 7px;
+      background: linear-gradient(180deg, #303036, #242428);
+      color: #fafafa; cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 1px 1px rgba(0,0,0,.18);
     }
-    .toolbar button:hover { background: #3f3f46; }
+    .toolbar button:hover { background: linear-gradient(180deg, #3a3a42, #2d2d33); border-color: #52525b; }
+    .toolbar button:active { transform: translateY(1px); }
     .toolbar .spacer { flex: 1; }
 
     .workspace { flex: 1; display: flex; min-height: 0; }
@@ -75,10 +78,13 @@
     }
     .sidebar header .actions { display: flex; gap: 6px; }
     .sidebar header button {
-      font: inherit; font-size: 16px; line-height: 1;
-      width: 22px; height: 22px; border: 0; border-radius: 6px;
-      background: #3f3f46; color: #fafafa; cursor: pointer;
+      font: inherit; font-size: 16px; font-weight: 760; line-height: 1;
+      width: 24px; height: 24px; border: 1px solid #52525b; border-radius: 7px;
+      background: linear-gradient(180deg, #484850, #393940);
+      color: #fafafa; cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
     }
+    .sidebar header button:hover { background: linear-gradient(180deg, #5a5a64, #46464f); }
     .sidebar ul { list-style: none; margin: 0; padding: 0; }
     .sidebar li {
       display: flex; align-items: center; gap: 6px;
@@ -110,18 +116,65 @@
     .sidebar li .confirm-no  { background: #52525b; color: #fafafa; }
     .sidebar .empty { padding: 4px 12px 10px; font-size: 12px; color: #71717a; }
 
-    .stage { flex: 1; position: relative; overflow: hidden; }
+    .stage {
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(340px, 42%) minmax(0, 1fr);
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      background: #18181b;
+    }
+    .preview {
+      min-width: 0;
+      min-height: 0;
+      background: #fff;
+      border-left: 1px solid #3f3f46;
+    }
     iframe { width: 100%; height: 100%; border: 0; background: #fff; }
 
     .panel {
-      position: absolute; inset: 0; display: none; flex-direction: column; background: #1e1e1e;
+      min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #1e1e1e;
     }
     .panel.open { display: flex; }
-    .editor-fields { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    #token-editor {
+      position: absolute; inset: 0; z-index: 2;
+      display: none;
+    }
+    #token-editor.open { display: flex; }
+    .editor-fields { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    .source-section {
+      display: flex;
+      flex-direction: column;
+      min-height: 38px;
+      border-bottom: 1px solid #3f3f46;
+    }
+    .source-section[data-block="template"] { flex: 2 1 0; }
+    .source-section[data-block="style"],
+    .source-section[data-block="usage"] { flex: 1 1 0; }
+    .source-section.collapsed { flex: 0 0 auto; }
+    .source-section.collapsed .code-editor { display: none; }
     .field-label {
-      padding: 8px 12px 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border: 0; cursor: pointer;
+      font: inherit; font-size: 11px; text-align: left;
+      text-transform: uppercase; letter-spacing: .05em;
       color: #a1a1aa; background: #1e1e1e;
     }
+    .field-label::before {
+      content: "▾";
+      display: inline-grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: #2f2f36;
+      color: #71717a;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .source-section.collapsed .field-label::before { content: "▸"; }
     .field-label span { text-transform: none; letter-spacing: 0; color: #71717a; }
     .panel textarea {
       border: 0; resize: none; padding: 6px 16px 12px;
@@ -130,9 +183,47 @@
       flex-basis: 0; min-height: 60px;
     }
     .panel textarea:focus { outline: none; }
-    #def { flex-grow: 2; }
-    #usage { flex-grow: 1; border-top: 1px solid #3f3f46; }
-    #requires { flex: 0 0 86px; border-bottom: 1px solid #3f3f46; }
+    .code-editor {
+      position: relative;
+      flex: 1;
+      min-height: 60px;
+      overflow: hidden;
+      background: #1e1e1e;
+    }
+    .code-editor textarea,
+    .syntax-highlight {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 6px 16px 12px;
+      border: 0;
+      overflow: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font: 13px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
+      tab-size: 2;
+    }
+    .code-editor textarea {
+      color: transparent;
+      caret-color: #e4e4e7;
+      background: transparent;
+    }
+    .syntax-highlight {
+      pointer-events: none;
+      color: #d4d4d8;
+    }
+    .tok-tag { color: #7dd3fc; }
+    .tok-attr { color: #f9a8d4; }
+    .tok-str { color: #facc15; }
+    .tok-comment { color: #71717a; }
+    .tok-rule { color: #c4b5fd; }
+    .tok-prop { color: #93c5fd; }
+    .tok-var { color: #86efac; }
+    #style-source,
+    #template-source,
+    #usage { flex: 1; }
     #tokens { flex: 1; }
     .panel-bar {
       display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: #111;
@@ -141,8 +232,12 @@
     .panel-bar button {
       font: inherit; font-size: 13px; padding: 5px 14px; border: 0; border-radius: 6px; cursor: pointer;
     }
-    .btn-apply { background: #22c55e; color: #052e16; }
+    .btn-token-apply { background: #22c55e; color: #052e16; }
     .btn-cancel { background: #3f3f46; color: #fafafa; }
+    @media (max-width: 900px) {
+      .stage { grid-template-columns: 1fr; grid-template-rows: minmax(320px, 48%) minmax(0, 1fr); }
+      .preview { border-left: 0; border-top: 1px solid #3f3f46; }
+    }
 
   </style>
 </head>
@@ -161,7 +256,6 @@
         <input id="page-slug" />
       </label>
     </span>
-    <button id="btn-edit">Edit</button>
     <button id="btn-tokens">Tokens</button>
     <button id="btn-reload">Reload</button>
     <span class="spacer"></span>
@@ -205,23 +299,35 @@
     </nav>
 
     <main class="stage">
-      <iframe id="frame" sandbox="allow-scripts" title="preview"></iframe>
-
       <!-- Artifact editor: source parts + usage markup -->
       <div class="panel" id="editor">
         <div class="editor-fields">
-          <div class="field-label">Requires <span>— one library-relative file path per line</span></div>
-          <textarea id="requires" spellcheck="false"></textarea>
-          <div class="field-label">Source <span>— style + template; optional client script may be added later</span></div>
-          <textarea id="def" spellcheck="false"></textarea>
-          <div class="field-label">Usage <span>— example markup; this is what pages compose</span></div>
-          <textarea id="usage" spellcheck="false"></textarea>
+          <section class="source-section" data-block="template">
+            <button class="field-label" type="button" data-toggle-source="template">Template</button>
+            <div class="code-editor">
+              <pre class="syntax-highlight" id="template-highlight" aria-hidden="true"></pre>
+              <textarea id="template-source" spellcheck="false"></textarea>
+            </div>
+          </section>
+          <section class="source-section" data-block="style">
+            <button class="field-label" type="button" data-toggle-source="style">Style</button>
+            <div class="code-editor">
+              <pre class="syntax-highlight" id="style-highlight" aria-hidden="true"></pre>
+              <textarea id="style-source" spellcheck="false"></textarea>
+            </div>
+          </section>
+          <section class="source-section" data-block="usage">
+            <button class="field-label" type="button" data-toggle-source="usage">Usage</button>
+            <div class="code-editor">
+              <pre class="syntax-highlight" id="usage-highlight" aria-hidden="true"></pre>
+              <textarea id="usage" spellcheck="false"></textarea>
+            </div>
+          </section>
         </div>
-        <div class="panel-bar">
-          <span class="hint">Shared design tokens are available as var(--accent) etc.</span>
-          <button class="btn-cancel" id="btn-cancel">Cancel</button>
-          <button class="btn-apply" id="btn-apply">Apply</button>
-        </div>
+      </div>
+
+      <div class="preview">
+        <iframe id="frame" sandbox="allow-scripts" title="preview"></iframe>
       </div>
 
       <!-- Token editor -->
@@ -233,7 +339,7 @@
         <div class="panel-bar">
           <span class="hint">Changes preview live; apply writes tokens.css.</span>
           <button class="btn-cancel" id="btn-token-cancel">Cancel</button>
-          <button class="btn-apply" id="btn-token-apply">Apply</button>
+          <button class="btn-token-apply" id="btn-token-apply">Apply</button>
         </div>
       </div>
     </main>
@@ -311,9 +417,12 @@ ${usage}
     const frame = document.getElementById('frame');
     const editor = document.getElementById('editor');
     const tokenEditor = document.getElementById('token-editor');
-    const requiresInput = document.getElementById('requires');
-    const defInput = document.getElementById('def');
+    const styleInput = document.getElementById('style-source');
+    const templateInput = document.getElementById('template-source');
     const usageInput = document.getElementById('usage');
+    const styleHighlight = document.getElementById('style-highlight');
+    const templateHighlight = document.getElementById('template-highlight');
+    const usageHighlight = document.getElementById('usage-highlight');
     const tokensInput = document.getElementById('tokens');
     const nameInput = document.getElementById('name');
     const pageMeta = document.getElementById('page-meta');
@@ -325,6 +434,9 @@ ${usage}
     let selectedId = null;
     let pendingDeleteId = null;
     let loadError = '';
+    let saveTimer = 0;
+    const sourceCollapseKey = 'evolve.source-collapse';
+    const sourceSections = [...document.querySelectorAll('.source-section')];
 
     async function load() {
       loadError = '';
@@ -362,15 +474,41 @@ ${usage}
     // any that are gone. Fire-and-forget — local single-user, optimistic UI.
     function save() {
       const payload = {
-        components: components().map(({ id, name, tag, requires, definition, usage }) => ({ id, name, tag, requires, definition, usage })),
-        layouts: layouts().map(({ id, name, tag, layout, requires, definition, usage }) => ({ id, name, tag, layout, requires, definition, usage })),
-        pages: pages().map(({ id, name, tag, title, slug, layout, requires, definition, usage }) => ({ id, name, tag, title, slug, layout, requires, definition, usage })),
+        components: components().map(({ id, name, tag, definition, usage }) => ({ id, name, tag, definition, usage })),
+        layouts: layouts().map(({ id, name, tag, layout, definition, usage }) => ({ id, name, tag, layout, definition, usage })),
+        pages: pages().map(({ id, name, tag, title, slug, layout, definition, usage }) => ({ id, name, tag, title, slug, layout, definition, usage })),
       };
       fetch(API, {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),
       }).catch(e => console.error('save failed', e));
+    }
+
+    function scheduleSave() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(save, 250);
+    }
+
+    function storedSourceCollapse() {
+      try {
+        return JSON.parse(localStorage.getItem(sourceCollapseKey) || '{}');
+      } catch {
+        return {};
+      }
+    }
+
+    function applySourceCollapse() {
+      const state = { usage: true, ...storedSourceCollapse() };
+      sourceSections.forEach(section => {
+        section.classList.toggle('collapsed', !!state[section.dataset.block]);
+      });
+    }
+
+    function setSourceCollapsed(block, collapsed) {
+      const state = { usage: true, ...storedSourceCollapse(), [block]: collapsed };
+      localStorage.setItem(sourceCollapseKey, JSON.stringify(state));
+      applySourceCollapse();
     }
     function selected() { return library.find(c => c.id === selectedId) ?? null; }
     function components() { return library.filter(c => c.kind === 'component'); }
@@ -400,12 +538,6 @@ ${usage}
     function safePartName(name) {
       const part = String(name ?? '').trim().toLowerCase();
       return /^[a-z0-9-]+$/.test(part) ? part : '';
-    }
-
-    function collectDefinition(c, defs, seen) {
-      if (!c?.path || seen.has(c.path)) return;
-      seen.add(c.path);
-      (c.requires ?? []).forEach(ref => collectDefinition(artifactByRef(ref), defs, seen));
     }
 
     function artifactTag(c) {
@@ -462,7 +594,6 @@ ${usage}
     function renderArtifactInstance(node, artifact, inner, defs, seen, context = {}, templateOverride = null) {
       if (!artifact) return '';
 
-      collectDefinition(artifact, defs, seen);
       const tag = artifactTag(artifact);
       if (!tag) return inner;
 
@@ -496,8 +627,37 @@ ${usage}
       return c?.definition?.match(/<style\b[^>]*>\s*([\s\S]*?)\s*<\/style>/i)?.[1] ?? '';
     }
 
+    function artifactStyleSource(c) {
+      return c?.definition?.match(/<style\b[^>]*>[\s\S]*?<\/style>/i)?.[0] ?? '';
+    }
+
     function artifactTemplate(c) {
       return c?.definition?.match(/<template\b[^>]*>\s*([\s\S]*?)\s*<\/template>/i)?.[1] ?? '';
+    }
+
+    function artifactTemplateSource(c) {
+      return c?.definition?.match(/<template\b[^>]*>[\s\S]*?<\/template>/i)?.[0] ?? '';
+    }
+
+    function definitionFromParts(c, style, template) {
+      const tag = artifactTag(c) || 'x-artifact';
+      const styleSource = sourceBlock(style, 'style', `<style>`);
+      const templateSource = sourceBlock(template, 'template', `<template>`);
+      return `${styleSource}
+
+${templateSource}`;
+    }
+
+    function stripWrapper(source, tag) {
+      const pattern = new RegExp(`<${tag}\\b[^>]*>\\s*([\\s\\S]*?)\\s*<\\/${tag}>`, 'i');
+      return String(source ?? '').match(pattern)?.[1] ?? String(source ?? '');
+    }
+
+    function sourceBlock(source, tag, openTag) {
+      const text = String(source ?? '').trim();
+      const pattern = new RegExp(`^<${tag}\\b[^>]*>[\\s\\S]*<\\/${tag}>$`, 'i');
+      if (pattern.test(text)) return text;
+      return `${openTag}\n${text}\n</${tag}>`;
     }
 
     function pageParts(html) {
@@ -619,6 +779,43 @@ ${usage}
         '"': '&quot;',
         "'": '&#39;',
       }[ch]));
+    }
+
+    function highlightHtml(source) {
+      return escapeHtml(source)
+        .replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="tok-comment">$1</span>')
+        .replace(/(&lt;\/?)([a-zA-Z][\w:-]*)([\s\S]*?)(\/?&gt;)/g, (_m, open, tag, attrs, close) => {
+          const markedAttrs = attrs.replace(/([:@a-zA-Z_][\w:.-]*)(=)(&quot;.*?&quot;|&#39;.*?&#39;)/g, '<span class="tok-attr">$1</span>$2<span class="tok-str">$3</span>');
+          return `${open}<span class="tok-tag">${tag}</span>${markedAttrs}${close}`;
+        });
+    }
+
+    function highlightCss(source) {
+      return escapeHtml(source)
+        .replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="tok-comment">$1</span>')
+        .replace(/(--[\w-]+)/g, '<span class="tok-var">$1</span>')
+        .replace(/([{}])/g, '<span class="tok-rule">$1</span>')
+        .replace(/([a-z-]+)(\s*:)/gi, '<span class="tok-prop">$1</span>$2')
+        .replace(/(&quot;.*?&quot;|&#39;.*?&#39;)/g, '<span class="tok-str">$1</span>');
+    }
+
+    function updateHighlight(input, output, mode) {
+      output.innerHTML = mode === 'css' ? highlightCss(input.value) : highlightHtml(input.value);
+      output.scrollTop = input.scrollTop;
+      output.scrollLeft = input.scrollLeft;
+    }
+
+    function updateSourceHighlights() {
+      updateHighlight(templateInput, templateHighlight, 'html');
+      updateHighlight(styleInput, styleHighlight, 'css');
+      updateHighlight(usageInput, usageHighlight, 'html');
+    }
+
+    function bindHighlightScroll(input, output) {
+      input.addEventListener('scroll', () => {
+        output.scrollTop = input.scrollTop;
+        output.scrollLeft = input.scrollLeft;
+      });
     }
 
     function slugify(value) {
@@ -770,13 +967,30 @@ ${usage}
       frame.srcdoc = documentFor(c);
     }
 
+    function syncSourceInputs() {
+      const c = selected();
+      styleInput.value = c ? artifactStyleSource(c) : '';
+      templateInput.value = c ? artifactTemplateSource(c) : '';
+      usageInput.value = c ? (c.usage ?? '') : '';
+      updateSourceHighlights();
+    }
+
+    function updateSelectedSource() {
+      const c = selected();
+      if (!c) return;
+      updateSourceHighlights();
+      c.definition = definitionFromParts(c, styleInput.value, templateInput.value);
+      c.usage = usageInput.value;
+      frame.srcdoc = documentFor(c);
+      scheduleSave();
+    }
+
     function closePanels() {
       if (tokenEditor.classList.contains('open') && tokens !== savedTokens) {
         tokens = savedTokens;
         tokensInput.value = savedTokens;
         renderFrame();
       }
-      editor.classList.remove('open');
       tokenEditor.classList.remove('open');
     }
 
@@ -785,6 +999,7 @@ ${usage}
       pendingDeleteId = null;
       closePanels();
       renderLists();
+      syncSourceInputs();
       renderFrame();
     }
 
@@ -798,6 +1013,7 @@ ${usage}
       save();
       closePanels();
       renderLists();
+      syncSourceInputs();
       renderFrame();
     }
 
@@ -843,15 +1059,15 @@ ${usage}
     function newArtifact(kind, name, slotContent) {
       const tag = 'x-' + crypto.randomUUID().replace(/-/g, '').slice(0, 8);
       return {
-        id: crypto.randomUUID(), kind, name, tag, requires: [],
-        definition: `<style id="${tag}-css" media="not all">
+        id: crypto.randomUUID(), kind, name, tag,
+        definition: `<style>
   :host { display: ${kind === 'component' ? 'inline-block' : 'block'}; }
   .box { padding: var(--space-lg, 20px); border-radius: var(--radius, 14px);
     background: var(--surface, #fff); color: var(--text, #18181b);
     box-shadow: 0 4px 20px rgba(0,0,0,.08); font: 1rem system-ui, sans-serif; }
 </style>
 
-<template id="${tag}-tpl">
+<template>
   <div class="box">${slotContent}</div>
 </template>`,
         usage: `<${tag}></${tag}>`
@@ -882,17 +1098,6 @@ ${usage}
       save();
     };
 
-    document.getElementById('btn-edit').onclick = () => {
-      const c = selected();
-      if (!c) return;
-      closePanels();
-      requiresInput.value = (c.requires ?? []).join('\n');
-      defInput.value = c.definition;
-      usageInput.value = c.usage;
-      editor.classList.add('open');
-      defInput.focus();
-    };
-
     document.getElementById('btn-tokens').onclick = () => {
       closePanels();
       tokensInput.value = tokens;
@@ -900,7 +1105,6 @@ ${usage}
       tokensInput.focus();
     };
 
-    document.getElementById('btn-cancel').onclick = () => editor.classList.remove('open');
     document.getElementById('btn-token-cancel').onclick = () => {
       tokens = savedTokens;
       tokensInput.value = savedTokens;
@@ -913,16 +1117,20 @@ ${usage}
       renderFrame();
     };
 
-    document.getElementById('btn-apply').onclick = () => {
-      const c = selected();
-      if (!c) return;
-      c.requires = requiresInput.value.split(/\n|,/).map(s => s.trim()).filter(Boolean);
-      c.definition = defInput.value;
-      c.usage = usageInput.value;
-      save();
-      editor.classList.remove('open');
-      renderFrame();
-    };
+    styleInput.oninput = updateSelectedSource;
+    templateInput.oninput = updateSelectedSource;
+    usageInput.oninput = updateSelectedSource;
+    bindHighlightScroll(styleInput, styleHighlight);
+    bindHighlightScroll(templateInput, templateHighlight);
+    bindHighlightScroll(usageInput, usageHighlight);
+
+    document.querySelectorAll('[data-toggle-source]').forEach(button => {
+      button.onclick = () => {
+        const block = button.dataset.toggleSource;
+        const section = button.closest('.source-section');
+        setSourceCollapsed(block, !section.classList.contains('collapsed'));
+      };
+    });
 
     document.getElementById('btn-token-apply').onclick = async () => {
       tokens = tokensInput.value;
@@ -975,6 +1183,8 @@ ${usage}
       library = await load();
       selectedId = library[0]?.id ?? null;
       renderLists();
+      applySourceCollapse();
+      syncSourceInputs();
       renderFrame();
     })();
   </script>

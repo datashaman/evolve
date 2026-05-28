@@ -1,7 +1,7 @@
-<!-- name: Marketing layout -->
-<!-- tag: x-marketing-layout -->
-<!-- layout: base-layout -->
-<style id="x-marketing-layout-css" media="not all">
+<!-- name: Marketing -->
+<!-- tag: x-marketing -->
+<!-- layout: base -->
+<style>
     :host { display: block; }
     .shell {
       background:
@@ -18,7 +18,7 @@
     }
 </style>
 
-<template id="x-marketing-layout-tpl">
+<template>
   <part name="action">Plan the site</part>
   <part name="main">
     <main class="marketing-main">
@@ -33,7 +33,7 @@
 </template>
 
 <script type="text/html" data-usage>
-<x-layout src="marketing-layout">
+<x-layout src="marketing">
   <part name="hero">
     <x-component src="hero-section">
       <span slot="eyebrow">Layout preview</span>
