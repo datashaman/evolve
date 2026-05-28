@@ -327,9 +327,7 @@ ${usage}
     function pages() { return library.filter(c => c.kind === 'page'); }
 
     function artifactByRef(ref) {
-      const [kind, id] = ref.split('/');
-      const list = kind === 'component' ? components() : kind === 'layout' ? layouts() : kind === 'page' ? pages() : [];
-      return list.find(c => c.id === id) ?? null;
+      return [...components(), ...layouts(), ...pages()].find(c => c.path === ref) ?? null;
     }
 
     function definitionsFor(c) {

@@ -87,9 +87,9 @@ function safeId(string $id): string {
 // Copy canonical seed artifact files into the live library (overwrite matching
 // ids, add missing). The single source of truth for the samples is library/.seed.
 function seedArtifacts(): void {
-    foreach (artifactDirs() as $kind => $dir) {
+    foreach (artifactDirs() as $folder => $dir) {
         @mkdir($dir, 0777, true);
-        foreach (glob(SEED_DIR . "/{$kind}s/*.html") ?: [] as $src) {
+        foreach (glob(SEED_DIR . "/{$folder}/*.html") ?: [] as $src) {
             writeIfChanged($dir . '/' . basename($src), file_get_contents($src));
         }
     }
@@ -114,9 +114,9 @@ function ensureSeeded(): void {
 
 function readLibrary(): array {
     return [
-        'components' => readArtifacts(COMPONENTS_DIR),
-        'layouts'    => readArtifacts(LAYOUTS_DIR),
-        'pages'      => readArtifacts(PAGES_DIR),
+        'components' => readArtifacts(COMPONENTS_DIR, 'components'),
+        'layouts'    => readArtifacts(LAYOUTS_DIR, 'layouts'),
+        'pages'      => readArtifacts(PAGES_DIR, 'pages'),
     ];
 }
 
@@ -129,16 +129,19 @@ function writeLibrary(array $payload): array {
 
 function artifactDirs(): array {
     return [
-        'component' => COMPONENTS_DIR,
-        'layout'    => LAYOUTS_DIR,
-        'page'      => PAGES_DIR,
+        'components' => COMPONENTS_DIR,
+        'layouts'    => LAYOUTS_DIR,
+        'pages'      => PAGES_DIR,
     ];
 }
 
-function readArtifacts(string $dir): array {
+function readArtifacts(string $dir, string $folder): array {
     $artifacts = [];
     foreach (glob($dir . '/*.html') ?: [] as $path) {
-        $artifacts[] = parseComponent(basename($path, '.html'), file_get_contents($path));
+        $id = basename($path, '.html');
+        $artifact = parseComponent($id, file_get_contents($path));
+        $artifact['path'] = "{$folder}/{$id}.html";
+        $artifacts[] = $artifact;
     }
     return $artifacts;
 }
@@ -307,18 +310,20 @@ function collectRequiredDefinition(string $ref, array &$defs, array &$seen): voi
     if ($ref === '' || isset($seen[$ref])) return;
     $seen[$ref] = true;
 
-    $parts = explode('/', $ref, 2);
-    if (count($parts) !== 2) return;
-    [$kind, $id] = $parts;
-    $dirs = artifactDirs();
-    if (empty($dirs[$kind])) return;
-
-    $path = $dirs[$kind] . '/' . safeId($id) . '.html';
+    $path = requiredPath($ref);
     if (!is_file($path)) return;
 
-    $artifact = parseComponent(safeId($id), file_get_contents($path));
+    $artifact = parseComponent(basename($path, '.html'), file_get_contents($path));
     foreach ($artifact['requires'] ?? [] as $childRef) {
         collectRequiredDefinition($childRef, $defs, $seen);
     }
     $defs[] = $artifact['definition'];
+}
+
+function requiredPath(string $ref): string {
+    $ref = str_replace('\\', '/', trim($ref));
+    if ($ref === '' || str_starts_with($ref, '/') || str_contains($ref, '..')) {
+        return '';
+    }
+    return __DIR__ . '/library/' . $ref;
 }
