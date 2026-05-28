@@ -1,0 +1,25 @@
+<!-- name: Button -->
+<template id="x-button-tpl">
+  <style>
+    button { font: 600 15px system-ui, sans-serif;
+      padding: var(--space-sm, 8px) var(--space-lg, 20px);
+      border: 0; border-radius: var(--radius-sm, 8px);
+      background: var(--accent, #6366f1); color: #fff; cursor: pointer; }
+    button:hover { filter: brightness(1.08); }
+  </style>
+  <button><slot>Button</slot></button>
+</template>
+
+<script>
+  customElements.define('x-button', class extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;
+      const tpl = document.getElementById('x-button-tpl');
+      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
+    }
+  });
+</script>
+
+<script type="text/html" data-usage>
+<x-button>Primary button</x-button>
+</script>

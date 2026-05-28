@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Component Workbench</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: flex;
+      flex-direction: column;
+      font-family: system-ui, sans-serif;
+      background: #f4f4f5;
+    }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 12px;
+      background: #18181b;
+      color: #fafafa;
+    }
+    .toolbar h1 { font-size: 14px; font-weight: 600; margin: 0 12px 0 0; white-space: nowrap; }
+    .toolbar .kind {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+      color: #a1a1aa; padding: 2px 8px; border: 1px solid #3f3f46; border-radius: 999px;
+    }
+    .toolbar .name {
+      font: inherit; font-size: 13px;
+      padding: 5px 10px; border: 1px solid #3f3f46; border-radius: 6px;
+      background: #27272a; color: #fafafa; min-width: 160px;
+    }
+    .toolbar button {
+      font: inherit; font-size: 13px;
+      padding: 5px 12px; border: 1px solid #3f3f46; border-radius: 6px;
+      background: #27272a; color: #fafafa; cursor: pointer;
+    }
+    .toolbar button:hover { background: #3f3f46; }
+    .toolbar .spacer { flex: 1; }
+
+    .workspace { flex: 1; display: flex; min-height: 0; }
+
+    .sidebar {
+      width: 220px; flex-shrink: 0;
+      display: flex; flex-direction: column;
+      background: #27272a; color: #e4e4e7;
+      border-right: 1px solid #3f3f46; overflow-y: auto;
+    }
+    .sidebar section { display: flex; flex-direction: column; }
+    .sidebar header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px;
+      font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #a1a1aa;
+    }
+    .sidebar header .actions { display: flex; gap: 6px; }
+    .sidebar header button {
+      font: inherit; font-size: 16px; line-height: 1;
+      width: 22px; height: 22px; border: 0; border-radius: 6px;
+      background: #3f3f46; color: #fafafa; cursor: pointer;
+    }
+    .sidebar ul { list-style: none; margin: 0; padding: 0; }
+    .sidebar li {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 12px; font-size: 13px; cursor: pointer;
+    }
+    .sidebar li:hover { background: #3f3f46; }
+    .sidebar li.active { background: #4338ca; color: #fff; }
+    .sidebar li .label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sidebar li .del {
+      visibility: hidden; border: 0; background: transparent; color: inherit;
+      cursor: pointer; font-size: 15px; opacity: .7;
+    }
+    .sidebar li:hover .del { visibility: visible; }
+    .sidebar li .del:hover { opacity: 1; }
+    .sidebar li .confirm {
+      font: inherit; font-size: 12px;
+      padding: 2px 8px; border: 0; border-radius: 6px; cursor: pointer;
+    }
+    .sidebar li .confirm-yes { background: #dc2626; color: #fff; }
+    .sidebar li .confirm-no  { background: #52525b; color: #fafafa; }
+    .sidebar .empty { padding: 4px 12px 10px; font-size: 12px; color: #71717a; }
+
+    .stage { flex: 1; position: relative; overflow: hidden; }
+    iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+
+    .panel {
+      position: absolute; inset: 0; display: none; flex-direction: column; background: #1e1e1e;
+    }
+    .panel.open { display: flex; }
+    .editor-fields { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .field-label {
+      padding: 8px 12px 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+      color: #a1a1aa; background: #1e1e1e;
+    }
+    .field-label span { text-transform: none; letter-spacing: 0; color: #71717a; }
+    .panel textarea {
+      border: 0; resize: none; padding: 6px 16px 12px;
+      font: 13px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
+      color: #e4e4e7; background: #1e1e1e; tab-size: 2;
+      flex-basis: 0; min-height: 60px;
+    }
+    .panel textarea:focus { outline: none; }
+    #def { flex-grow: 2; }
+    #usage { flex-grow: 1; border-top: 1px solid #3f3f46; }
+    .panel-bar {
+      display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: #111;
+    }
+    .panel-bar .hint { flex: 1; color: #71717a; font-size: 12px; }
+    .panel-bar button {
+      font: inherit; font-size: 13px; padding: 5px 14px; border: 0; border-radius: 6px; cursor: pointer;
+    }
+    .btn-apply { background: #22c55e; color: #052e16; }
+    .btn-cancel { background: #3f3f46; color: #fafafa; }
+
+    .composer-cols { flex: 1; display: flex; min-height: 0; color: #e4e4e7; }
+    .composer-cols .col { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 16px; }
+    .composer-cols .col + .col { border-left: 1px solid #3f3f46; }
+    .composer-cols h4 { margin: 0 0 12px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #a1a1aa; }
+    .composer-cols ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+    .composer-cols .row {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 10px; border-radius: 8px; background: #27272a; font-size: 13px;
+    }
+    .composer-cols .row .label { flex: 1; }
+    .composer-cols .row button {
+      font: inherit; border: 0; border-radius: 6px; cursor: pointer;
+      width: 24px; height: 24px; background: #3f3f46; color: #fafafa;
+    }
+    .composer-cols .row button:disabled { opacity: .3; cursor: default; }
+    .composer-cols .add {
+      display: flex; align-items: center; gap: 6px;
+      width: 100%; text-align: left;
+      padding: 8px 10px; margin-bottom: 6px; border: 0; border-radius: 8px;
+      background: #27272a; color: #e4e4e7; font: inherit; font-size: 13px; cursor: pointer;
+    }
+    .composer-cols .add:hover { background: #3f3f46; }
+  </style>
+</head>
+<body>
+  <header class="toolbar">
+    <h1>Component Workbench</h1>
+    <span class="kind" id="kind">component</span>
+    <input id="name" class="name" placeholder="name" />
+    <button id="btn-edit">Edit</button>
+    <button id="btn-reload">Reload</button>
+    <span class="spacer"></span>
+    <button id="btn-open" title="Open the real route in a new tab">Open ↗</button>
+    <button id="btn-export">Export</button>
+  </header>
+
+  <div class="workspace">
+    <nav class="sidebar">
+      <section>
+        <header>
+          <span>Components</span>
+          <span class="actions">
+            <button id="btn-restore" title="Reset sample components to defaults">⟲</button>
+            <button id="btn-new-component" title="New component">+</button>
+          </span>
+        </header>
+        <ul id="list-components"></ul>
+        <div class="empty" id="empty-components" hidden>No components yet.</div>
+      </section>
+      <section>
+        <header>
+          <span>Pages</span>
+          <span class="actions">
+            <button id="btn-new-page" title="New page">+</button>
+          </span>
+        </header>
+        <ul id="list-pages"></ul>
+        <div class="empty" id="empty-pages" hidden>No pages yet.</div>
+      </section>
+    </nav>
+
+    <main class="stage">
+      <iframe id="frame" sandbox="allow-scripts" title="preview"></iframe>
+
+      <!-- Component editor: definition (registered once) + usage (composed) -->
+      <div class="panel" id="editor">
+        <div class="editor-fields">
+          <div class="field-label">Definition <span>— template + style + script, registered once in the host shell</span></div>
+          <textarea id="def" spellcheck="false"></textarea>
+          <div class="field-label">Usage <span>— example markup; this is what pages compose</span></div>
+          <textarea id="usage" spellcheck="false"></textarea>
+        </div>
+        <div class="panel-bar">
+          <span class="hint">Shared design tokens are available as var(--accent) etc.</span>
+          <button class="btn-cancel" id="btn-cancel">Cancel</button>
+          <button class="btn-apply" id="btn-apply">Apply</button>
+        </div>
+      </div>
+
+      <!-- Page composer -->
+      <div class="panel" id="composer">
+        <div class="composer-cols">
+          <div class="col">
+            <h4>In this page</h4>
+            <ol id="page-items"></ol>
+          </div>
+          <div class="col">
+            <h4>Add component</h4>
+            <div id="page-available"></div>
+          </div>
+        </div>
+        <div class="panel-bar">
+          <span class="hint">Changes apply live as you add, remove, or reorder.</span>
+          <button class="btn-apply" id="btn-done">Done</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const API = '/api/library';
+
+    // Each component carries a `definition` (registered once) and `usage`
+    // (clean markup that pages compose). The host shell injects definitions
+    // into <head>, so usage is just custom-element tags — no per-fragment
+    // define, no guard.
+    const SEED = [
+      {
+        id: 'card', kind: 'component', name: 'Card', tag: 'x-card',
+        definition: `<template id="x-card-tpl">
+  <style>
+    :host { display: block; }
+    .card { max-width: 320px; padding: var(--space-lg, 20px);
+      border-radius: var(--radius, 14px); background: var(--surface, #fff);
+      box-shadow: 0 4px 20px rgba(0,0,0,.08); }
+    h2 { margin: 0 0 var(--space-sm, 8px); color: var(--text, #18181b);
+      font: 600 1.25rem system-ui, sans-serif; }
+    p { margin: 0 0 var(--space-lg, 20px); color: var(--text-muted, #52525b);
+      font: 1rem/1.5 system-ui, sans-serif; }
+    .cta { font: inherit; padding: var(--space-sm, 8px) var(--space-lg, 20px);
+      border: 0; border-radius: var(--radius-sm, 8px);
+      background: var(--accent, #6366f1); color: #fff; cursor: pointer; }
+  </style>
+  <div class="card">
+    <h2><slot name="title">Card</slot></h2>
+    <p><slot name="body"></slot></p>
+    <button class="cta"><slot name="action">Action</slot></button>
+  </div>
+</template>
+
+<script>
+  customElements.define('x-card', class extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;
+      const tpl = document.getElementById('x-card-tpl');
+      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
+    }
+  });
+<\/script>`,
+        usage: `<x-card>
+  <span slot="title">Card component</span>
+  <span slot="body">A self-contained unit, styled with shared tokens so it
+     looks the same wherever a page composes it.</span>
+</x-card>`
+      },
+      {
+        id: 'button', kind: 'component', name: 'Button', tag: 'x-button',
+        definition: `<template id="x-button-tpl">
+  <style>
+    button { font: 600 15px system-ui, sans-serif;
+      padding: var(--space-sm, 8px) var(--space-lg, 20px);
+      border: 0; border-radius: var(--radius-sm, 8px);
+      background: var(--accent, #6366f1); color: #fff; cursor: pointer; }
+    button:hover { filter: brightness(1.08); }
+  </style>
+  <button><slot>Button</slot></button>
+</template>
+
+<script>
+  customElements.define('x-button', class extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;
+      const tpl = document.getElementById('x-button-tpl');
+      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
+    }
+  });
+<\/script>`,
+        usage: `<x-button>Primary button</x-button>`
+      },
+      {
+        id: 'badge', kind: 'component', name: 'Badge', tag: 'x-badge',
+        definition: `<template id="x-badge-tpl">
+  <style>
+    :host { display: inline-block; }
+    .badge { display: inline-block; font: 600 12px system-ui, sans-serif;
+      padding: 4px 10px; border-radius: 999px;
+      background: color-mix(in srgb, var(--accent, #6366f1) 15%, white);
+      color: var(--accent, #6366f1); }
+  </style>
+  <span class="badge"><slot>Badge</slot></span>
+</template>
+
+<script>
+  customElements.define('x-badge', class extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;
+      const tpl = document.getElementById('x-badge-tpl');
+      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
+    }
+  });
+<\/script>`,
+        usage: `<x-badge>New</x-badge>`
+      },
+      {
+        id: 'counter', kind: 'component', name: 'Counter', tag: 'x-counter',
+        definition: `<template id="x-counter-tpl">
+  <style>
+    .counter { display: inline-flex; align-items: center; gap: 14px;
+      font: 600 18px system-ui, sans-serif; }
+    button { font: inherit; width: 38px; height: 38px; cursor: pointer;
+      border: 0; border-radius: var(--radius-sm, 8px);
+      background: var(--accent, #6366f1); color: #fff; }
+    button:hover { filter: brightness(1.08); }
+    output { min-width: 2ch; text-align: center; color: var(--text, #111); }
+  </style>
+  <div class="counter">
+    <button id="dec" aria-label="decrement">−</button>
+    <output id="val"></output>
+    <button id="inc" aria-label="increment">+</button>
+  </div>
+</template>
+
+<script>
+  customElements.define('x-counter', class extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;
+      const root = this.attachShadow({ mode: 'open' });
+      root.append(document.getElementById('x-counter-tpl').content.cloneNode(true));
+      this.out = root.getElementById('val');
+      root.getElementById('inc').onclick = () => this.render(this.count + 1);
+      root.getElementById('dec').onclick = () => this.render(this.count - 1);
+      this.render(Number(this.getAttribute('start') || 0));
+    }
+    render(n) { this.count = n; this.out.textContent = n; }
+  });
+<\/script>`,
+        usage: `<x-counter start="3"></x-counter>`
+      }
+    ];
+
+    const SEED_PAGES = [
+      { id: 'sample-page', kind: 'page', name: 'Sample page', items: ['badge', 'card', 'button', 'counter'] }
+    ];
+
+    // Shared design tokens live in library/tokens.css — one source of truth read
+    // by both this client preview and the server-rendered /p and /c routes.
+    let tokens = '';
+
+    // Host shell: tokens + the registry (definitions injected once into <head>),
+    // then the usage markup in <body>. 'component' centers a single element on a
+    // grid backdrop; 'page' lays the composition out in normal document flow.
+    function buildDocument(usage, definitions, mode) {
+      const body = mode === 'page'
+        ? `body {
+            margin: 0; padding: 40px;
+            display: flex; flex-direction: column; align-items: flex-start; gap: 24px;
+            font-family: system-ui, sans-serif; color: var(--text); background: var(--surface);
+          }`
+        : `body {
+            margin: 0; min-height: 100vh;
+            display: grid; place-items: center; padding: 40px;
+            font-family: system-ui, sans-serif;
+            background: #fafafa;
+            background-image:
+              linear-gradient(#0000000a 1px, transparent 1px),
+              linear-gradient(90deg, #0000000a 1px, transparent 1px);
+            background-size: 16px 16px;
+          }`;
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>${tokens} ${body}</style>
+${definitions.join('\n')}
+</head>
+<body>
+${usage}
+</body>
+</html>`;
+    }
+
+    const frame = document.getElementById('frame');
+    const editor = document.getElementById('editor');
+    const composer = document.getElementById('composer');
+    const defInput = document.getElementById('def');
+    const usageInput = document.getElementById('usage');
+    const nameInput = document.getElementById('name');
+    const kindBadge = document.getElementById('kind');
+
+    let library = [];
+    let selectedId = null;
+    let pendingDeleteId = null;
+
+    async function load() {
+      try {
+        const r = await fetch(API);
+        if (r.ok) {
+          const d = await r.json();
+          const merged = [
+            ...(d.components ?? []).map(c => ({ ...c, kind: 'component' })),
+            ...(d.pages ?? []).map(p => ({ ...p, kind: 'page' })),
+          ];
+          if (merged.length) return merged;
+        }
+      } catch (e) { console.error('load failed', e); }
+      return null; // signal: nothing stored yet
+    }
+
+    // Persist the whole library; the backend fans it out to files and removes
+    // any that are gone. Fire-and-forget — local single-user, optimistic UI.
+    function save() {
+      const payload = {
+        components: components().map(({ id, name, definition, usage }) => ({ id, name, definition, usage })),
+        pages: pages().map(({ id, name, items }) => ({ id, name, items })),
+      };
+      fetch(API, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch(e => console.error('save failed', e));
+    }
+    function selected() { return library.find(c => c.id === selectedId) ?? null; }
+    function components() { return library.filter(c => c.kind === 'component'); }
+    function pages() { return library.filter(c => c.kind === 'page'); }
+
+    // Build the full preview document for a component or page, gathering the
+    // definitions it needs (deduped) and the usage markup.
+    function documentFor(c) {
+      if (!c) return '';
+      if (c.kind === 'page') {
+        const seen = new Set();
+        const defs = [];
+        const usages = [];
+        for (const id of c.items) {
+          const comp = library.find(x => x.id === id && x.kind === 'component');
+          if (!comp) continue;
+          usages.push(comp.usage);
+          if (!seen.has(comp.id)) { seen.add(comp.id); defs.push(comp.definition); }
+        }
+        return buildDocument(usages.join('\n'), defs, 'page');
+      }
+      return buildDocument(c.usage, [c.definition], 'component');
+    }
+
+    function makeItem(c) {
+      const li = document.createElement('li');
+      if (c.id === selectedId) li.className = 'active';
+
+      if (c.id === pendingDeleteId) {
+        const label = document.createElement('span');
+        label.className = 'label';
+        label.textContent = 'Delete?';
+        const yes = document.createElement('button');
+        yes.className = 'confirm confirm-yes';
+        yes.textContent = 'Delete';
+        yes.onclick = (e) => { e.stopPropagation(); remove(c.id); };
+        const no = document.createElement('button');
+        no.className = 'confirm confirm-no';
+        no.textContent = 'Cancel';
+        no.onclick = (e) => { e.stopPropagation(); pendingDeleteId = null; renderLists(); };
+        li.append(label, yes, no);
+        li.onclick = (e) => e.stopPropagation();
+      } else {
+        const label = document.createElement('span');
+        label.className = 'label';
+        label.textContent = c.name || '(unnamed)';
+        const del = document.createElement('button');
+        del.className = 'del';
+        del.textContent = '×';
+        del.title = 'Delete';
+        del.onclick = (e) => { e.stopPropagation(); pendingDeleteId = c.id; renderLists(); };
+        li.append(label, del);
+        li.onclick = () => select(c.id);
+      }
+      return li;
+    }
+
+    function renderLists() {
+      const cl = document.getElementById('list-components');
+      const pl = document.getElementById('list-pages');
+      cl.innerHTML = '';
+      pl.innerHTML = '';
+      components().forEach(c => cl.append(makeItem(c)));
+      pages().forEach(p => pl.append(makeItem(p)));
+      document.getElementById('empty-components').hidden = components().length > 0;
+      document.getElementById('empty-pages').hidden = pages().length > 0;
+    }
+
+    function renderFrame() {
+      const c = selected();
+      kindBadge.textContent = c ? c.kind : '—';
+      nameInput.value = c ? c.name : '';
+      frame.srcdoc = documentFor(c);
+    }
+
+    function closePanels() {
+      editor.classList.remove('open');
+      composer.classList.remove('open');
+    }
+
+    function select(id) {
+      selectedId = id;
+      pendingDeleteId = null;
+      closePanels();
+      renderLists();
+      renderFrame();
+    }
+
+    function remove(id) {
+      const i = library.findIndex(c => c.id === id);
+      if (i === -1) return;
+      pendingDeleteId = null;
+      const wasSelected = selectedId === id;
+      library.splice(i, 1);
+      // A page may reference this component — drop those references.
+      for (const p of pages()) {
+        if (p.items) p.items = p.items.filter(x => x !== id);
+      }
+      if (wasSelected) selectedId = library[Math.max(0, i - 1)]?.id ?? null;
+      save();
+      closePanels();
+      renderLists();
+      renderFrame();
+    }
+
+    // --- Page composer ---
+    function renderComposer() {
+      const page = selected();
+      if (!page || page.kind !== 'page') return;
+
+      const itemsEl = document.getElementById('page-items');
+      itemsEl.innerHTML = '';
+      page.items.forEach((id, idx) => {
+        const c = library.find(x => x.id === id);
+        const row = document.createElement('li');
+        row.className = 'row';
+        const label = document.createElement('span');
+        label.className = 'label';
+        label.textContent = c ? c.name : '(missing)';
+        const up = document.createElement('button');
+        up.textContent = '↑'; up.disabled = idx === 0;
+        up.onclick = () => moveItem(idx, -1);
+        const down = document.createElement('button');
+        down.textContent = '↓'; down.disabled = idx === page.items.length - 1;
+        down.onclick = () => moveItem(idx, 1);
+        const rm = document.createElement('button');
+        rm.textContent = '×';
+        rm.onclick = () => { page.items.splice(idx, 1); save(); renderFrame(); renderComposer(); };
+        row.append(label, up, down, rm);
+        itemsEl.append(row);
+      });
+
+      const avail = document.getElementById('page-available');
+      avail.innerHTML = '';
+      const comps = components();
+      if (!comps.length) {
+        avail.innerHTML = '<div style="color:#71717a;font-size:13px">No components to add.</div>';
+      }
+      comps.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'add';
+        btn.textContent = '+ ' + c.name;
+        btn.onclick = () => { page.items.push(c.id); save(); renderFrame(); renderComposer(); };
+        avail.append(btn);
+      });
+    }
+
+    function moveItem(idx, dir) {
+      const page = selected();
+      const j = idx + dir;
+      if (j < 0 || j >= page.items.length) return;
+      [page.items[idx], page.items[j]] = [page.items[j], page.items[idx]];
+      save();
+      renderFrame();
+      renderComposer();
+    }
+
+    // --- Toolbar actions ---
+    document.getElementById('btn-restore').onclick = () => {
+      // Reset sample components to their seed definitions (adding any missing).
+      // Custom components and pages are left untouched.
+      let touched = null;
+      for (const seed of SEED) {
+        const i = library.findIndex(c => c.id === seed.id);
+        if (i >= 0) library[i] = structuredClone(seed);
+        else library.push(structuredClone(seed));
+        touched ??= seed.id;
+      }
+      save();
+      select(touched ?? selectedId);
+    };
+
+    document.getElementById('btn-new-component').onclick = () => {
+      const tag = 'x-' + crypto.randomUUID().replace(/-/g, '').slice(0, 8);
+      const c = {
+        id: crypto.randomUUID(), kind: 'component', name: 'Untitled', tag,
+        definition: `<template id="${tag}-tpl">
+  <style>
+    :host { display: inline-block; }
+    .box { padding: var(--space-lg, 20px); border-radius: var(--radius, 14px);
+      background: var(--surface, #fff); color: var(--text, #18181b);
+      box-shadow: 0 4px 20px rgba(0,0,0,.08); font: 1rem system-ui, sans-serif; }
+  </style>
+  <div class="box"><slot>New component</slot></div>
+</template>
+
+<script>
+  customElements.define('${tag}', class extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;
+      const tpl = document.getElementById('${tag}-tpl');
+      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
+    }
+  });
+<\/script>`,
+        usage: `<${tag}>New component</${tag}>`
+      };
+      library.push(c);
+      save();
+      select(c.id);
+      nameInput.focus(); nameInput.select();
+    };
+
+    document.getElementById('btn-new-page').onclick = () => {
+      const p = { id: crypto.randomUUID(), kind: 'page', name: 'Untitled page', items: [] };
+      library.push(p);
+      save();
+      select(p.id);
+      composer.classList.add('open');
+      renderComposer();
+    };
+
+    nameInput.oninput = () => {
+      const c = selected();
+      if (!c) return;
+      c.name = nameInput.value;
+      save();
+      renderLists();
+    };
+
+    document.getElementById('btn-edit').onclick = () => {
+      const c = selected();
+      if (!c) return;
+      if (c.kind === 'page') {
+        editor.classList.remove('open');
+        composer.classList.add('open');
+        renderComposer();
+      } else {
+        composer.classList.remove('open');
+        defInput.value = c.definition;
+        usageInput.value = c.usage;
+        editor.classList.add('open');
+        defInput.focus();
+      }
+    };
+
+    document.getElementById('btn-cancel').onclick = () => editor.classList.remove('open');
+    document.getElementById('btn-done').onclick = () => composer.classList.remove('open');
+
+    document.getElementById('btn-apply').onclick = () => {
+      const c = selected();
+      if (!c) return;
+      c.definition = defInput.value;
+      c.usage = usageInput.value;
+      save();
+      editor.classList.remove('open');
+      renderFrame();
+    };
+
+    document.getElementById('btn-reload').onclick = renderFrame;
+
+    document.getElementById('btn-open').onclick = () => {
+      const c = selected();
+      if (!c) return;
+      window.open(`/${c.kind === 'page' ? 'p' : 'c'}/${c.id}`, '_blank');
+    };
+
+    document.getElementById('btn-export').onclick = () => {
+      const c = selected();
+      if (!c) return;
+      // Export a full standalone document — definitions + tokens + usage — so it
+      // opens and runs on its own.
+      const blob = new Blob([documentFor(c)], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (c.name || c.kind).toLowerCase().replace(/\s+/g, '-') + '.html';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    (async function init() {
+      tokens = await fetch('/library/tokens.css').then(r => r.ok ? r.text() : '').catch(() => '');
+      const stored = await load();
+      if (stored) {
+        library = stored;
+      } else {
+        // First run: seed the sample library and persist it to disk.
+        library = [...structuredClone(SEED), ...structuredClone(SEED_PAGES)];
+        save();
+      }
+      selectedId = library[0]?.id ?? null;
+      renderLists();
+      renderFrame();
+    })();
+  </script>
+</body>
+</html>

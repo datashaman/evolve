@@ -1,0 +1,10 @@
+:root {
+  --accent: #6366f1;
+  --surface: #ffffff;
+  --text: #18181b;
+  --text-muted: #52525b;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --space-sm: 8px;
+  --space-lg: 20px;
+}

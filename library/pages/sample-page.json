@@ -1,0 +1,9 @@
+{
+    "name": "Sample page",
+    "items": [
+        "badge",
+        "card",
+        "button",
+        "counter"
+    ]
+}
