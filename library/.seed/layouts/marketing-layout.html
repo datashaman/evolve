@@ -1,6 +1,6 @@
 <!-- name: Marketing layout -->
-<template id="x-marketing-layout-tpl">
-  <style>
+<!-- requires: component/site-header, component/hero-section, component/cta-panel -->
+<style id="x-marketing-layout-css" media="not all">
     :host { display: block; }
     .shell {
       min-height: 100vh;
@@ -25,7 +25,9 @@
       font-size: 14px;
       border-top: 1px solid var(--border, #d9e2ea);
     }
-  </style>
+</style>
+
+<template id="x-marketing-layout-tpl">
   <div class="shell">
     <div class="wrap">
       <slot name="header"></slot>
@@ -40,13 +42,7 @@
 </template>
 
 <script>
-  customElements.define('x-marketing-layout', class extends HTMLElement {
-    connectedCallback() {
-      if (this.shadowRoot) return;
-      const tpl = document.getElementById('x-marketing-layout-tpl');
-      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
-    }
-  });
+  defineArtifact('x-marketing-layout', 'x-marketing-layout-tpl', 'x-marketing-layout-css');
 </script>
 
 <script type="text/html" data-usage>

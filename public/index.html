@@ -238,6 +238,21 @@
 <head>
   <meta charset="utf-8">
   <style>${tokens} ${body}</style>
+  <script>
+    window.defineArtifact = (tag, templateId, styleId) => {
+      if (customElements.get(tag)) return;
+      customElements.define(tag, class extends HTMLElement {
+        connectedCallback() {
+          if (this.shadowRoot) return;
+          const tpl = document.getElementById(templateId);
+          const css = document.getElementById(styleId);
+          const style = document.createElement('style');
+          style.textContent = css ? css.textContent : '';
+          this.attachShadow({ mode: 'open' }).append(style, tpl.content.cloneNode(true));
+        }
+      });
+    };
+  <\/script>
 ${definitions.join('\n')}
 </head>
 <body>
@@ -296,9 +311,9 @@ ${usage}
     // any that are gone. Fire-and-forget — local single-user, optimistic UI.
     function save() {
       const payload = {
-        components: components().map(({ id, name, definition, usage }) => ({ id, name, definition, usage })),
-        layouts: layouts().map(({ id, name, definition, usage }) => ({ id, name, definition, usage })),
-        pages: pages().map(({ id, name, definition, usage }) => ({ id, name, definition, usage })),
+        components: components().map(({ id, name, requires, definition, usage }) => ({ id, name, requires, definition, usage })),
+        layouts: layouts().map(({ id, name, requires, definition, usage }) => ({ id, name, requires, definition, usage })),
+        pages: pages().map(({ id, name, requires, definition, usage }) => ({ id, name, requires, definition, usage })),
       };
       fetch(API, {
         method: 'PUT',
@@ -311,15 +326,33 @@ ${usage}
     function layouts() { return library.filter(c => c.kind === 'layout'); }
     function pages() { return library.filter(c => c.kind === 'page'); }
 
-    function definitions() {
-      return [...components(), ...layouts(), ...pages()].map(c => c.definition);
+    function artifactByRef(ref) {
+      const [kind, id] = ref.split('/');
+      const list = kind === 'component' ? components() : kind === 'layout' ? layouts() : kind === 'page' ? pages() : [];
+      return list.find(c => c.id === id) ?? null;
+    }
+
+    function definitionsFor(c) {
+      const defs = [];
+      const seen = new Set();
+      function collect(ref) {
+        if (!ref || seen.has(ref)) return;
+        seen.add(ref);
+        const artifact = artifactByRef(ref);
+        if (!artifact) return;
+        (artifact.requires ?? []).forEach(collect);
+        defs.push(artifact.definition);
+      }
+      (c.requires ?? []).forEach(collect);
+      defs.push(c.definition);
+      return defs;
     }
 
     // Build the full preview document for any artifact. Definitions for all
-    // artifacts are loaded so HTML can compose custom elements directly.
+    // required artifacts are loaded so HTML can compose custom elements directly.
     function documentFor(c) {
       if (!c) return '';
-      return buildDocument(c.usage, definitions(), c.kind === 'component' ? 'component' : 'page');
+      return buildDocument(c.usage, definitionsFor(c), c.kind === 'component' ? 'component' : 'page');
     }
 
     function makeItem(c) {
@@ -450,25 +483,20 @@ ${usage}
     function newArtifact(kind, name, slotContent) {
       const tag = 'x-' + crypto.randomUUID().replace(/-/g, '').slice(0, 8);
       return {
-        id: crypto.randomUUID(), kind, name, tag,
-        definition: `<template id="${tag}-tpl">
-  <style>
-    :host { display: ${kind === 'component' ? 'inline-block' : 'block'}; }
-    .box { padding: var(--space-lg, 20px); border-radius: var(--radius, 14px);
-      background: var(--surface, #fff); color: var(--text, #18181b);
-      box-shadow: 0 4px 20px rgba(0,0,0,.08); font: 1rem system-ui, sans-serif; }
-  </style>
+        id: crypto.randomUUID(), kind, name, tag, requires: [],
+        definition: `<style id="${tag}-css" media="not all">
+  :host { display: ${kind === 'component' ? 'inline-block' : 'block'}; }
+  .box { padding: var(--space-lg, 20px); border-radius: var(--radius, 14px);
+    background: var(--surface, #fff); color: var(--text, #18181b);
+    box-shadow: 0 4px 20px rgba(0,0,0,.08); font: 1rem system-ui, sans-serif; }
+</style>
+
+<template id="${tag}-tpl">
   <div class="box">${slotContent}</div>
 </template>
 
 <script>
-  customElements.define('${tag}', class extends HTMLElement {
-    connectedCallback() {
-      if (this.shadowRoot) return;
-      const tpl = document.getElementById('${tag}-tpl');
-      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
-    }
-  });
+  defineArtifact('${tag}', '${tag}-tpl', '${tag}-css');
 <\/script>`,
         usage: `<${tag}></${tag}>`
       };

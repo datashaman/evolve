@@ -1,6 +1,5 @@
 <!-- name: Site header -->
-<template id="x-site-header-tpl">
-  <style>
+<style id="x-site-header-css" media="not all">
     :host { display: block; }
     header {
       display: flex;
@@ -43,7 +42,9 @@
       header { align-items: flex-start; flex-direction: column; }
       nav { flex-wrap: wrap; gap: 14px; }
     }
-  </style>
+</style>
+
+<template id="x-site-header-tpl">
   <header>
     <a class="brand" href="#">
       <span class="mark" aria-hidden="true"></span>
@@ -57,13 +58,7 @@
 </template>
 
 <script>
-  customElements.define('x-site-header', class extends HTMLElement {
-    connectedCallback() {
-      if (this.shadowRoot) return;
-      const tpl = document.getElementById('x-site-header-tpl');
-      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
-    }
-  });
+  defineArtifact('x-site-header', 'x-site-header-tpl', 'x-site-header-css');
 </script>
 
 <script type="text/html" data-usage>

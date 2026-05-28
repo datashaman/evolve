@@ -1,6 +1,5 @@
 <!-- name: Hero section -->
-<template id="x-hero-section-tpl">
-  <style>
+<style id="x-hero-section-css" media="not all">
     :host { display: block; }
     section {
       display: grid;
@@ -55,7 +54,9 @@
     @media (max-width: 860px) {
       section { grid-template-columns: 1fr; }
     }
-  </style>
+</style>
+
+<template id="x-hero-section-tpl">
   <section>
     <div>
       <p class="eyebrow"><slot name="eyebrow">Strategy and delivery</slot></p>
@@ -73,13 +74,7 @@
 </template>
 
 <script>
-  customElements.define('x-hero-section', class extends HTMLElement {
-    connectedCallback() {
-      if (this.shadowRoot) return;
-      const tpl = document.getElementById('x-hero-section-tpl');
-      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
-    }
-  });
+  defineArtifact('x-hero-section', 'x-hero-section-tpl', 'x-hero-section-css');
 </script>
 
 <script type="text/html" data-usage>

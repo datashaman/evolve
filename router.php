@@ -170,15 +170,24 @@ function writeIfChanged(string $path, string $content): void {
 // browser when the file is injected into a page).
 function serializeComponent(array $c): string {
     $name       = $c['name'] ?? $c['id'] ?? '';
+    $requires   = array_values(array_filter($c['requires'] ?? []));
     $definition = rtrim($c['definition'] ?? '');
     $usage      = trim($c['usage'] ?? '');
-    return "<!-- name: {$name} -->\n{$definition}\n\n<script type=\"text/html\" data-usage>\n{$usage}\n</script>\n";
+    $header = "<!-- name: {$name} -->\n";
+    if ($requires) {
+        $header .= '<!-- requires: ' . implode(', ', $requires) . " -->\n";
+    }
+    return "{$header}{$definition}\n\n<script type=\"text/html\" data-usage>\n{$usage}\n</script>\n";
 }
 
 function parseComponent(string $id, string $content): array {
     $name = $id;
     if (preg_match('/<!--\s*name:\s*(.*?)\s*-->/', $content, $m)) {
         $name = $m[1];
+    }
+    $requires = [];
+    if (preg_match('/<!--\s*requires:\s*(.*?)\s*-->/', $content, $m)) {
+        $requires = array_values(array_filter(array_map('trim', explode(',', $m[1]))));
     }
     $usage = '';
     if (preg_match('/<script type="text\/html" data-usage>\s*([\s\S]*?)\s*<\/script>\s*$/', $content, $m)) {
@@ -187,10 +196,12 @@ function parseComponent(string $id, string $content): array {
     // Definition is everything except the name comment and the usage block.
     $definition = $content;
     $definition = preg_replace('/<!--\s*name:.*?-->\s*/', '', $definition, 1);
+    $definition = preg_replace('/<!--\s*requires:.*?-->\s*/', '', $definition, 1);
     $definition = preg_replace('/<script type="text\/html" data-usage>[\s\S]*?<\/script>\s*$/', '', $definition);
     return [
         'id'         => $id,
         'name'       => $name,
+        'requires'   => $requires,
         'definition' => trim($definition),
         'usage'      => $usage,
     ];
@@ -236,6 +247,21 @@ function buildDocument(string $usage, array $definitions, string $mode): string 
 <head>
   <meta charset=\"utf-8\">
   <style>{$tokens} {$body}</style>
+  <script>
+    window.defineArtifact = (tag, templateId, styleId) => {
+      if (customElements.get(tag)) return;
+      customElements.define(tag, class extends HTMLElement {
+        connectedCallback() {
+          if (this.shadowRoot) return;
+          const tpl = document.getElementById(templateId);
+          const css = document.getElementById(styleId);
+          const style = document.createElement('style');
+          style.textContent = css ? css.textContent : '';
+          this.attachShadow({ mode: 'open' }).append(style, tpl.content.cloneNode(true));
+        }
+      });
+    };
+  </script>
 {$defs}
 </head>
 <body>
@@ -263,15 +289,36 @@ function renderArtifactRoute(string $id, string $dir, string $mode, string $notF
     $artifact = parseComponent($id, file_get_contents($path));
 
     header('Content-Type: text/html');
-    echo buildDocument($artifact['usage'], allDefinitions(), $mode);
+    echo buildDocument($artifact['usage'], requiredDefinitions($artifact), $mode);
 }
 
-function allDefinitions(): array {
+function requiredDefinitions(array $artifact): array {
     $defs = [];
-    foreach (artifactDirs() as $dir) {
-        foreach (readArtifacts($dir) as $artifact) {
-            $defs[] = $artifact['definition'];
-        }
+    $seen = [];
+    foreach ($artifact['requires'] ?? [] as $ref) {
+        collectRequiredDefinition($ref, $defs, $seen);
     }
+    $defs[] = $artifact['definition'];
     return $defs;
+}
+
+function collectRequiredDefinition(string $ref, array &$defs, array &$seen): void {
+    $ref = trim($ref);
+    if ($ref === '' || isset($seen[$ref])) return;
+    $seen[$ref] = true;
+
+    $parts = explode('/', $ref, 2);
+    if (count($parts) !== 2) return;
+    [$kind, $id] = $parts;
+    $dirs = artifactDirs();
+    if (empty($dirs[$kind])) return;
+
+    $path = $dirs[$kind] . '/' . safeId($id) . '.html';
+    if (!is_file($path)) return;
+
+    $artifact = parseComponent(safeId($id), file_get_contents($path));
+    foreach ($artifact['requires'] ?? [] as $childRef) {
+        collectRequiredDefinition($childRef, $defs, $seen);
+    }
+    $defs[] = $artifact['definition'];
 }

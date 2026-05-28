@@ -1,6 +1,6 @@
 <!-- name: Home -->
-<template id="x-home-page-tpl">
-  <style>
+<!-- requires: layout/marketing-layout, component/site-header, component/hero-section, component/feature-card, component/cta-panel -->
+<style id="x-home-page-css" media="not all">
     :host { display: block; }
     .services {
       display: grid;
@@ -46,7 +46,9 @@
       .grid,
       .proof { grid-template-columns: 1fr; }
     }
-  </style>
+</style>
+
+<template id="x-home-page-tpl">
   <x-marketing-layout>
     <x-site-header slot="header">
       <span slot="brand">Northstar Studio</span>
@@ -128,13 +130,7 @@
 </template>
 
 <script>
-  customElements.define('x-home-page', class extends HTMLElement {
-    connectedCallback() {
-      if (this.shadowRoot) return;
-      const tpl = document.getElementById('x-home-page-tpl');
-      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
-    }
-  });
+  defineArtifact('x-home-page', 'x-home-page-tpl', 'x-home-page-css');
 </script>
 
 <script type="text/html" data-usage>

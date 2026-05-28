@@ -1,6 +1,5 @@
 <!-- name: CTA panel -->
-<template id="x-cta-panel-tpl">
-  <style>
+<style id="x-cta-panel-css" media="not all">
     :host { display: block; }
     section {
       display: grid;
@@ -41,7 +40,9 @@
       section { grid-template-columns: 1fr; }
       a { justify-content: center; }
     }
-  </style>
+</style>
+
+<template id="x-cta-panel-tpl">
   <section id="contact">
     <div>
       <h2><slot name="title">Ready to turn this into your site?</slot></h2>
@@ -52,13 +53,7 @@
 </template>
 
 <script>
-  customElements.define('x-cta-panel', class extends HTMLElement {
-    connectedCallback() {
-      if (this.shadowRoot) return;
-      const tpl = document.getElementById('x-cta-panel-tpl');
-      this.attachShadow({ mode: 'open' }).append(tpl.content.cloneNode(true));
-    }
-  });
+  defineArtifact('x-cta-panel', 'x-cta-panel-tpl', 'x-cta-panel-css');
 </script>
 
 <script type="text/html" data-usage>
