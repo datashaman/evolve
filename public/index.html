@@ -87,6 +87,12 @@
     .sidebar li:hover { background: #3f3f46; }
     .sidebar li.active { background: #4338ca; color: #fff; }
     .sidebar li .label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sidebar li.page-item { padding-left: calc(12px + var(--depth, 0) * 16px); }
+    .sidebar li.page-item .slug {
+      max-width: 86px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      color: #a1a1aa; font-size: 11px;
+    }
+    .sidebar li.page-item.active .slug { color: #c7d2fe; }
     .sidebar li .del {
       visibility: hidden; border: 0; background: transparent; color: inherit;
       cursor: pointer; font-size: 15px; opacity: .7;
@@ -439,7 +445,8 @@ ${usage}
     function expandLayoutTag(attrs, inner, defs, seen, context) {
       const node = parseCompositionNode('x-layout', attrs);
       const artifact = artifactByRef(layoutRef(node?.getAttribute('src') ?? ''));
-      return renderArtifactInstance(node, artifact, inner, defs, seen, context);
+      const template = expandParts(expandUses(artifactTemplate(artifact), defs, seen, context), pageParts(inner), defs, seen, context);
+      return renderArtifactInstance(node, artifact, '', defs, seen, context, template);
     }
 
     function parseCompositionNode(tag, attrs) {
@@ -597,9 +604,12 @@ ${usage}
       return '/' + slug.replace(/^\/+|\/+$/g, '').replace(/^-+|-+$/g, '');
     }
 
-    function makeItem(c) {
+    function makeItem(c, options = {}) {
       const li = document.createElement('li');
+      if (options.className) li.classList.add(options.className);
+      if (Number.isFinite(options.depth)) li.style.setProperty('--depth', options.depth);
       if (c.id === selectedId) li.className = 'active';
+      if (options.className) li.classList.add(options.className);
 
       if (c.id === pendingDeleteId) {
         const label = document.createElement('span');
@@ -619,15 +629,53 @@ ${usage}
         const label = document.createElement('span');
         label.className = 'label';
         label.textContent = c.name || '(unnamed)';
+        const meta = options.meta ? document.createElement('span') : null;
+        if (meta) {
+          meta.className = 'slug';
+          meta.textContent = options.meta;
+          meta.title = options.meta;
+        }
         const del = document.createElement('button');
         del.className = 'del';
         del.textContent = '×';
         del.title = 'Delete';
         del.onclick = (e) => { e.stopPropagation(); pendingDeleteId = c.id; renderLists(); };
-        li.append(label, del);
+        li.append(label);
+        if (meta) li.append(meta);
+        li.append(del);
         li.onclick = () => select(c.id);
       }
       return li;
+    }
+
+    function pageRows() {
+      const indexed = pages()
+        .map(page => ({ ...page, slug: slugify(page.slug), parent: parentSlug(page.slug) }))
+        .sort((a, b) => a.slug.localeCompare(b.slug));
+      const children = new Map();
+      indexed.forEach(page => {
+        const group = children.get(page.parent) ?? [];
+        group.push(page);
+        children.set(page.parent, group);
+      });
+
+      const rows = [];
+      const seen = new Set();
+      function append(parent, depth) {
+        (children.get(parent) ?? []).forEach(page => {
+          if (seen.has(page.id)) return;
+          seen.add(page.id);
+          rows.push({ page, depth });
+          append(page.slug, depth + 1);
+        });
+      }
+
+      append('', 0);
+      indexed.forEach(page => {
+        if (seen.has(page.id)) return;
+        rows.push({ page, depth: 0 });
+      });
+      return rows;
     }
 
     function renderLists() {
@@ -639,7 +687,9 @@ ${usage}
       pl.innerHTML = '';
       components().forEach(c => cl.append(makeItem(c)));
       layouts().forEach(l => ll.append(makeItem(l)));
-      pages().forEach(p => pl.append(makeItem(p)));
+      pageRows().forEach(({ page, depth }) => {
+        pl.append(makeItem(page, { className: 'page-item', depth, meta: slugify(page.slug) }));
+      });
       document.getElementById('empty-components').textContent = loadError || 'No components yet.';
       document.getElementById('empty-components').hidden = !loadError && components().length > 0;
       document.getElementById('empty-layouts').textContent = loadError ? '' : 'No layouts yet.';

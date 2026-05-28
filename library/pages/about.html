@@ -2,19 +2,21 @@
 <!-- tag: x-about-page -->
 <!-- title: About -->
 <!-- slug: /about -->
-<!-- layout: marketing-layout -->
-<style id="x-home-page-css" media="not all">
+<!-- layout: about-layout -->
+<style id="x-about-page-css" media="not all">
     :host { display: block; }
-    .services {
+    .story {
       display: grid;
-      gap: 18px;
+      gap: 20px;
+      max-width: 760px;
     }
-    .section-head {
+    .section-head,
+    .principles {
       display: grid;
-      gap: 10px;
-      max-width: 680px;
+      gap: 16px;
     }
     .section-head p,
+    .story p,
     .metric p {
       margin: 0;
       color: var(--text-muted, #5f6f7a);
@@ -25,19 +27,39 @@
       color: var(--text, #172026);
       font: 740 clamp(30px, 4vw, 46px)/1.05 var(--font-sans, system-ui, sans-serif);
     }
-    .grid {
+    .principles {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 12px;
+    }
+    .profile {
+      display: grid;
       gap: 16px;
     }
-    .proof {
+    .profile dl {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
-      padding: 22px;
-      border: 1px solid var(--border, #d9e2ea);
-      border-radius: var(--radius, 16px);
-      background: var(--surface, #fff);
+      gap: 14px;
+      margin: 0;
+    }
+    .profile div {
+      display: grid;
+      gap: 4px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border, #d9e2ea);
+    }
+    .profile div:last-child { border-bottom: 0; padding-bottom: 0; }
+    .profile dt {
+      color: var(--text-muted, #5f6f7a);
+      font-size: 12px;
+      font-weight: 760;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .profile dd {
+      margin: 0;
+      color: var(--text, #172026);
+      font-size: 15px;
+      line-height: 1.45;
     }
     .metric strong {
       display: block;
@@ -46,75 +68,62 @@
       font: 780 34px/1 var(--font-sans, system-ui, sans-serif);
     }
     @media (max-width: 820px) {
-      .grid,
-      .proof { grid-template-columns: 1fr; }
+      .principles { grid-template-columns: 1fr; }
     }
 </style>
 
-<template id="x-home-page-tpl">
+<template id="x-about-page-tpl">
   <part name="hero">
-    <x-component src="hero-section">
-      <span slot="eyebrow">About Northstar Studio</span>
-      <span slot="title">A focused studio for practical service-business websites.</span>
-      <span slot="body">We shape compact web systems from reusable content parts, server-rendered components, and durable design tokens.</span>
-      <span slot="primary">Start from this scaffold</span>
-      <span slot="secondary">Review the sections</span>
-      <div slot="aside" class="proof">
-        <div class="metric">
-          <strong>6</strong>
-          <p>Server-rendered artifacts</p>
-        </div>
-        <div class="metric">
-          <strong>3</strong>
-          <p>Library types sharing one model</p>
-        </div>
-        <div class="metric">
-          <strong>1</strong>
-          <p>Token file controlling the theme</p>
-        </div>
+    <section class="intro">
+      <p class="eyebrow">About Northstar Studio</p>
+      <h1>A small studio for practical, durable service-business websites.</h1>
+      <p class="lede">We shape compact web systems from reusable content parts, server-rendered components, and design tokens that stay understandable after launch.</p>
+      <div class="actions">
+        <a class="button" href="#contact">Start a conversation</a>
+        <a class="button secondary" href="#approach">Read the approach</a>
       </div>
-    </x-component>
+    </section>
   </part>
 
   <part name="main">
-    <section id="services" class="services">
+    <section id="approach" class="story">
       <div class="section-head">
-        <h2>How we work.</h2>
-        <p>We keep page structure explicit, reusable pieces small, and the rendered site understandable from the source files.</p>
+        <h2>Built for teams that need the website to stay legible.</h2>
+        <p>Northstar keeps the production site close to the language people already use: pages, layouts, parts, and reusable components. The goal is a system a designer, developer, or operator can inspect without reverse-engineering a bundle.</p>
       </div>
-      <div class="grid">
+      <p>Every page starts with the real content structure, then gets wrapped by a layout suited to the job. A landing page can be campaign-led. An about page can be editorial. The components underneath stay reusable without forcing every page into the same shape.</p>
+      <div class="principles">
         <x-component src="feature-card">
           <span slot="icon">01</span>
-          <span slot="title">Offer clarity</span>
-          <span slot="body">Structure the page around the customer problem, service promise, and next step.</span>
+          <span slot="title">Clear boundaries</span>
+          <span slot="body">Components own local markup and style. Layouts own the page frame. Pages own the content parts.</span>
         </x-component>
         <x-component src="feature-card">
           <span slot="icon">02</span>
-          <span slot="title">Reusable sections</span>
-          <span slot="body">Edit once, reuse across pages, and keep the site system small enough to understand.</span>
-        </x-component>
-        <x-component src="feature-card">
-          <span slot="icon">03</span>
-          <span slot="title">Token-driven theme</span>
-          <span slot="body">Adjust color, spacing, radius, and typography without hunting through every artifact.</span>
+          <span slot="title">HTML composition</span>
+          <span slot="body">Authors compose with readable tags while the server renders final HTML for the browser.</span>
         </x-component>
       </div>
     </section>
+  </part>
 
-    <section id="proof" class="proof">
-      <div class="metric">
-        <strong>HTML</strong>
-        <p>Pages author layouts and components with HTML-like composition tags that render on the server.</p>
-      </div>
-      <div class="metric">
-        <strong>CSS</strong>
-        <p>Design tokens stay shared while each rendered artifact keeps its local style boundary.</p>
-      </div>
-      <div class="metric">
-        <strong>JS</strong>
-        <p>Client scripts become optional enhancement, not the mechanism that makes the page render.</p>
-      </div>
-    </section>
+  <part name="aside">
+    <div class="profile">
+      <dl>
+        <div>
+          <dt>Focus</dt>
+          <dd>Service businesses, expert teams, and productized consulting offers.</dd>
+        </div>
+        <div>
+          <dt>System</dt>
+          <dd>Server-rendered pages, reusable components, explicit content parts.</dd>
+        </div>
+        <div>
+          <dt>Baseline</dt>
+          <dd>Fast HTML first, optional client-side enhancement only where it earns its place.</dd>
+        </div>
+      </dl>
+    </div>
   </part>
 
   <part name="cta">
@@ -131,5 +140,5 @@
 </template>
 
 <script type="text/html" data-usage>
-<x-home-page></x-home-page>
+<x-about-page></x-about-page>
 </script>

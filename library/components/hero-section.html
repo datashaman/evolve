@@ -7,7 +7,7 @@
       grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr);
       gap: clamp(28px, 6vw, 72px);
       align-items: center;
-      padding: clamp(48px, 8vw, 96px) 0;
+      padding: var(--hero-block-padding, clamp(48px, 8vw, 96px)) 0;
     }
     .eyebrow {
       margin: 0 0 14px;
@@ -69,7 +69,10 @@
       </div>
     </div>
     <div class="panel">
-      <slot name="aside"></slot>
+      <slot name="aside">
+        <strong>Site system</strong>
+        <p>Reusable sections, shared tokens, and server-rendered pages are ready to customize.</p>
+      </slot>
     </div>
   </section>
 </template>
@@ -79,5 +82,9 @@
   <span slot="eyebrow">Studio starter</span>
   <span slot="title">A practical website scaffold for a service business.</span>
   <span slot="body">Use this seed as a realistic starting point: navigation, hero, service cards, CTA, layout, and page composition.</span>
+  <div slot="aside">
+    <strong>Preview panel</strong>
+    <p>Use this area for proof points, a service summary, or a compact lead form.</p>
+  </div>
 </x-hero-section>
 </script>

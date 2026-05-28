@@ -16,11 +16,14 @@
     }
     main {
       display: grid;
-      gap: clamp(44px, 7vw, 88px);
-      padding-bottom: 64px;
+      gap: clamp(28px, 4vw, 56px);
+      padding-bottom: 48px;
+    }
+    x-hero-section {
+      --hero-block-padding: clamp(28px, 5vw, 64px);
     }
     footer {
-      padding: 28px 0 42px;
+      padding: 22px 0 34px;
       color: var(--text-muted, #5f6f7a);
       font-size: 14px;
       border-top: 1px solid var(--border, #d9e2ea);
@@ -52,16 +55,24 @@
 
 <script type="text/html" data-usage>
 <x-layout src="marketing-layout">
-  <x-component src="hero-section">
-    <span slot="eyebrow">Layout preview</span>
-    <span slot="title">A marketing shell with a built-in header.</span>
-    <span slot="body">This layout owns the navigation and renders supplied page sections into its main content slot.</span>
-  </x-component>
-  <x-component src="cta-panel">
-    <span slot="title">Drop page content into this shell.</span>
-    <span slot="body">Use layout usage to preview the frame with realistic sections.</span>
-    <span slot="action">Preview action</span>
-  </x-component>
-  <span slot="footer">Layout preview footer content.</span>
+  <part name="hero">
+    <x-component src="hero-section">
+      <span slot="eyebrow">Layout preview</span>
+      <span slot="title">A marketing shell with a built-in header.</span>
+      <span slot="body">This layout owns the navigation and renders supplied page sections into its main content slot.</span>
+      <div slot="aside">
+        <strong>Marketing preview</strong>
+        <p>Place campaign proof, launch metrics, or a featured offer in this side panel.</p>
+      </div>
+    </x-component>
+  </part>
+  <part name="cta">
+    <x-component src="cta-panel">
+      <span slot="title">Drop page content into this shell.</span>
+      <span slot="body">Use layout usage to preview the frame with realistic sections.</span>
+      <span slot="action">Preview action</span>
+    </x-component>
+  </part>
+  <part name="footer">Layout preview footer content.</part>
 </x-layout>
 </script>

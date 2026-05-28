@@ -559,7 +559,8 @@ function expandLayoutTag(string $attrs, string $inner, array &$defs, array &$see
 
     $artifact = parseComponent(basename($path, '.html'), file_get_contents($path));
     $attrs = preg_replace('/\s*\bsrc\s*=\s*(["\']).*?\1/i', '', $attrs, 1);
-    return renderArtifactInstance($artifact, $attrs, $inner, $defs, $seen, $context);
+    $template = expandParts(expandUses(artifactTemplate($artifact), $defs, $seen, $context), pageParts($inner), $defs, $seen, $context);
+    return renderArtifactInstance($artifact, $attrs, '', $defs, $seen, $context, $template);
 }
 
 function renderArtifactUsage(array $artifact, string $usage, array &$defs, array &$seen, array $context): string {

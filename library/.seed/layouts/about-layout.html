@@ -1,0 +1,210 @@
+<!-- name: About layout -->
+<!-- tag: x-about-layout -->
+<style id="x-about-layout-css" media="not all">
+    :host { display: block; }
+    .shell {
+      min-height: 100vh;
+      background:
+        linear-gradient(90deg, color-mix(in srgb, var(--accent, #2563eb) 7%, transparent), transparent 40%),
+        var(--surface-soft, #f6f8fb);
+      color: var(--text, #172026);
+      font-family: var(--font-sans, system-ui, sans-serif);
+    }
+    .wrap {
+      width: min(1120px, calc(100vw - 40px));
+      margin: 0 auto;
+    }
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+      gap: clamp(28px, 5vw, 64px);
+      align-items: start;
+      padding: clamp(34px, 6vw, 72px) 0 72px;
+    }
+    .content {
+      display: grid;
+      gap: clamp(34px, 5vw, 58px);
+      min-width: 0;
+    }
+    .intro {
+      display: grid;
+      gap: 22px;
+      max-width: 760px;
+    }
+    .eyebrow {
+      margin: 0;
+      color: var(--accent, #2563eb);
+      font-size: 13px;
+      font-weight: 780;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    h1 {
+      max-width: 820px;
+      margin: 0;
+      color: var(--text, #172026);
+      font: 760 clamp(46px, 6vw, 82px)/.95 var(--font-sans, system-ui, sans-serif);
+    }
+    h2 {
+      margin: 0;
+      color: var(--text, #172026);
+      font: 740 clamp(28px, 3vw, 42px)/1.05 var(--font-sans, system-ui, sans-serif);
+    }
+    p {
+      margin: 0;
+      color: var(--text-muted, #5f6f7a);
+      font-size: 17px;
+      line-height: 1.65;
+    }
+    .lede {
+      max-width: 680px;
+      font-size: 20px;
+      line-height: 1.6;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      min-height: 46px;
+      padding: 0 18px;
+      border-radius: var(--radius-sm, 8px);
+      background: var(--accent, #2563eb);
+      color: white;
+      font-weight: 760;
+      text-decoration: none;
+    }
+    .button.secondary {
+      background: var(--surface-strong, #edf2f7);
+      color: var(--text, #172026);
+    }
+    .story {
+      display: grid;
+      gap: 20px;
+      max-width: 760px;
+    }
+    .section-head,
+    .principles {
+      display: grid;
+      gap: 16px;
+    }
+    .principles {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 12px;
+    }
+    .aside {
+      position: sticky;
+      top: 24px;
+      display: grid;
+      gap: 16px;
+      padding: 22px;
+      border: 1px solid var(--border, #d9e2ea);
+      border-radius: var(--radius, 16px);
+      background: color-mix(in srgb, var(--surface, #fff) 92%, transparent);
+      box-shadow: 0 18px 50px rgba(23,32,38,.08);
+    }
+    .aside-title {
+      margin: 0;
+      color: var(--text-muted, #5f6f7a);
+      font-size: 12px;
+      font-weight: 760;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .profile dl {
+      display: grid;
+      gap: 14px;
+      margin: 0;
+    }
+    .profile div {
+      display: grid;
+      gap: 4px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border, #d9e2ea);
+    }
+    .profile div:last-child { border-bottom: 0; padding-bottom: 0; }
+    .profile dt {
+      color: var(--text-muted, #5f6f7a);
+      font-size: 12px;
+      font-weight: 760;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .profile dd {
+      margin: 0;
+      color: var(--text, #172026);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    footer {
+      padding: 28px 0 42px;
+      color: var(--text-muted, #5f6f7a);
+      font-size: 14px;
+      border-top: 1px solid var(--border, #d9e2ea);
+    }
+    @media (max-width: 860px) {
+      main { grid-template-columns: 1fr; }
+      .aside { position: static; }
+      .principles { grid-template-columns: 1fr; }
+    }
+</style>
+
+<template id="x-about-layout-tpl">
+  <div class="shell">
+    <div class="wrap">
+      <x-component src="site-header">
+        <span slot="brand">Northstar Studio</span>
+        <x-pages parent="/">
+          <a slot="nav" href="{url}">{title}</a>
+        </x-pages>
+        <a slot="nav" href="#contact">Contact</a>
+        <span slot="action">Start a conversation</span>
+      </x-component>
+      <main>
+        <div class="content">
+          <x-part name="hero" />
+          <x-part name="main" />
+          <x-part name="cta" />
+        </div>
+        <aside class="aside">
+          <p class="aside-title">Studio profile</p>
+          <x-part name="aside">
+            A compact layout for about pages, case-study intros, and credibility-led content.
+          </x-part>
+        </aside>
+      </main>
+      <footer>
+        <x-part name="footer">Built with the component workbench.</x-part>
+      </footer>
+    </div>
+  </div>
+</template>
+
+<script type="text/html" data-usage>
+<x-layout src="about-layout">
+  <part name="hero">
+    <section class="intro">
+      <p class="eyebrow">Layout preview</p>
+      <h1>An editorial shell for trust-building pages.</h1>
+      <p class="lede">Use this layout when the page needs narrative content, supporting notes, and a persistent side panel.</p>
+      <div class="actions">
+        <a class="button" href="#contact">Start a project</a>
+        <a class="button secondary" href="#approach">Read the approach</a>
+      </div>
+    </section>
+  </part>
+  <part name="main">
+    <x-component src="feature-card">
+      <span slot="icon">01</span>
+      <span slot="title">Narrative first</span>
+      <span slot="body">The main column carries the story while the side panel holds compact proof points.</span>
+    </x-component>
+  </part>
+  <part name="aside">Preview side-panel content.</part>
+  <part name="footer">About layout preview footer.</part>
+</x-layout>
+</script>
