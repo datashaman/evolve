@@ -185,23 +185,29 @@ function writeIfChanged(string $path, string $content): void {
     }
 }
 
-// A component file is a real, includable artifact: the definition (template +
-// style + script). The display name rides in a leading comment, and the example
-// usage in a trailing inert <script type="text/html"> block (ignored by the
-// browser when the file is injected into a page).
+// An artifact file is source plus metadata. The display name/tag ride in leading
+// comments, and the example usage lives in a trailing inert script block.
 function serializeComponent(array $c): string {
     $name       = $c['name'] ?? $c['id'] ?? '';
+    $tag        = safeTag($c['tag'] ?? artifactTag($c));
     $title      = $c['title'] ?? '';
     $slug       = array_key_exists('slug', $c) ? safeSlug($c['slug']) : '';
+    $layout     = safeLayoutName($c['layout'] ?? '');
     $requires   = array_values(array_filter($c['requires'] ?? []));
     $definition = rtrim($c['definition'] ?? '');
     $usage      = trim($c['usage'] ?? '');
     $header = "<!-- name: {$name} -->\n";
+    if ($tag !== '') {
+        $header .= "<!-- tag: {$tag} -->\n";
+    }
     if ($title !== '') {
         $header .= "<!-- title: {$title} -->\n";
     }
     if ($slug !== '') {
         $header .= "<!-- slug: {$slug} -->\n";
+    }
+    if ($layout !== '') {
+        $header .= "<!-- layout: {$layout} -->\n";
     }
     if ($requires) {
         $header .= '<!-- requires: ' . implode(', ', $requires) . " -->\n";
@@ -214,6 +220,10 @@ function parseComponent(string $id, string $content): array {
     if (preg_match('/<!--\s*name:\s*(.*?)\s*-->/', $content, $m)) {
         $name = $m[1];
     }
+    $tag = '';
+    if (preg_match('/<!--\s*tag:\s*(.*?)\s*-->/', $content, $m)) {
+        $tag = safeTag($m[1]);
+    }
     $title = '';
     if (preg_match('/<!--\s*title:\s*(.*?)\s*-->/', $content, $m)) {
         $title = $m[1];
@@ -221,6 +231,10 @@ function parseComponent(string $id, string $content): array {
     $slug = '';
     if (preg_match('/<!--\s*slug:\s*(.*?)\s*-->/', $content, $m)) {
         $slug = safeSlug($m[1]);
+    }
+    $layout = '';
+    if (preg_match('/<!--\s*layout:\s*(.*?)\s*-->/', $content, $m)) {
+        $layout = safeLayoutName($m[1]);
     }
     $requires = [];
     if (preg_match('/<!--\s*requires:\s*(.*?)\s*-->/', $content, $m)) {
@@ -230,18 +244,22 @@ function parseComponent(string $id, string $content): array {
     if (preg_match('/<script type="text\/html" data-usage>\s*([\s\S]*?)\s*<\/script>\s*$/', $content, $m)) {
         $usage = $m[1];
     }
-    // Definition is everything except the name comment and the usage block.
+    // Definition is the source block after metadata and before usage.
     $definition = $content;
     $definition = preg_replace('/<!--\s*name:.*?-->\s*/', '', $definition, 1);
+    $definition = preg_replace('/<!--\s*tag:.*?-->\s*/', '', $definition, 1);
     $definition = preg_replace('/<!--\s*title:.*?-->\s*/', '', $definition, 1);
     $definition = preg_replace('/<!--\s*slug:.*?-->\s*/', '', $definition, 1);
+    $definition = preg_replace('/<!--\s*layout:.*?-->\s*/', '', $definition, 1);
     $definition = preg_replace('/<!--\s*requires:.*?-->\s*/', '', $definition, 1);
     $definition = preg_replace('/<script type="text\/html" data-usage>[\s\S]*?<\/script>\s*$/', '', $definition);
     return [
         'id'         => $id,
         'name'       => $name,
+        'tag'        => $tag,
         'title'      => $title,
         'slug'       => $slug,
+        'layout'     => $layout,
         'requires'   => $requires,
         'definition' => trim($definition),
         'usage'      => $usage,
@@ -253,9 +271,8 @@ function loadTokens(): string {
     return is_file($path) ? file_get_contents($path) : '';
 }
 
-// Mirror of the client's buildDocument: tokens + definitions (registered once)
-// in <head>, usage in <body>. 'component' centers a single element on a grid
-// backdrop; pages/layouts own the full canvas.
+// Mirror of the client's buildDocument: tokens plus rendered artifact markup.
+// Component previews center a single artifact; pages/layouts own the full canvas.
 function buildDocument(string $usage, array $definitions, string $mode, string $title = 'Component Workbench'): string {
     $body = $mode === 'page'
         ? "html, body { min-height: 100%; }
@@ -282,7 +299,6 @@ function buildDocument(string $usage, array $definitions, string $mode, string $
             background-size: 16px 16px;
           }";
     $tokens = loadTokens();
-    $defs = implode("\n", $definitions);
     return "<!DOCTYPE html>
 <html>
 <head>
@@ -290,21 +306,24 @@ function buildDocument(string $usage, array $definitions, string $mode, string $
   <title>" . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . "</title>
   <style>{$tokens} {$body}</style>
   <script>
-    window.defineArtifact = (tag, templateId, styleId) => {
-      if (customElements.get(tag)) return;
-      customElements.define(tag, class extends HTMLElement {
-        connectedCallback() {
-          if (this.shadowRoot) return;
-          const tpl = document.getElementById(templateId);
-          const css = document.getElementById(styleId);
-          const style = document.createElement('style');
-          style.textContent = css ? css.textContent : '';
-          this.attachShadow({ mode: 'open' }).append(style, tpl.content.cloneNode(true));
-        }
-      });
-    };
+    (() => {
+      const activate = (root = document) => {
+        root.querySelectorAll('template[shadowrootmode]').forEach((tpl) => {
+          const host = tpl.parentElement;
+          if (!host || host.shadowRoot) return;
+          const shadow = host.attachShadow({ mode: tpl.getAttribute('shadowrootmode') || 'open' });
+          shadow.append(tpl.content);
+          tpl.remove();
+          activate(shadow);
+        });
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => activate());
+      } else {
+        activate();
+      }
+    })();
   </script>
-{$defs}
 </head>
 <body>
 {$usage}
@@ -357,12 +376,53 @@ function pagePathBySlug(string $slug): string {
 function renderedArtifactParts(array $artifact): array {
     $defs = [];
     $seen = [];
-    foreach ($artifact['requires'] ?? [] as $ref) {
-        collectRequiredDefinition($ref, $defs, $seen);
-    }
-    $defs[] = expandUses($artifact['definition'], $defs, $seen);
-    $usage = expandUses($artifact['usage'], $defs, $seen);
+    $usage = $artifact['layout'] !== ''
+        ? renderPageParts($artifact, $defs, $seen)
+        : renderArtifactUsage($artifact, expandUses($artifact['usage'], $defs, $seen), $defs, $seen);
     return [$usage, $defs];
+}
+
+function expandPartFallbacks(string $html, array &$defs, array &$seen): string {
+    return expandParts($html, [], $defs, $seen);
+}
+
+function renderPageParts(array $page, array &$defs, array &$seen): string {
+    $layoutPath = requiredPath(layoutRef($page['layout']));
+    if (!is_file($layoutPath)) return expandUses($page['definition'], $defs, $seen);
+
+    $layout = parseComponent(basename($layoutPath, '.html'), file_get_contents($layoutPath));
+    $parts = pageParts($page['definition']);
+    $template = expandParts(expandUses(artifactTemplate($layout), $defs, $seen), $parts, $defs, $seen);
+    return renderArtifactInstance($layout, '', '', $defs, $seen, $template);
+}
+
+function pageParts(string $html): array {
+    $parts = [];
+    $pattern = '#<part\b([^>]*)>((?:(?!<part\b).)*?)</part>#is';
+    preg_match_all($pattern, $html, $matches, PREG_SET_ORDER);
+    foreach ($matches as $m) {
+        if (!preg_match('/\bname\s*=\s*(["\'])(.*?)\1/i', $m[1], $name)) continue;
+        $key = safePartName($name[2]);
+        if ($key !== '') $parts[$key] = $m[2];
+    }
+    return $parts;
+}
+
+function expandParts(string $html, array $parts, array &$defs, array &$seen): string {
+    $paired = '#<x-part\b([^>]*)>((?:(?!<x-part\b).)*?)</x-part>#is';
+    $html = preg_replace_callback($paired, function ($m) use ($parts, &$defs, &$seen) {
+        return renderPartTag($m[1], $m[2], $parts, $defs, $seen);
+    }, $html);
+
+    return preg_replace_callback('#<x-part\b([^>]*)/>#is', function ($m) use ($parts, &$defs, &$seen) {
+        return renderPartTag($m[1], '', $parts, $defs, $seen);
+    }, $html);
+}
+
+function renderPartTag(string $attrs, string $fallback, array $parts, array &$defs, array &$seen): string {
+    if (!preg_match('/\bname\s*=\s*(["\'])(.*?)\1/i', $attrs, $m)) return '';
+    $name = safePartName($m[2]);
+    return expandUses($parts[$name] ?? $fallback, $defs, $seen);
 }
 
 function collectRequiredDefinition(string $ref, array &$defs, array &$seen): void {
@@ -377,7 +437,6 @@ function collectRequiredDefinition(string $ref, array &$defs, array &$seen): voi
     foreach ($artifact['requires'] ?? [] as $childRef) {
         collectRequiredDefinition($childRef, $defs, $seen);
     }
-    $defs[] = expandUses($artifact['definition'], $defs, $seen);
 }
 
 function expandUses(string $html, array &$defs, array &$seen): string {
@@ -392,7 +451,7 @@ function expandUses(string $html, array &$defs, array &$seen): string {
         }, $html);
     }
 
-    return preg_replace_callback('#<(x-use|x-component|x-layout)\b([^>]*)/?>#is', function ($m) use (&$defs, &$seen) {
+    return preg_replace_callback('#<(x-use|x-component|x-layout)\b([^>]*)/>#is', function ($m) use (&$defs, &$seen) {
         return match ($m[1]) {
             'x-component' => expandComponentTag($m[2], '', $defs, $seen),
             'x-layout' => expandLayoutTag($m[2], '', $defs, $seen),
@@ -409,13 +468,8 @@ function expandUseTag(string $attrs, string $inner, array &$defs, array &$seen):
     if (!is_file($path)) return '';
 
     $artifact = parseComponent(basename($path, '.html'), file_get_contents($path));
-    collectRequiredDefinition($ref, $defs, $seen);
-
-    $tag = artifactTag($artifact);
-    if ($tag === '') return $inner;
-
     $attrs = preg_replace('/\s*\bsrc\s*=\s*(["\']).*?\1/i', '', $attrs, 1);
-    return "<{$tag}{$attrs}>{$inner}</{$tag}>";
+    return renderArtifactInstance($artifact, $attrs, $inner, $defs, $seen);
 }
 
 function expandComponentTag(string $attrs, string $inner, array &$defs, array &$seen): string {
@@ -427,13 +481,8 @@ function expandComponentTag(string $attrs, string $inner, array &$defs, array &$
     if (!is_file($path)) return '';
 
     $artifact = parseComponent(basename($path, '.html'), file_get_contents($path));
-    collectRequiredDefinition($ref, $defs, $seen);
-
-    $tag = artifactTag($artifact);
-    if ($tag === '') return $inner;
-
     $attrs = preg_replace('/\s*\bsrc\s*=\s*(["\']).*?\1/i', '', $attrs, 1);
-    return "<{$tag}{$attrs}>{$inner}</{$tag}>";
+    return renderArtifactInstance($artifact, $attrs, $inner, $defs, $seen);
 }
 
 function expandLayoutTag(string $attrs, string $inner, array &$defs, array &$seen): string {
@@ -445,13 +494,54 @@ function expandLayoutTag(string $attrs, string $inner, array &$defs, array &$see
     if (!is_file($path)) return '';
 
     $artifact = parseComponent(basename($path, '.html'), file_get_contents($path));
-    collectRequiredDefinition($ref, $defs, $seen);
+    $attrs = preg_replace('/\s*\bsrc\s*=\s*(["\']).*?\1/i', '', $attrs, 1);
+    return renderArtifactInstance($artifact, $attrs, $inner, $defs, $seen);
+}
 
+function renderArtifactUsage(array $artifact, string $usage, array &$defs, array &$seen): string {
+    $tag = artifactTag($artifact);
+    if ($tag === '') return $usage;
+
+    $paired = '#<' . preg_quote($tag, '#') . '\b([^>]*)>((?:(?!<' . preg_quote($tag, '#') . '\b).)*?)</' . preg_quote($tag, '#') . '>#is';
+    $usage = preg_replace_callback($paired, function ($m) use ($artifact, &$defs, &$seen) {
+        if (preg_match('/^\s*<template\b[^>]*\bshadowrootmode=/i', $m[2])) return $m[0];
+        return renderArtifactInstance($artifact, $m[1], $m[2], $defs, $seen);
+    }, $usage);
+
+    return preg_replace_callback('#<' . preg_quote($tag, '#') . '\b([^>]*)/>#is', function ($m) use ($artifact, &$defs, &$seen) {
+        return renderArtifactInstance($artifact, $m[1], '', $defs, $seen);
+    }, $usage);
+}
+
+function renderArtifactInstance(array $artifact, string $attrs, string $inner, array &$defs, array &$seen, ?string $templateOverride = null): string {
     $tag = artifactTag($artifact);
     if ($tag === '') return $inner;
 
-    $attrs = preg_replace('/\s*\bsrc\s*=\s*(["\']).*?\1/i', '', $attrs, 1);
-    return "<{$tag}{$attrs}>{$inner}</{$tag}>";
+    foreach ($artifact['requires'] ?? [] as $ref) {
+        collectRequiredDefinition($ref, $defs, $seen);
+    }
+
+    $style = artifactStyle($artifact);
+    $template = $templateOverride ?? expandPartFallbacks(expandUses(artifactTemplate($artifact), $defs, $seen), $defs, $seen);
+    $inner = expandUses($inner, $defs, $seen);
+    $attrs = trim($attrs);
+    $attrs = $attrs === '' ? '' : ' ' . $attrs;
+
+    return "<{$tag}{$attrs}><template shadowrootmode=\"open\"><style>{$style}</style>{$template}</template>{$inner}</{$tag}>";
+}
+
+function artifactStyle(array $artifact): string {
+    if (preg_match('/<style\b[^>]*>\s*([\s\S]*?)\s*<\/style>/i', $artifact['definition'], $m)) {
+        return $m[1];
+    }
+    return '';
+}
+
+function artifactTemplate(array $artifact): string {
+    if (preg_match('/<template\b[^>]*>\s*([\s\S]*?)\s*<\/template>/i', $artifact['definition'], $m)) {
+        return $m[1];
+    }
+    return '';
 }
 
 function componentRef(string $src): string {
@@ -483,10 +573,23 @@ function layoutRef(string $src): string {
 }
 
 function artifactTag(array $artifact): string {
-    if (preg_match('/defineArtifact\(\s*([\'"])([a-z][a-z0-9-]*)\1/i', $artifact['definition'], $m)) {
-        return $m[2];
-    }
-    return '';
+    return safeTag($artifact['tag'] ?? '');
+}
+
+function safeTag(string $tag): string {
+    $tag = strtolower(trim($tag));
+    return preg_match('/^[a-z][a-z0-9]*-[a-z0-9-]+$/', $tag) ? $tag : '';
+}
+
+function safeLayoutName(string $layout): string {
+    $layout = trim(str_replace('\\', '/', strtolower($layout)));
+    $layout = trim($layout, '/');
+    return $layout !== '' && !str_contains($layout, '..') && preg_match('/^[a-z0-9-\/]+$/', $layout) ? $layout : '';
+}
+
+function safePartName(string $name): string {
+    $name = strtolower(trim($name));
+    return preg_match('/^[a-z0-9-]+$/', $name) ? $name : '';
 }
 
 function requiredPath(string $ref): string {

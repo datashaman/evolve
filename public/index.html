@@ -198,12 +198,12 @@
     <main class="stage">
       <iframe id="frame" sandbox="allow-scripts" title="preview"></iframe>
 
-      <!-- Component editor: definition (registered once) + usage (composed) -->
+      <!-- Artifact editor: source parts + usage markup -->
       <div class="panel" id="editor">
         <div class="editor-fields">
           <div class="field-label">Requires <span>— one library-relative file path per line</span></div>
           <textarea id="requires" spellcheck="false"></textarea>
-          <div class="field-label">Definition <span>— template + style + script, registered once in the host shell</span></div>
+          <div class="field-label">Source <span>— style + template; optional client script may be added later</span></div>
           <textarea id="def" spellcheck="false"></textarea>
           <div class="field-label">Usage <span>— example markup; this is what pages compose</span></div>
           <textarea id="usage" spellcheck="false"></textarea>
@@ -238,9 +238,8 @@
     let tokens = '';
     let savedTokens = '';
 
-    // Host shell: tokens + the registry (definitions injected once into <head>),
-    // then the usage markup in <body>. 'component' centers a single element on a
-    // grid backdrop; pages/layouts own the full canvas.
+    // Host shell: shared tokens plus server-rendered artifact markup. Component
+    // previews are centered; pages/layouts own the full canvas.
     function buildDocument(usage, definitions, mode, title = 'Component Workbench Preview') {
       const body = mode === 'page'
         ? `html, body { min-height: 100%; }
@@ -273,21 +272,24 @@
   <title>${escapeHtml(title)}</title>
   <style>${tokens} ${body}</style>
   <script>
-    window.defineArtifact = (tag, templateId, styleId) => {
-      if (customElements.get(tag)) return;
-      customElements.define(tag, class extends HTMLElement {
-        connectedCallback() {
-          if (this.shadowRoot) return;
-          const tpl = document.getElementById(templateId);
-          const css = document.getElementById(styleId);
-          const style = document.createElement('style');
-          style.textContent = css ? css.textContent : '';
-          this.attachShadow({ mode: 'open' }).append(style, tpl.content.cloneNode(true));
-        }
-      });
-    };
+    (() => {
+      const activate = (root = document) => {
+        root.querySelectorAll('template[shadowrootmode]').forEach((tpl) => {
+          const host = tpl.parentElement;
+          if (!host || host.shadowRoot) return;
+          const shadow = host.attachShadow({ mode: tpl.getAttribute('shadowrootmode') || 'open' });
+          shadow.append(tpl.content);
+          tpl.remove();
+          activate(shadow);
+        });
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => activate());
+      } else {
+        activate();
+      }
+    })();
   <\/script>
-${definitions.join('\n')}
 </head>
 <body>
 ${usage}
@@ -349,9 +351,9 @@ ${usage}
     // any that are gone. Fire-and-forget — local single-user, optimistic UI.
     function save() {
       const payload = {
-        components: components().map(({ id, name, requires, definition, usage }) => ({ id, name, requires, definition, usage })),
-        layouts: layouts().map(({ id, name, requires, definition, usage }) => ({ id, name, requires, definition, usage })),
-        pages: pages().map(({ id, name, title, slug, requires, definition, usage }) => ({ id, name, title, slug, requires, definition, usage })),
+        components: components().map(({ id, name, tag, requires, definition, usage }) => ({ id, name, tag, requires, definition, usage })),
+        layouts: layouts().map(({ id, name, tag, requires, definition, usage }) => ({ id, name, tag, requires, definition, usage })),
+        pages: pages().map(({ id, name, tag, title, slug, layout, requires, definition, usage }) => ({ id, name, tag, title, slug, layout, requires, definition, usage })),
       };
       fetch(API, {
         method: 'PUT',
@@ -384,15 +386,19 @@ ${usage}
       return `layouts/${ref}.html`;
     }
 
+    function safePartName(name) {
+      const part = String(name ?? '').trim().toLowerCase();
+      return /^[a-z0-9-]+$/.test(part) ? part : '';
+    }
+
     function collectDefinition(c, defs, seen) {
       if (!c?.path || seen.has(c.path)) return;
       seen.add(c.path);
       (c.requires ?? []).forEach(ref => collectDefinition(artifactByRef(ref), defs, seen));
-      defs.push(expandUses(c.definition, defs, seen));
     }
 
     function artifactTag(c) {
-      return c?.definition?.match(/defineArtifact\(\s*['"]([a-z][a-z0-9-]*)['"]/i)?.[1] ?? '';
+      return c?.tag ?? '';
     }
 
     function expandUses(html, defs, seen) {
@@ -408,7 +414,7 @@ ${usage}
               : expandUseTag(attrs, inner, defs, seen)
         ));
       }
-      return expanded.replace(/<(x-use|x-component|x-layout)\b([^>]*)\/?>/gis, (_match, tag, attrs) => (
+      return expanded.replace(/<(x-use|x-component|x-layout)\b([^>]*)\/>/gis, (_match, tag, attrs) => (
         tag === 'x-component'
           ? expandComponentTag(attrs, '', defs, seen)
           : tag === 'x-layout'
@@ -420,19 +426,19 @@ ${usage}
     function expandUseTag(attrs, inner, defs, seen) {
       const node = parseCompositionNode('x-use', attrs);
       const artifact = artifactByRef(node?.getAttribute('src') ?? '');
-      return expandArtifactTag(node, artifact, inner, defs, seen);
+      return renderArtifactInstance(node, artifact, inner, defs, seen);
     }
 
     function expandComponentTag(attrs, inner, defs, seen) {
       const node = parseCompositionNode('x-component', attrs);
       const artifact = artifactByRef(componentRef(node?.getAttribute('src') ?? ''));
-      return expandArtifactTag(node, artifact, inner, defs, seen);
+      return renderArtifactInstance(node, artifact, inner, defs, seen);
     }
 
     function expandLayoutTag(attrs, inner, defs, seen) {
       const node = parseCompositionNode('x-layout', attrs);
       const artifact = artifactByRef(layoutRef(node?.getAttribute('src') ?? ''));
-      return expandArtifactTag(node, artifact, inner, defs, seen);
+      return renderArtifactInstance(node, artifact, inner, defs, seen);
     }
 
     function parseCompositionNode(tag, attrs) {
@@ -441,7 +447,7 @@ ${usage}
       return tpl.content.firstElementChild;
     }
 
-    function expandArtifactTag(node, artifact, inner, defs, seen) {
+    function renderArtifactInstance(node, artifact, inner, defs, seen, templateOverride = null) {
       if (!artifact) return '';
 
       collectDefinition(artifact, defs, seen);
@@ -452,18 +458,80 @@ ${usage}
         .filter(attr => attr.name !== 'src')
         .map(attr => ` ${attr.name}="${escapeHtml(attr.value)}"`)
         .join('');
-      return `<${tag}${passthrough}>${inner}</${tag}>`;
+      const style = artifactStyle(artifact);
+      const template = templateOverride ?? expandPartFallbacks(expandUses(artifactTemplate(artifact), defs, seen), defs, seen);
+      const children = expandUses(inner, defs, seen);
+      return `<${tag}${passthrough}><template shadowrootmode="open"><style>${style}</style>${template}</template>${children}</${tag}>`;
     }
 
-    // Build the full preview document for any artifact. Definitions for all
-    // required artifacts are loaded so HTML can compose custom elements directly.
+    function renderArtifactUsage(c, usage, defs, seen) {
+      const tag = artifactTag(c);
+      if (!tag) return usage;
+      const paired = new RegExp(`<${tag}\\b([^>]*)>((?:(?!<${tag}\\b).)*?)<\\/${tag}>`, 'gis');
+      let rendered = usage ?? '';
+      rendered = rendered.replace(paired, (_match, attrs, inner) => {
+        if (/^\s*<template\b[^>]*\bshadowrootmode=/i.test(inner)) return _match;
+        const node = parseCompositionNode(tag, attrs);
+        return renderArtifactInstance(node, c, inner, defs, seen);
+      });
+      return rendered.replace(new RegExp(`<${tag}\\b([^>]*)\\/>`, 'gis'), (_match, attrs) => {
+        const node = parseCompositionNode(tag, attrs);
+        return renderArtifactInstance(node, c, '', defs, seen);
+      });
+    }
+
+    function artifactStyle(c) {
+      return c?.definition?.match(/<style\b[^>]*>\s*([\s\S]*?)\s*<\/style>/i)?.[1] ?? '';
+    }
+
+    function artifactTemplate(c) {
+      return c?.definition?.match(/<template\b[^>]*>\s*([\s\S]*?)\s*<\/template>/i)?.[1] ?? '';
+    }
+
+    function pageParts(html) {
+      const parts = {};
+      const paired = /<part\b([^>]*)>((?:(?!<part\b).)*?)<\/part>/gis;
+      let match;
+      while ((match = paired.exec(html ?? ''))) {
+        const node = parseCompositionNode('part', match[1]);
+        const name = safePartName(node?.getAttribute('name'));
+        if (name) parts[name] = match[2];
+      }
+      return parts;
+    }
+
+    function expandParts(html, parts, defs, seen) {
+      const paired = /<x-part\b([^>]*)>((?:(?!<x-part\b).)*?)<\/x-part>/gis;
+      let expanded = (html ?? '').replace(paired, (_match, attrs, fallback) => renderPartTag(attrs, fallback, parts, defs, seen));
+      return expanded.replace(/<x-part\b([^>]*)\/>/gis, (_match, attrs) => renderPartTag(attrs, '', parts, defs, seen));
+    }
+
+    function renderPartTag(attrs, fallback, parts, defs, seen) {
+      const node = parseCompositionNode('x-part', attrs);
+      const name = safePartName(node?.getAttribute('name'));
+      return expandUses(parts[name] ?? fallback, defs, seen);
+    }
+
+    function expandPartFallbacks(html, defs, seen) {
+      return expandParts(html, {}, defs, seen);
+    }
+
+    function renderPageWithLayout(c, defs, seen) {
+      const layout = artifactByRef(layoutRef(c.layout));
+      if (!layout) return expandUses(c.definition, defs, seen);
+      const template = expandParts(expandUses(artifactTemplate(layout), defs, seen), pageParts(c.definition), defs, seen);
+      return renderArtifactInstance(parseCompositionNode('x-layout', ''), layout, '', defs, seen, template);
+    }
+
+    // Build the full preview document for any artifact. Authoring tags are
+    // expanded to rendered artifact instances before they reach the iframe.
     function documentFor(c) {
       if (!c) return '';
       const defs = [];
       const seen = new Set();
-      (c.requires ?? []).forEach(ref => collectDefinition(artifactByRef(ref), defs, seen));
-      defs.push(expandUses(c.definition, defs, seen));
-      const usage = expandUses(c.usage, defs, seen);
+      const usage = c.kind === 'page' && c.layout
+        ? renderPageWithLayout(c, defs, seen)
+        : renderArtifactUsage(c, expandUses(c.usage, defs, seen), defs, seen);
       return buildDocument(usage, defs, c.kind === 'component' ? 'component' : 'page', c.title || c.name);
     }
 
@@ -544,6 +612,7 @@ ${usage}
       const c = selected();
       kindBadge.textContent = c ? c.kind : '—';
       nameInput.value = c ? c.name : '';
+      if (c?.kind === 'page' && c.layout === undefined) c.layout = '';
       pageMeta.classList.toggle('visible', c?.kind === 'page');
       pageTitleInput.value = c?.kind === 'page' ? (c.title ?? c.name ?? '') : '';
       pageSlugInput.value = c?.kind === 'page' ? (c.slug || '/') : '';
@@ -613,6 +682,7 @@ ${usage}
       const p = newArtifact('page', 'Untitled page', '<slot></slot>');
       p.title = 'Untitled page';
       p.slug = '/untitled-page';
+      p.layout = '';
       library.push(p);
       save();
       select(p.id);
@@ -632,11 +702,7 @@ ${usage}
 
 <template id="${tag}-tpl">
   <div class="box">${slotContent}</div>
-</template>
-
-<script>
-  defineArtifact('${tag}', '${tag}-tpl', '${tag}-css');
-<\/script>`,
+</template>`,
         usage: `<${tag}></${tag}>`
       };
     }
@@ -742,8 +808,7 @@ ${usage}
     document.getElementById('btn-export').onclick = () => {
       const c = selected();
       if (!c) return;
-      // Export a full standalone document — definitions + tokens + usage — so it
-      // opens and runs on its own.
+      // Export a full standalone document: tokens plus rendered artifact usage.
       const blob = new Blob([documentFor(c)], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

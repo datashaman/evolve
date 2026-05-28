@@ -1,6 +1,8 @@
 <!-- name: Home -->
+<!-- tag: x-home-page -->
 <!-- title: Evolve Studio -->
 <!-- slug: / -->
+<!-- layout: marketing-layout -->
 <style id="x-home-page-css" media="not all">
     :host { display: block; }
     .services {
@@ -50,17 +52,17 @@
 </style>
 
 <template id="x-home-page-tpl">
-  <x-layout src="marketing-layout">
+  <part name="hero">
     <x-component src="hero-section">
       <span slot="eyebrow">Website systems for service teams</span>
       <span slot="title">A lean site scaffold that already behaves like a real project.</span>
-      <span slot="body">This seed gives you a credible home page, reusable sections, shared tokens, and componentized HTML you can reshape into your own offer.</span>
+      <span slot="body">This seed gives you a credible home page, reusable sections, shared tokens, and server-rendered artifact composition you can reshape into your own offer.</span>
       <span slot="primary">Start from this scaffold</span>
       <span slot="secondary">Review the sections</span>
       <div slot="aside" class="proof">
         <div class="metric">
           <strong>6</strong>
-          <p>HTML-backed artifacts</p>
+          <p>Server-rendered artifacts</p>
         </div>
         <div class="metric">
           <strong>3</strong>
@@ -72,11 +74,13 @@
         </div>
       </div>
     </x-component>
+  </part>
 
+  <part name="main">
     <section id="services" class="services">
       <div class="section-head">
         <h2>Everything starts as a component.</h2>
-        <p>Components, layouts, and pages all use template, style, script, and usage HTML. Composition stays visible and editable.</p>
+        <p>Components, layouts, and pages all keep template, style, and usage HTML together. Composition stays visible and editable.</p>
       </div>
       <div class="grid">
         <x-component src="feature-card">
@@ -100,31 +104,31 @@
     <section id="proof" class="proof">
       <div class="metric">
         <strong>HTML</strong>
-        <p>Pages compose layouts and components with ordinary custom-element markup.</p>
+        <p>Pages author layouts and components with HTML-like composition tags that render on the server.</p>
       </div>
       <div class="metric">
         <strong>CSS</strong>
-        <p>Design tokens flow into every shadow root through the host document.</p>
+        <p>Design tokens stay shared while each rendered artifact keeps its local style boundary.</p>
       </div>
       <div class="metric">
         <strong>JS</strong>
-        <p>Each artifact owns its registration and behavior alongside its template.</p>
+        <p>Client scripts become optional enhancement, not the mechanism that makes the page render.</p>
       </div>
     </section>
+  </part>
 
+  <part name="cta">
     <x-component src="cta-panel" id="contact">
       <span slot="title">Make this your starting point.</span>
       <span slot="body">Rename the brand, update the service cards, tune the tokens, and extend the library with real sections.</span>
       <span slot="action">hello@northstar.test</span>
     </x-component>
+  </part>
 
+  <part name="footer">
     <span slot="footer">Northstar Studio. A seeded workbench site scaffold.</span>
-  </x-layout>
+  </part>
 </template>
-
-<script>
-  defineArtifact('x-home-page', 'x-home-page-tpl', 'x-home-page-css');
-</script>
 
 <script type="text/html" data-usage>
 <x-home-page></x-home-page>

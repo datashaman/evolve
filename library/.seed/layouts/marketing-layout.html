@@ -1,5 +1,5 @@
 <!-- name: Marketing layout -->
-<!-- requires: components/site-header.html -->
+<!-- tag: x-marketing-layout -->
 <style id="x-marketing-layout-css" media="not all">
     :host { display: block; }
     .shell {
@@ -30,31 +30,37 @@
 <template id="x-marketing-layout-tpl">
   <div class="shell">
     <div class="wrap">
-      <x-site-header>
+      <x-component src="site-header">
         <span slot="brand">Northstar Studio</span>
         <a slot="nav" href="#services">Services</a>
         <a slot="nav" href="#proof">Proof</a>
         <a slot="nav" href="#contact">Contact</a>
         <span slot="action">Plan the site</span>
-      </x-site-header>
+      </x-component>
       <main>
-        <slot></slot>
+        <x-part name="hero" />
+        <x-part name="main" />
+        <x-part name="cta" />
       </main>
       <footer>
-        <slot name="footer">Built with the component workbench.</slot>
+        <x-part name="footer">Built with the component workbench.</x-part>
       </footer>
     </div>
   </div>
 </template>
 
-<script>
-  defineArtifact('x-marketing-layout', 'x-marketing-layout-tpl', 'x-marketing-layout-css');
-</script>
-
 <script type="text/html" data-usage>
-<x-marketing-layout>
-  <x-component src="hero-section"></x-component>
-  <x-component src="cta-panel"></x-component>
-  <span slot="footer">Example footer content for the marketing layout.</span>
-</x-marketing-layout>
+<x-layout src="marketing-layout">
+  <x-component src="hero-section">
+    <span slot="eyebrow">Layout preview</span>
+    <span slot="title">A marketing shell with a built-in header.</span>
+    <span slot="body">This layout owns the navigation and renders supplied page sections into its main content slot.</span>
+  </x-component>
+  <x-component src="cta-panel">
+    <span slot="title">Drop page content into this shell.</span>
+    <span slot="body">Use layout usage to preview the frame with realistic sections.</span>
+    <span slot="action">Preview action</span>
+  </x-component>
+  <span slot="footer">Layout preview footer content.</span>
+</x-layout>
 </script>
