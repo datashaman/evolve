@@ -69,6 +69,36 @@ class EvolveLibrary
         return '';
     }
 
+    public function stylesheet(): string
+    {
+        $manifest = $this->manifest();
+        $styles = [];
+
+        foreach (['component' => 'components', 'layout' => 'layouts', 'page' => 'pages'] as $kind => $group) {
+            foreach ($manifest[$group] ?? [] as $artifact) {
+                $id = $this->safeId($artifact['id'] ?? '');
+                $sfc = $this->parseSfc($this->filePath($kind, $id));
+                $style = $sfc['style'] ?? '';
+
+                if ($id === '' || trim($style) === '') {
+                    continue;
+                }
+
+                if ($kind === 'component') {
+                    $style = $this->scopeCss($style, '[wire\\:name="'.$this->componentReference($kind, $id).'"]', $this->rootTag($sfc['blade'] ?? ''));
+                }
+
+                if ($kind === 'page') {
+                    $style = $this->scopeCss($style, '[wire\\:name="'.$this->componentReference($kind, $id).'"]');
+                }
+
+                $styles[] = "/* {$kind}: {$id} */\n".trim($style);
+            }
+        }
+
+        return implode("\n\n", $styles)."\n";
+    }
+
     protected function readGroup(string $kind, array $entries): array
     {
         return collect($entries)
@@ -171,6 +201,35 @@ class EvolveLibrary
         }
 
         return $source;
+    }
+
+    protected function scopeCss(string $css, string $scope, ?string $rootTag = null): string
+    {
+        return preg_replace_callback('/(^|[{}])(\s*)([^@{}][^{}]*?)\s*\{/', function (array $match) use ($scope, $rootTag) {
+            $selectors = collect(explode(',', trim($match[3])))
+                ->map(fn (string $selector) => $this->scopeSelector(trim($selector), $scope, $rootTag))
+                ->implode(', ');
+
+            return $match[1].$match[2].$selectors.' {';
+        }, $css);
+    }
+
+    protected function scopeSelector(string $selector, string $scope, ?string $rootTag = null): string
+    {
+        if ($selector === '' || str_starts_with($selector, '@') || str_contains($selector, '@media') || str_starts_with($selector, $scope)) {
+            return $selector;
+        }
+
+        if ($rootTag && preg_match('/^'.preg_quote($rootTag, '/').'(?=$|[.#:\[])(.*)$/', $selector, $match)) {
+            return $scope.($match[1] ?? '');
+        }
+
+        return $scope.' '.$selector;
+    }
+
+    protected function rootTag(string $blade): ?string
+    {
+        return preg_match('/^\s*<([a-z][\w-]*)\b/i', $blade, $match) ? strtolower($match[1]) : null;
     }
 
     protected function manifest(): array

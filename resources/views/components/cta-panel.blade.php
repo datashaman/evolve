@@ -25,6 +25,9 @@ section {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 24px;
   align-items: center;
+  width: min(1200px, calc(100vw - 48px));
+  box-sizing: border-box;
+  margin: 0 auto;
   padding: 32px;
   border-radius: var(--radius);
   background: var(--ink);

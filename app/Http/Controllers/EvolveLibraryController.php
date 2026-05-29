@@ -26,6 +26,11 @@ class EvolveLibraryController extends Controller
         return response($library->tokens(), 200, ['Content-Type' => 'text/css']);
     }
 
+    public function stylesheet(EvolveLibrary $library): Response
+    {
+        return response($library->stylesheet(), 200, ['Content-Type' => 'text/css']);
+    }
+
     public function updateTokens(Request $request, EvolveLibrary $library): JsonResponse
     {
         $library->writeTokens($request->getContent());

@@ -19,6 +19,7 @@ new class extends Component {
 article {
   display: grid;
   gap: 16px;
+  box-sizing: border-box;
   min-height: 100%;
   padding: 26px;
   border: 1px solid var(--border);

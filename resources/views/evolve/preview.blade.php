@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+@php(config(['livewire.inject_assets' => false]))
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -6,12 +7,15 @@
     <title>Preview</title>
     <link rel="stylesheet" href="{{ route('tokens') }}">
     @livewireStyles
+    <link rel="stylesheet" href="{{ route('evolve.styles') }}?v={{ filemtime(resource_path('evolve/manifest.json')) }}">
     <style>
         html, body { min-height: 100%; margin: 0; }
         body {
             min-height: 100vh;
             display: grid;
             place-items: center;
+            align-content: center;
+            justify-content: center;
             padding: 40px;
             font-family: var(--font-sans, system-ui, sans-serif);
             color: var(--text, #18181b);
@@ -20,6 +24,11 @@
                 linear-gradient(#0000000a 1px, transparent 1px),
                 linear-gradient(90deg, #0000000a 1px, transparent 1px);
             background-size: 16px 16px;
+        }
+        body > [wire\:id],
+        body > [wire\:name] {
+            align-self: center;
+            justify-self: center;
         }
         .empty-preview {
             padding: 16px 20px;
@@ -32,6 +41,5 @@
 </head>
 <body>
     {!! $content !!}
-    @livewireScripts
 </body>
 </html>
