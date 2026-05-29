@@ -39,19 +39,19 @@
     .sidebar li.active .meta { color: #c7d2fe; }
     .empty { padding: 4px 12px 10px; color: #71717a; font-size: 12px; }
     .stage { flex: 1; display: grid; grid-template-columns: minmax(360px, var(--editor-width, 44%)) 9px minmax(320px, 1fr); min-width: 0; min-height: 0; overflow: hidden; }
+    .stage.content-mode { grid-template-columns: minmax(0, 1fr); }
     .panel { display: flex; min-width: 0; min-height: 0; flex-direction: column; background: #1e1e1e; }
     .editor-fields { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
     .editor-fields.resizing { cursor: row-resize; user-select: none; }
     .source-section { display: flex; flex-direction: column; min-height: 38px; }
     .source-section[hidden] { display: none; }
     .source-section[data-block="metadata"] { flex: 0 0 auto; }
-    .source-section[data-block="data"] { flex: 1 1 0; }
     .source-section[data-block="php"] { flex: 1.2 1 0; }
     .source-section[data-block="blade"] { flex: 2 1 0; }
     .source-section[data-block="style"], .source-section[data-block="usage"] { flex: 1 1 0; }
     .source-section.collapsed { flex: 0 0 auto !important; }
     .source-section[data-block="usage"].collapsed { margin-top: auto; }
-    .source-section.collapsed .metadata-grid, .source-section.collapsed .content-index, .source-section.collapsed .code-editor { display: none; }
+    .source-section.collapsed .metadata-grid, .source-section.collapsed .code-editor { display: none; }
     .section-resize { flex: 0 0 6px; background: #18181b; cursor: row-resize; }
     .section-resize:hover, .editor-fields.resizing .section-resize { background: #24242a; }
     .section-resize[hidden] { display: none; }
@@ -67,14 +67,6 @@
     .metadata-field[hidden] { display: none; }
     .metadata-field span { color: #a1a1aa; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
     .metadata-field input { width: 100%; padding: 7px 9px; border: 1px solid #3f3f46; border-radius: 6px; background: #27272a; color: #fafafa; font: 13px ui-monospace, "SF Mono", Menlo, monospace; }
-    .content-grid { display: grid; grid-template-columns: minmax(80px, .35fr) minmax(0, 1fr); gap: 10px; padding: 10px 12px 12px; }
-    .content-grid label { display: grid; gap: 5px; min-width: 0; }
-    .content-grid label.full { grid-column: 1 / -1; }
-    .content-grid span { color: #a1a1aa; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
-    .content-grid input, .content-grid textarea { width: 100%; padding: 7px 9px; border: 1px solid #3f3f46; border-radius: 6px; background: #27272a; color: #fafafa; font: 13px ui-monospace, "SF Mono", Menlo, monospace; }
-    .content-grid textarea { min-height: 120px; resize: vertical; line-height: 1.45; }
-    .content-grid .checkbox { display: flex; gap: 8px; align-items: center; align-self: end; color: #e4e4e7; font-size: 13px; }
-    .content-grid .checkbox input { width: auto; }
     .content-index { flex: 1; min-height: 0; overflow: auto; padding: 12px; background: #1e1e1e; }
     .content-index[hidden] { display: none; }
     .content-index table { width: 100%; border-collapse: collapse; table-layout: fixed; color: #e4e4e7; font-size: 12px; }
@@ -99,6 +91,7 @@
     .tok-tag { color: #7dd3fc; } .tok-attr { color: #f9a8d4; } .tok-str { color: #facc15; } .tok-comment { color: #71717a; }
     .tok-rule { color: #c4b5fd; } .tok-prop { color: #93c5fd; } .tok-var { color: #86efac; } .tok-key { color: #f0abfc; }
     .preview { min-width: 0; min-height: 0; background: #fff; }
+    .stage.content-mode .stage-resize, .stage.content-mode .preview { display: none; }
     iframe { width: 100%; height: 100%; border: 0; background: #fff; }
     @media (max-width: 900px) {
       .stage { grid-template-columns: 1fr; grid-template-rows: minmax(360px, 50%) minmax(0, 1fr); }
@@ -135,24 +128,21 @@
               <label class="metadata-field" data-meta="slug"><span>Slug</span><input id="meta-slug"></label>
             </div>
           </section>
-          <section class="source-section" data-block="data" hidden>
-            <button class="field-label" type="button" data-toggle-source="data">Data</button>
-            <div class="content-index" id="content-index">
-              <div class="content-actions"><button id="btn-add-content-row" type="button">Add row</button></div>
-              <table>
-                <thead>
-                  <tr>
-                    <th class="position-cell">Order</th>
-                    <th class="icon-cell">Icon</th>
-                    <th>Title</th>
-                    <th>Summary</th>
-                    <th class="published-cell">Published</th>
-                  </tr>
-                </thead>
-                <tbody id="content-rows"></tbody>
-              </table>
-            </div>
-          </section>
+          <div class="content-index" id="content-index" hidden>
+            <div class="content-actions"><button id="btn-add-content-row" type="button">Add row</button></div>
+            <table>
+              <thead>
+                <tr>
+                  <th class="position-cell">Order</th>
+                  <th class="icon-cell">Icon</th>
+                  <th>Title</th>
+                  <th>Summary</th>
+                  <th class="published-cell">Published</th>
+                </tr>
+              </thead>
+              <tbody id="content-rows"></tbody>
+            </table>
+          </div>
           <section class="source-section" data-block="php"><button class="field-label" type="button" data-toggle-source="php">PHP</button><div class="code-editor"><pre class="syntax-highlight" id="php-highlight"></pre><textarea id="php-source" spellcheck="false"></textarea></div></section>
           <div class="section-resize" data-resize-source data-before="php" data-after="blade"></div>
           <section class="source-section" data-block="blade"><button class="field-label" type="button" data-toggle-source="blade">Blade</button><div class="code-editor"><pre class="syntax-highlight" id="blade-highlight"></pre><textarea id="blade-source" spellcheck="false"></textarea></div></section>
@@ -365,9 +355,10 @@
       fields.style.value = c?.style ?? '';
       fields.usage.value = c?.usage ?? '';
       const isContent = c?.kind === 'content';
-      sourceSection('metadata').hidden = false;
+      stage.classList.toggle('content-mode', isContent);
+      sourceSection('metadata').hidden = isContent;
       document.querySelector('[data-meta="slug"]').hidden = c?.kind !== 'page';
-      sourceSection('data').hidden = !isContent;
+      contentIndex.hidden = !isContent;
       sourceSection('php').hidden = isContent || ['layout', 'style'].includes(c?.kind);
       sourceSection('blade').hidden = isContent || c?.kind === 'style';
       sourceSection('style').hidden = isContent;
@@ -381,6 +372,7 @@
     function renderFrame() {
       const c = selected();
       if (!c) return;
+      if (c.kind === 'content') return;
       frame.src = `${previewUrl(c)}?t=${Date.now()}`;
     }
 
@@ -487,9 +479,9 @@
       updateResizeHandles(); fitSourceHeights();
     }
     function sourceSection(block) { return sourceSections.find(section => section.dataset.block === block); }
-    function visibleCodeSections() { return ['data','php','blade','style','usage'].map(sourceSection).filter(section => section && !section.hidden && !section.classList.contains('collapsed')); }
+    function visibleCodeSections() { return ['php','blade','style','usage'].map(sourceSection).filter(section => section && !section.hidden && !section.classList.contains('collapsed')); }
     function availableCodeHeight() {
-      const fixed = [...editorFields.children].reduce((sum, child) => child.hidden || (child.classList.contains('source-section') && ['data','php','blade','style','usage'].includes(child.dataset.block) && !child.classList.contains('collapsed')) ? sum : sum + child.getBoundingClientRect().height, 0);
+      const fixed = [...editorFields.children].reduce((sum, child) => child.hidden || (child.classList.contains('source-section') && ['php','blade','style','usage'].includes(child.dataset.block) && !child.classList.contains('collapsed')) ? sum : sum + child.getBoundingClientRect().height, 0);
       return Math.max(0, editorFields.clientHeight - fixed);
     }
     function fitSourceHeights() {
