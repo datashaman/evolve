@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Service;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -8,7 +9,12 @@ new
     #[Layout('layouts::marketing')]
     #[Title('Northstar Studio')]
 class extends Component {
-    //
+    public function with(): array
+    {
+        return [
+            'services' => Service::query()->published()->ordered()->get(),
+        ];
+    }
 };
 ?>
 
@@ -34,15 +40,11 @@ class extends Component {
             <p>Components, layouts, and pages all keep PHP, Blade, and style together in real framework files.</p>
         </div>
         <div class="cards">
-            <livewire:feature-card icon="01" title="Offer clarity">
-                <livewire:slot name="body">Structure the page around the customer problem, service promise, and next step.</livewire:slot>
-            </livewire:feature-card>
-            <livewire:feature-card icon="02" title="Reusable sections">
-                <livewire:slot name="body">Edit once, reuse across pages, and keep the site system small enough to understand.</livewire:slot>
-            </livewire:feature-card>
-            <livewire:feature-card icon="03" title="Token-driven theme">
-                <livewire:slot name="body">Adjust color, spacing, radius, and typography without hunting through every artifact.</livewire:slot>
-            </livewire:feature-card>
+            @foreach ($services as $service)
+                <livewire:feature-card :key="'service-'.$service->id" :icon="$service->icon" :title="$service->title">
+                    <livewire:slot name="body">{{ $service->summary }}</livewire:slot>
+                </livewire:feature-card>
+            @endforeach
         </div>
     </section>
 

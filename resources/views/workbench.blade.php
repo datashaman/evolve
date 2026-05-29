@@ -45,6 +45,7 @@
     .source-section { display: flex; flex-direction: column; min-height: 38px; }
     .source-section[hidden] { display: none; }
     .source-section[data-block="metadata"] { flex: 0 0 auto; }
+    .source-section[data-block="content"] { flex: 0 0 auto; }
     .source-section[data-block="php"] { flex: 1.2 1 0; }
     .source-section[data-block="blade"] { flex: 2 1 0; }
     .source-section[data-block="style"], .source-section[data-block="usage"] { flex: 1 1 0; }
@@ -66,6 +67,14 @@
     .metadata-field[hidden] { display: none; }
     .metadata-field span { color: #a1a1aa; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
     .metadata-field input { width: 100%; padding: 7px 9px; border: 1px solid #3f3f46; border-radius: 6px; background: #27272a; color: #fafafa; font: 13px ui-monospace, "SF Mono", Menlo, monospace; }
+    .content-grid { display: grid; grid-template-columns: minmax(80px, .35fr) minmax(0, 1fr); gap: 10px; padding: 10px 12px 12px; }
+    .content-grid label { display: grid; gap: 5px; min-width: 0; }
+    .content-grid label.full { grid-column: 1 / -1; }
+    .content-grid span { color: #a1a1aa; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .content-grid input, .content-grid textarea { width: 100%; padding: 7px 9px; border: 1px solid #3f3f46; border-radius: 6px; background: #27272a; color: #fafafa; font: 13px ui-monospace, "SF Mono", Menlo, monospace; }
+    .content-grid textarea { min-height: 120px; resize: vertical; line-height: 1.45; }
+    .content-grid .checkbox { display: flex; gap: 8px; align-items: center; align-self: end; color: #e4e4e7; font-size: 13px; }
+    .content-grid .checkbox input { width: auto; }
     .code-editor { position: relative; flex: 1; min-height: 60px; overflow: hidden; background: #1e1e1e; }
     .code-editor textarea, .syntax-highlight {
       position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 8px 16px 12px; border: 0; overflow: auto;
@@ -98,6 +107,7 @@
       <section><header><span>Layouts</span><button id="btn-new-layout">+</button></header><ul id="list-layouts"></ul><div class="empty" id="empty-layouts" hidden>No layouts yet.</div></section>
       <section><header><span>Styles</span><button id="btn-new-style">+</button></header><ul id="list-styles"></ul><div class="empty" id="empty-styles" hidden>No styles yet.</div></section>
       <section><header><span>Components</span><button id="btn-new-component">+</button></header><ul id="list-components"></ul><div class="empty" id="empty-components" hidden>No components yet.</div></section>
+      <section><header><span>Content</span><button id="btn-new-content">+</button></header><ul id="list-content"></ul><div class="empty" id="empty-content" hidden>No content yet.</div></section>
       <section><header><span>Pages</span><button id="btn-new-page">+</button></header><ul id="list-pages"></ul><div class="empty" id="empty-pages" hidden>No pages yet.</div></section>
     </nav>
     <div class="sidebar-resize" id="sidebar-resize"></div>
@@ -110,6 +120,16 @@
             <div class="metadata-grid">
               <label class="metadata-field"><span>Name</span><input id="meta-name"></label>
               <label class="metadata-field" data-meta="slug"><span>Slug</span><input id="meta-slug"></label>
+            </div>
+          </section>
+          <section class="source-section" data-block="content" hidden>
+            <button class="field-label" type="button" data-toggle-source="content">Content</button>
+            <div class="content-grid">
+              <label><span>Icon</span><input id="content-icon"></label>
+              <label><span>Title</span><input id="content-title"></label>
+              <label class="full"><span>Summary</span><textarea id="content-summary" spellcheck="false"></textarea></label>
+              <label><span>Position</span><input id="content-position" type="number" min="0" step="1"></label>
+              <label class="checkbox"><input id="content-published" type="checkbox"> Published</label>
             </div>
           </section>
           <section class="source-section" data-block="php"><button class="field-label" type="button" data-toggle-source="php">PHP</button><div class="code-editor"><pre class="syntax-highlight" id="php-highlight"></pre><textarea id="php-source" spellcheck="false"></textarea></div></section>
@@ -128,10 +148,12 @@
 
   <script>
     const API = '/api/library';
+    const CONTENT_API = '/api/content';
     const csrf = document.querySelector('meta[name="csrf-token"]').content;
     let library = [];
     let selectedKey = '';
     let saveTimer = 0;
+    let contentSaveTimer = 0;
     let draggedStyleKey = '';
     const frame = document.getElementById('frame');
     const workspace = document.querySelector('.workspace');
@@ -144,6 +166,11 @@
       blade: document.getElementById('blade-source'),
       style: document.getElementById('style-source'),
       usage: document.getElementById('usage'),
+      contentIcon: document.getElementById('content-icon'),
+      contentTitle: document.getElementById('content-title'),
+      contentSummary: document.getElementById('content-summary'),
+      contentPosition: document.getElementById('content-position'),
+      contentPublished: document.getElementById('content-published'),
     };
     const highlights = {
       php: document.getElementById('php-highlight'),
@@ -161,8 +188,11 @@
     const byKind = kind => library.filter(c => c.kind === kind);
 
     async function load() {
-      const data = await fetch(API, { headers: { accept: 'application/json' } }).then(r => r.json());
-      library = [...data.layouts, ...data.styles, ...data.components, ...data.pages];
+      const [data, content] = await Promise.all([
+        fetch(API, { headers: { accept: 'application/json' } }).then(r => r.json()),
+        fetch(CONTENT_API, { headers: { accept: 'application/json' } }).then(r => r.json()),
+      ]);
+      library = [...data.layouts, ...data.styles, ...data.components, ...content.services, ...data.pages];
       selectedKey ||= artifactKey(library[0]);
       renderLists();
       syncInputs();
@@ -183,15 +213,45 @@
       }).then(() => { if (refresh) renderFrame(); });
     }
 
+    function saveContent(refresh = false) {
+      const previousKey = selectedKey;
+      return fetch(CONTENT_API, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': csrf },
+        body: JSON.stringify({ services: byKind('content') }),
+      }).then(r => r.json()).then(data => {
+        const current = selected();
+        const services = data.services ?? [];
+        library = [...byKind('layout'), ...byKind('style'), ...byKind('component'), ...services, ...byKind('page')];
+
+        if (current?.kind === 'content') {
+          const replacement = services.find(item => item.client_id === current.id)
+            ?? services.find(item => item.id === current.id)
+            ?? services.find(item => item.title === current.title && Number(item.position) === Number(current.position));
+          selectedKey = replacement ? artifactKey(replacement) : previousKey;
+        }
+
+        renderLists();
+        syncInputs();
+        if (refresh) renderFrame();
+      });
+    }
+
     function scheduleSave(refresh = false) {
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => save(refresh), 300);
+    }
+
+    function scheduleContentSave(refresh = false) {
+      clearTimeout(contentSaveTimer);
+      contentSaveTimer = setTimeout(() => saveContent(refresh), 300);
     }
 
     function renderLists() {
       renderList('layout', 'list-layouts', 'empty-layouts');
       renderList('style', 'list-styles', 'empty-styles');
       renderList('component', 'list-components', 'empty-components');
+      renderList('content', 'list-content', 'empty-content');
       renderList('page', 'list-pages', 'empty-pages');
     }
 
@@ -204,7 +264,7 @@
         li.className = artifactKey(item) === selectedKey ? 'active' : '';
         li.innerHTML = `<span class="label"></span><span class="meta"></span>`;
         li.querySelector('.label').textContent = item.name || item.id;
-        li.querySelector('.meta').textContent = kind === 'page' ? item.slug : kind === 'style' ? `${item.id}.css` : item.id;
+        li.querySelector('.meta').textContent = kind === 'page' ? item.slug : kind === 'style' ? `${item.id}.css` : kind === 'content' ? item.model : item.id;
         if (kind === 'style') {
           li.draggable = true;
           li.dataset.key = artifactKey(item);
@@ -235,7 +295,7 @@
       if (from < 0 || to < 0) return;
       const [moved] = styles.splice(from, 1);
       styles.splice(to, 0, moved);
-      library = [...byKind('layout'), ...styles, ...byKind('component'), ...byKind('page')];
+      library = [...byKind('layout'), ...styles, ...byKind('component'), ...byKind('content'), ...byKind('page')];
       renderLists();
       save(true);
     }
@@ -249,11 +309,18 @@
       fields.blade.value = c?.blade ?? '';
       fields.style.value = c?.style ?? '';
       fields.usage.value = c?.usage ?? '';
+      fields.contentIcon.value = c?.icon ?? '';
+      fields.contentTitle.value = c?.title ?? '';
+      fields.contentSummary.value = c?.summary ?? '';
+      fields.contentPosition.value = c?.position ?? '';
+      fields.contentPublished.checked = !!c?.is_published;
+      sourceSection('metadata').hidden = c?.kind === 'content';
       document.querySelector('[data-meta="slug"]').hidden = c?.kind !== 'page';
-      sourceSection('php').hidden = ['layout', 'style'].includes(c?.kind);
-      sourceSection('blade').hidden = c?.kind === 'style';
-      sourceSection('style').hidden = false;
-      sourceSection('usage').hidden = c?.kind === 'style';
+      sourceSection('content').hidden = c?.kind !== 'content';
+      sourceSection('php').hidden = ['layout', 'style', 'content'].includes(c?.kind);
+      sourceSection('blade').hidden = ['style', 'content'].includes(c?.kind);
+      sourceSection('style').hidden = c?.kind === 'content';
+      sourceSection('usage').hidden = ['style', 'content'].includes(c?.kind);
       updateHighlights();
       updateResizeHandles();
       requestAnimationFrame(fitSourceHeights);
@@ -266,6 +333,7 @@
     }
 
     function previewUrl(c) {
+      if (c.kind === 'content') return '/';
       if (c.kind === 'style') return '/';
       if (c.kind === 'page') return c.slug || '/';
       return `/workbench/preview/${c.kind}/${c.id}`;
@@ -274,6 +342,18 @@
     function updateSelected() {
       const c = selected();
       if (!c) return;
+      if (c.kind === 'content') {
+        c.name = fields.contentTitle.value;
+        c.title = fields.contentTitle.value;
+        c.icon = fields.contentIcon.value;
+        c.summary = fields.contentSummary.value;
+        c.position = Number(fields.contentPosition.value || 0);
+        c.is_published = fields.contentPublished.checked;
+        renderLists();
+        scheduleContentSave(true);
+        return;
+      }
+
       c.name = fields.name.value;
       c.slug = fields.slug.value || '/';
       c.php = ['layout', 'style'].includes(c.kind) ? '' : fields.php.value;
@@ -286,6 +366,7 @@
     }
 
     Object.values(fields).forEach(input => input.addEventListener('input', updateSelected));
+    fields.contentPublished.addEventListener('change', updateSelected);
 
     function newArtifact(kind) {
       const id = `new-${crypto.randomUUID().slice(0, 8)}`;
@@ -302,10 +383,29 @@
       selectedKey = artifactKey(item);
       renderLists(); syncInputs(); save(true);
     }
+
+    function newContent() {
+      const item = {
+        id: `new-${crypto.randomUUID().slice(0, 8)}`,
+        kind: 'content',
+        model: 'Service',
+        name: 'New service',
+        title: 'New service',
+        icon: String(byKind('content').length + 1).padStart(2, '0'),
+        summary: 'Describe the customer outcome this service creates.',
+        position: byKind('content').length + 1,
+        is_published: true,
+      };
+      library.push(item);
+      selectedKey = artifactKey(item);
+      renderLists(); syncInputs(); saveContent(true);
+    }
+
     document.getElementById('btn-new-style').onclick = () => newArtifact('style');
     document.getElementById('btn-new-component').onclick = () => newArtifact('component');
     document.getElementById('btn-new-layout').onclick = () => newArtifact('layout');
     document.getElementById('btn-new-page').onclick = () => newArtifact('page');
+    document.getElementById('btn-new-content').onclick = () => newContent();
     document.getElementById('btn-reload').onclick = () => load();
     document.getElementById('btn-open').onclick = () => { const c = selected(); if (c) window.open(previewUrl(c), '_blank'); };
 

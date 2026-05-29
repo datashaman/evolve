@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\EvolveContentController;
 use App\Http\Controllers\EvolveLibraryController;
 use App\Http\Controllers\EvolvePreviewController;
 use App\Services\EvolveLibrary;
@@ -11,6 +12,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('api/library', [EvolveLibraryController::class, 'index']);
     Route::put('api/library', [EvolveLibraryController::class, 'update']);
+    Route::get('api/content', [EvolveContentController::class, 'index']);
+    Route::put('api/content', [EvolveContentController::class, 'update']);
     Route::get('workbench/preview/{kind}/{id}', [EvolvePreviewController::class, 'show'])
         ->where('kind', 'component|layout|page')
         ->where('id', '[A-Za-z0-9_\\-\\/]+');
