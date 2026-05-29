@@ -1,3 +1,4 @@
+---
 name: Growth sync
 
 on:
@@ -21,6 +22,7 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
+
     steps:
       - uses: datashaman/growth/actions/growth-sync@main
         with:
