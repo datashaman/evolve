@@ -21,20 +21,11 @@ class EvolveLibraryController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    public function tokens(EvolveLibrary $library): Response
-    {
-        return response($library->tokens(), 200, ['Content-Type' => 'text/css']);
-    }
-
     public function stylesheet(EvolveLibrary $library): Response
     {
-        return response($library->stylesheet(), 200, ['Content-Type' => 'text/css']);
-    }
-
-    public function updateTokens(Request $request, EvolveLibrary $library): JsonResponse
-    {
-        $library->writeTokens($request->getContent());
-
-        return response()->json(['ok' => true]);
+        return response($library->stylesheet(), 200, [
+            'Content-Type' => 'text/css',
+            'Cache-Control' => 'no-store',
+        ]);
     }
 }

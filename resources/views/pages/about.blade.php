@@ -49,7 +49,7 @@ class extends Component {
 
 <x-slot:footer>Northstar Studio. About this Livewire SFC scaffold.</x-slot:footer>
 
-<style>
+<style global>
 .intro h1 {
   margin: 0;
   color: var(--ink);

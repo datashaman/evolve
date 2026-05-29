@@ -32,6 +32,8 @@
     .sidebar li { display: flex; gap: 8px; align-items: center; padding: 8px 12px; font-size: 13px; cursor: pointer; }
     .sidebar li:hover { background: #3f3f46; }
     .sidebar li.active { background: #4338ca; color: #fff; }
+    .sidebar li[draggable="true"] { cursor: grab; }
+    .sidebar li.dragging { opacity: .45; }
     .sidebar .label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sidebar .meta { max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #a1a1aa; font-size: 11px; }
     .sidebar li.active .meta { color: #c7d2fe; }
@@ -76,14 +78,6 @@
     .tok-rule { color: #c4b5fd; } .tok-prop { color: #93c5fd; } .tok-var { color: #86efac; } .tok-key { color: #f0abfc; }
     .preview { min-width: 0; min-height: 0; background: #fff; }
     iframe { width: 100%; height: 100%; border: 0; background: #fff; }
-    #token-editor { position: absolute; inset: 0; z-index: 5; display: none; }
-    #token-editor.open { display: flex; }
-    #tokens { flex: 1; border: 0; resize: none; padding: 14px 16px; background: #1e1e1e; color: #e4e4e7; font: 13px/1.5 ui-monospace, "SF Mono", Menlo, monospace; }
-    .panel-bar { display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: #111; }
-    .panel-bar .hint { flex: 1; color: #71717a; font-size: 12px; }
-    .panel-bar button { padding: 6px 14px; border: 0; border-radius: 6px; cursor: pointer; }
-    .btn-token-apply { background: #22c55e; color: #052e16; }
-    .btn-cancel { background: #3f3f46; color: #fafafa; }
     @media (max-width: 900px) {
       .stage { grid-template-columns: 1fr; grid-template-rows: minmax(360px, 50%) minmax(0, 1fr); }
       .stage-resize { display: none; }
@@ -94,7 +88,6 @@
   <header class="toolbar">
     <h1>Evolve Workbench</h1>
     <span class="kind" id="kind">component</span>
-    <button id="btn-tokens">Tokens</button>
     <button id="btn-reload">Reload</button>
     <span class="spacer"></span>
     <button id="btn-open">Open</button>
@@ -102,6 +95,7 @@
 
   <div class="workspace">
     <nav class="sidebar">
+      <section><header><span>Styles</span><button id="btn-new-style">+</button></header><ul id="list-styles"></ul><div class="empty" id="empty-styles" hidden>No styles yet.</div></section>
       <section><header><span>Components</span><button id="btn-new-component">+</button></header><ul id="list-components"></ul><div class="empty" id="empty-components" hidden>No components yet.</div></section>
       <section><header><span>Layouts</span><button id="btn-new-layout">+</button></header><ul id="list-layouts"></ul><div class="empty" id="empty-layouts" hidden>No layouts yet.</div></section>
       <section><header><span>Pages</span><button id="btn-new-page">+</button></header><ul id="list-pages"></ul><div class="empty" id="empty-pages" hidden>No pages yet.</div></section>
@@ -129,11 +123,6 @@
       </div>
       <div class="stage-resize" id="stage-resize"></div>
       <div class="preview"><iframe id="frame" sandbox="allow-scripts allow-same-origin allow-forms" title="preview"></iframe></div>
-
-      <div class="panel" id="token-editor">
-        <div class="editor-fields"><div class="field-label">Tokens</div><textarea id="tokens" spellcheck="false"></textarea></div>
-        <div class="panel-bar"><span class="hint">Saved to resources/css/tokens.css.</span><button class="btn-cancel" id="btn-token-cancel">Cancel</button><button class="btn-token-apply" id="btn-token-apply">Apply</button></div>
-      </div>
     </main>
   </div>
 
@@ -143,12 +132,11 @@
     let library = [];
     let selectedKey = '';
     let saveTimer = 0;
-    let savedTokens = '';
+    let draggedStyleKey = '';
     const frame = document.getElementById('frame');
     const workspace = document.querySelector('.workspace');
     const stage = document.querySelector('.stage');
     const editorFields = document.querySelector('#editor .editor-fields');
-    const tokenEditor = document.getElementById('token-editor');
     const fields = {
       name: document.getElementById('meta-name'),
       slug: document.getElementById('meta-slug'),
@@ -174,20 +162,16 @@
 
     async function load() {
       const data = await fetch(API, { headers: { accept: 'application/json' } }).then(r => r.json());
-      library = [...data.components, ...data.layouts, ...data.pages];
+      library = [...data.styles, ...data.components, ...data.layouts, ...data.pages];
       selectedKey ||= artifactKey(library[0]);
       renderLists();
       syncInputs();
       renderFrame();
     }
 
-    async function loadTokens() {
-      savedTokens = await fetch('/tokens.css', { cache: 'no-store' }).then(r => r.text());
-      document.getElementById('tokens').value = savedTokens;
-    }
-
     function save(refresh = false) {
       const payload = {
+        styles: byKind('style'),
         components: byKind('component'),
         layouts: byKind('layout'),
         pages: byKind('page'),
@@ -205,6 +189,7 @@
     }
 
     function renderLists() {
+      renderList('style', 'list-styles', 'empty-styles');
       renderList('component', 'list-components', 'empty-components');
       renderList('layout', 'list-layouts', 'empty-layouts');
       renderList('page', 'list-pages', 'empty-pages');
@@ -219,11 +204,40 @@
         li.className = artifactKey(item) === selectedKey ? 'active' : '';
         li.innerHTML = `<span class="label"></span><span class="meta"></span>`;
         li.querySelector('.label').textContent = item.name || item.id;
-        li.querySelector('.meta').textContent = kind === 'page' ? item.slug : item.id;
+        li.querySelector('.meta').textContent = kind === 'page' ? item.slug : kind === 'style' ? `${item.id}.css` : item.id;
+        if (kind === 'style') {
+          li.draggable = true;
+          li.dataset.key = artifactKey(item);
+          li.ondragstart = event => {
+            draggedStyleKey = li.dataset.key;
+            li.classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', draggedStyleKey);
+          };
+          li.ondragend = () => li.classList.remove('dragging');
+          li.ondragover = event => event.preventDefault();
+          li.ondrop = event => {
+            event.preventDefault();
+            reorderStyle(draggedStyleKey || event.dataTransfer.getData('text/plain'), li.dataset.key);
+          };
+        }
         li.onclick = () => { selectedKey = artifactKey(item); syncInputs(); renderLists(); renderFrame(); };
         list.append(li);
       });
       document.getElementById(emptyId).hidden = items.length > 0;
+    }
+
+    function reorderStyle(sourceKey, targetKey) {
+      if (!sourceKey || !targetKey || sourceKey === targetKey) return;
+      const styles = byKind('style');
+      const from = styles.findIndex(item => artifactKey(item) === sourceKey);
+      const to = styles.findIndex(item => artifactKey(item) === targetKey);
+      if (from < 0 || to < 0) return;
+      const [moved] = styles.splice(from, 1);
+      styles.splice(to, 0, moved);
+      library = [...styles, ...byKind('component'), ...byKind('layout'), ...byKind('page')];
+      renderLists();
+      save(true);
     }
 
     function syncInputs() {
@@ -236,8 +250,10 @@
       fields.style.value = c?.style ?? '';
       fields.usage.value = c?.usage ?? '';
       document.querySelector('[data-meta="slug"]').hidden = c?.kind !== 'page';
-      sourceSection('php').hidden = c?.kind === 'layout';
-      sourceSection('usage').hidden = c?.kind === 'layout';
+      sourceSection('php').hidden = ['layout', 'style'].includes(c?.kind);
+      sourceSection('blade').hidden = c?.kind === 'style';
+      sourceSection('style').hidden = false;
+      sourceSection('usage').hidden = c?.kind === 'style';
       updateHighlights();
       updateResizeHandles();
       requestAnimationFrame(fitSourceHeights);
@@ -250,6 +266,7 @@
     }
 
     function previewUrl(c) {
+      if (c.kind === 'style') return '/';
       if (c.kind === 'page') return c.slug || '/';
       return `/workbench/preview/${c.kind}/${c.id}`;
     }
@@ -259,10 +276,10 @@
       if (!c) return;
       c.name = fields.name.value;
       c.slug = fields.slug.value || '/';
-      c.php = c.kind === 'layout' ? '' : fields.php.value;
-      c.blade = fields.blade.value;
+      c.php = ['layout', 'style'].includes(c.kind) ? '' : fields.php.value;
+      c.blade = c.kind === 'style' ? '' : fields.blade.value;
       c.style = fields.style.value;
-      c.usage = c.kind === 'layout' ? '' : fields.usage.value;
+      c.usage = c.kind === 'style' ? '' : fields.usage.value;
       updateHighlights();
       renderLists();
       scheduleSave(true);
@@ -274,31 +291,23 @@
       const id = `new-${crypto.randomUUID().slice(0, 8)}`;
       const component = id.replaceAll('/', '.');
       const item = {
-        id, kind, name: kind === 'page' ? 'New page' : kind === 'layout' ? 'New layout' : 'New component',
+        id, kind, name: kind === 'style' ? 'New style' : kind === 'page' ? 'New page' : kind === 'layout' ? 'New layout' : 'New component',
         slug: kind === 'page' ? `/${id}` : '',
-        php: kind === 'layout' ? '' : "use Livewire\\Component;\n\nnew class extends Component {\n    //\n};",
-        blade: kind === 'component' ? '<div>New component</div>' : '@{{ $slot }}',
-        style: '',
-        usage: kind === 'component' ? `<livewire:${component} />` : kind === 'layout' ? '' : `<livewire:pages::${component} />`,
+        php: ['layout', 'style'].includes(kind) ? '' : "use Livewire\\Component;\n\nnew class extends Component {\n    //\n};",
+        blade: kind === 'style' ? '' : kind === 'component' ? '<div>New component</div>' : '@{{ $slot }}',
+        style: kind === 'style' ? "/* Global styles */\n" : '',
+        usage: kind === 'component' ? `<livewire:${component} />` : kind === 'layout' ? `<x-layouts::${component}></x-layouts::${component}>` : kind === 'page' ? `<livewire:pages::${component} />` : '',
       };
       library.push(item);
       selectedKey = artifactKey(item);
       renderLists(); syncInputs(); save(true);
     }
+    document.getElementById('btn-new-style').onclick = () => newArtifact('style');
     document.getElementById('btn-new-component').onclick = () => newArtifact('component');
     document.getElementById('btn-new-layout').onclick = () => newArtifact('layout');
     document.getElementById('btn-new-page').onclick = () => newArtifact('page');
-    document.getElementById('btn-reload').onclick = () => { load(); loadTokens(); };
+    document.getElementById('btn-reload').onclick = () => load();
     document.getElementById('btn-open').onclick = () => { const c = selected(); if (c) window.open(previewUrl(c), '_blank'); };
-    document.getElementById('btn-tokens').onclick = () => tokenEditor.classList.add('open');
-    document.getElementById('btn-token-cancel').onclick = () => { document.getElementById('tokens').value = savedTokens; tokenEditor.classList.remove('open'); };
-    document.getElementById('btn-token-apply').onclick = async () => {
-      const css = document.getElementById('tokens').value;
-      await fetch('/api/tokens', { method: 'PUT', headers: { 'content-type': 'text/css', 'x-csrf-token': csrf }, body: css });
-      savedTokens = css;
-      tokenEditor.classList.remove('open');
-      renderFrame();
-    };
 
     function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
     function highlightHtml(source) {
@@ -393,7 +402,6 @@
     const editorWidth = Number(localStorage.getItem('evolve.stage-editor-width')); if (editorWidth) stage.style.setProperty('--editor-width', `${editorWidth}px`);
     initSectionResize();
     applyCollapse();
-    loadTokens();
     load();
   </script>
 </body>

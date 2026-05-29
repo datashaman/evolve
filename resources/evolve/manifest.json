@@ -1,4 +1,14 @@
 {
+    "styles": [
+        {
+            "id": "tokens",
+            "name": "Tokens"
+        },
+        {
+            "id": "site",
+            "name": "Site"
+        }
+    ],
     "components": [
         {
             "id": "site-header",
@@ -24,15 +34,18 @@
     "layouts": [
         {
             "id": "base",
-            "name": "Base"
+            "name": "Base",
+            "usage": "<x-layouts::base>\n  <main style=\"width: min(1200px, calc(100vw - 48px)); margin: 0 auto; padding: 48px 0 72px;\">\n    <h1>Base layout preview</h1>\n    <p>This frame owns the document shell, header, and footer.</p>\n  </main>\n</x-layouts::base>"
         },
         {
             "id": "marketing",
-            "name": "Marketing"
+            "name": "Marketing",
+            "usage": "<x-layouts::marketing>\n  <x-slot:hero>\n    <livewire:hero-section />\n  </x-slot:hero>\n\n  <livewire:feature-card icon=\"01\" title=\"Layout preview\" />\n\n  <x-slot:cta>\n    <livewire:cta-panel title=\"Drop page content into this shell.\" action=\"Preview action\" href=\"#contact\" />\n  </x-slot:cta>\n</x-layouts::marketing>"
         },
         {
             "id": "about",
-            "name": "About"
+            "name": "About",
+            "usage": "<x-layouts::about>\n  <x-slot:hero>\n    <h1>An editorial shell for trust-building pages.</h1>\n  </x-slot:hero>\n\n  <x-slot:aside>\n    Preview side-panel content.\n  </x-slot:aside>\n\n  <livewire:feature-card icon=\"01\" title=\"Narrative first\" />\n</x-layouts::about>"
         }
     ],
     "pages": [

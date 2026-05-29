@@ -23,7 +23,7 @@ new class extends Component {
 </section>
 
 <style>
-section {
+& {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr);
   gap: clamp(32px, 7vw, 96px);
@@ -79,6 +79,6 @@ aside {
 }
 aside strong { color: var(--ink); }
 @media (max-width: 860px) {
-  section { grid-template-columns: 1fr; padding: 56px 0; }
+  & { grid-template-columns: 1fr; padding: 56px 0; }
 }
 </style>

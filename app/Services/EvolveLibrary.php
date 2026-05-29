@@ -12,6 +12,7 @@ class EvolveLibrary
         $manifest = $this->manifest();
 
         return [
+            'styles' => $this->readStyles($manifest['styles'] ?? []),
             'components' => $this->readGroup('component', $manifest['components'] ?? []),
             'layouts' => $this->readGroup('layout', $manifest['layouts'] ?? []),
             'pages' => $this->readGroup('page', $manifest['pages'] ?? []),
@@ -23,22 +24,13 @@ class EvolveLibrary
         $previous = $this->manifest();
 
         $manifest = [
+            'styles' => $this->writeStyles($payload['styles'] ?? [], $previous['styles'] ?? []),
             'components' => $this->writeGroup('component', $payload['components'] ?? [], $previous['components'] ?? []),
             'layouts' => $this->writeGroup('layout', $payload['layouts'] ?? [], $previous['layouts'] ?? []),
             'pages' => $this->writeGroup('page', $payload['pages'] ?? [], $previous['pages'] ?? []),
         ];
 
         $this->writeFile($this->manifestPath(), json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
-    }
-
-    public function tokens(): string
-    {
-        return File::exists($this->tokenPath()) ? File::get($this->tokenPath()) : '';
-    }
-
-    public function writeTokens(string $css): void
-    {
-        $this->writeFile($this->tokenPath(), $css);
     }
 
     public function pageRoutes(): array
@@ -55,12 +47,9 @@ class EvolveLibrary
 
     public function usage(string $kind, string $id): string
     {
-        if ($kind === 'layout') {
-            return $this->layoutPreview($id);
-        }
-
         $key = match ($kind) {
             'component' => 'components',
+            'layout' => 'layouts',
             'page' => 'pages',
             default => '',
         };
@@ -79,29 +68,83 @@ class EvolveLibrary
         $manifest = $this->manifest();
         $styles = [];
 
-        foreach (['component' => 'components', 'layout' => 'layouts', 'page' => 'pages'] as $kind => $group) {
-            foreach ($manifest[$group] ?? [] as $artifact) {
-                $id = $this->safeId($artifact['id'] ?? '');
-                $sfc = $kind === 'layout' ? ['style' => $this->layoutStyle($id)] : $this->parseSfc($this->filePath($kind, $id));
-                $style = $sfc['style'] ?? '';
+        foreach ($manifest['styles'] ?? [] as $artifact) {
+            $id = $this->safeId($artifact['id'] ?? '');
+            $style = $this->globalStyle($id);
 
-                if ($id === '' || trim($style) === '') {
-                    continue;
-                }
-
-                if ($kind === 'component') {
-                    $style = $this->scopeCss($style, '[wire\\:name="'.$this->componentReference($kind, $id).'"]', $this->rootTag($sfc['blade'] ?? ''));
-                }
-
-                if ($kind === 'page') {
-                    $style = $this->scopeCss($style, '[wire\\:name="'.$this->componentReference($kind, $id).'"]');
-                }
-
-                $styles[] = "/* {$kind}: {$id} */\n".trim($style);
+            if ($id !== '' && trim($style) !== '') {
+                $styles[] = "/* style: {$id} */\n".trim($style);
             }
         }
 
+        foreach ($manifest['layouts'] ?? [] as $artifact) {
+            $id = $this->safeId($artifact['id'] ?? '');
+            $style = $this->layoutStyle($id);
+
+            if ($id === '' || trim($style) === '') {
+                continue;
+            }
+
+            $styles[] = "/* layout: {$id} */\n".trim($style);
+        }
+
         return implode("\n\n", $styles)."\n";
+    }
+
+    protected function readStyles(array $entries): array
+    {
+        return collect($entries)
+            ->map(function (array $entry) {
+                $id = $this->safeId($entry['id'] ?? '');
+                if ($id === '') {
+                    return null;
+                }
+
+                return [
+                    'id' => $id,
+                    'kind' => 'style',
+                    'name' => $entry['name'] ?? Str::headline(basename($id)),
+                    'slug' => '',
+                    'php' => '',
+                    'blade' => '',
+                    'style' => $this->globalStyle($id),
+                    'usage' => '',
+                    'path' => $this->relativeStylePath($id),
+                    'component' => '',
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    protected function writeStyles(array $artifacts, array $previousEntries): array
+    {
+        $entries = [];
+        $keep = [];
+
+        foreach ($artifacts as $artifact) {
+            $id = $this->safeId($artifact['id'] ?? '');
+            if ($id === '') {
+                continue;
+            }
+
+            $keep[] = $id;
+            $this->writeFile($this->stylePath($id), rtrim((string) ($artifact['style'] ?? ''))."\n");
+            $entries[] = [
+                'id' => $id,
+                'name' => (string) ($artifact['name'] ?? Str::headline(basename($id))),
+            ];
+        }
+
+        foreach ($previousEntries as $entry) {
+            $id = $this->safeId($entry['id'] ?? '');
+            if ($id !== '' && ! in_array($id, $keep, true)) {
+                File::delete($this->stylePath($id));
+            }
+        }
+
+        return $entries;
     }
 
     protected function readGroup(string $kind, array $entries): array
@@ -118,7 +161,7 @@ class EvolveLibrary
                     'kind' => $kind,
                     'name' => $entry['name'] ?? Str::headline(basename($id)),
                     'slug' => $entry['slug'] ?? '',
-                    'usage' => $kind === 'layout' ? '' : ($entry['usage'] ?? ''),
+                    'usage' => $entry['usage'] ?? '',
                     'path' => $this->relativePath($kind, $id),
                     'component' => $this->componentReference($kind, $id),
                     ...($kind === 'layout'
@@ -150,7 +193,8 @@ class EvolveLibrary
                 $this->writeFile($this->filePath($kind, $id), $this->serializeSfc(
                     (string) ($artifact['php'] ?? $this->defaultPhp()),
                     (string) ($artifact['blade'] ?? '<div></div>'),
-                    (string) ($artifact['style'] ?? '')
+                    (string) ($artifact['style'] ?? ''),
+                    $kind === 'page'
                 ));
             }
 
@@ -164,7 +208,7 @@ class EvolveLibrary
                 $entry['usage'] = (string) ($artifact['usage'] ?? '');
             }
 
-            if ($kind === 'component') {
+            if (in_array($kind, ['component', 'layout'], true)) {
                 $entry['usage'] = (string) ($artifact['usage'] ?? '');
             }
 
@@ -204,68 +248,33 @@ class EvolveLibrary
         return trim(File::exists($path) ? File::get($path) : '');
     }
 
-    protected function serializeSfc(string $php, string $blade, string $style): string
+    protected function serializeSfc(string $php, string $blade, string $style, bool $globalStyle = false): string
     {
         $source = "<?php\n\n".trim($php)."\n?>\n\n".trim($blade)."\n";
         $style = trim($style);
 
         if ($style !== '') {
-            $source .= "\n<style>\n{$style}\n</style>\n";
+            $tag = $globalStyle ? 'style global' : 'style';
+            $source .= "\n<{$tag}>\n{$style}\n</style>\n";
         }
 
         return $source;
     }
 
-    protected function scopeCss(string $css, string $scope, ?string $rootTag = null): string
-    {
-        return preg_replace_callback('/(^|[{}])(\s*)([^@{}][^{}]*?)\s*\{/', function (array $match) use ($scope, $rootTag) {
-            $selectors = collect(explode(',', trim($match[3])))
-                ->map(fn (string $selector) => $this->scopeSelector(trim($selector), $scope, $rootTag))
-                ->implode(', ');
-
-            return $match[1].$match[2].$selectors.' {';
-        }, $css);
-    }
-
-    protected function scopeSelector(string $selector, string $scope, ?string $rootTag = null): string
-    {
-        if ($selector === '' || str_starts_with($selector, '@') || str_contains($selector, '@media') || str_starts_with($selector, $scope)) {
-            return $selector;
-        }
-
-        if ($rootTag && preg_match('/^'.preg_quote($rootTag, '/').'(?=$|[.#:\[])(.*)$/', $selector, $match)) {
-            return $scope.($match[1] ?? '');
-        }
-
-        return $scope.' '.$selector;
-    }
-
-    protected function rootTag(string $blade): ?string
-    {
-        return preg_match('/^\s*<([a-z][\w-]*)\b/i', $blade, $match) ? strtolower($match[1]) : null;
-    }
-
-    protected function layoutPreview(string $id): string
-    {
-        $component = $this->componentName($id);
-
-        return match ($component) {
-            'base' => '<x-layouts::base><main style="width: min(1200px, calc(100vw - 48px)); margin: 0 auto; padding: 48px 0 72px;"><h1>Base layout preview</h1><p>This frame owns the document shell, header, and footer.</p></main></x-layouts::base>',
-            'marketing' => '<x-layouts::marketing><x-slot:hero><livewire:hero-section /></x-slot:hero><livewire:feature-card icon="01" title="Layout preview" /><x-slot:cta><livewire:cta-panel title="Drop page content into this shell." action="Preview action" href="#contact" /></x-slot:cta></x-layouts::marketing>',
-            'about' => '<x-layouts::about><x-slot:hero><h1>An editorial shell for trust-building pages.</h1></x-slot:hero><x-slot:aside>Preview side-panel content.</x-slot:aside><livewire:feature-card icon="01" title="Narrative first" /></x-layouts::about>',
-            default => '<x-layouts::'.$component.'></x-layouts::'.$component.'>',
-        };
-    }
-
     protected function manifest(): array
     {
         if (! File::exists($this->manifestPath())) {
-            return ['components' => [], 'layouts' => [], 'pages' => []];
+            return $this->emptyManifest();
         }
 
         $decoded = json_decode(File::get($this->manifestPath()), true);
 
-        return is_array($decoded) ? $decoded : ['components' => [], 'layouts' => [], 'pages' => []];
+        return is_array($decoded) ? array_replace($this->emptyManifest(), $decoded) : $this->emptyManifest();
+    }
+
+    protected function emptyManifest(): array
+    {
+        return ['styles' => [], 'components' => [], 'layouts' => [], 'pages' => []];
     }
 
     protected function writeFile(string $path, string $content): void
@@ -296,9 +305,21 @@ class EvolveLibrary
         return resource_path('evolve/manifest.json');
     }
 
-    protected function tokenPath(): string
+    protected function globalStyle(string $id): string
     {
-        return resource_path('css/tokens.css');
+        $path = $this->stylePath($id);
+
+        return File::exists($path) ? trim(File::get($path)) : '';
+    }
+
+    protected function stylePath(string $id): string
+    {
+        return resource_path('css/'.$this->safeId($id).'.css');
+    }
+
+    protected function relativeStylePath(string $id): string
+    {
+        return 'resources/css/'.$this->safeId($id).'.css';
     }
 
     protected function layoutStyle(string $id): string

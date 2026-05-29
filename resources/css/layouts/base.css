@@ -12,8 +12,3 @@ footer {
   padding: 36px 0 48px;
   color: var(--muted);
 }
-
-html,
-body {
-  margin: 0;
-}

@@ -61,7 +61,7 @@ class extends Component {
 
 <x-slot:footer>Northstar Studio. A seeded Livewire SFC workbench scaffold.</x-slot:footer>
 
-<style>
+<style global>
 .services,
 .proof {
   width: min(1200px, calc(100vw - 48px));

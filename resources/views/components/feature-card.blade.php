@@ -16,7 +16,7 @@ new class extends Component {
 </article>
 
 <style>
-article {
+& {
   display: grid;
   gap: 16px;
   box-sizing: border-box;

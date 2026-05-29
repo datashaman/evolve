@@ -20,7 +20,7 @@ new class extends Component {
 </section>
 
 <style>
-section {
+& {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 24px;
@@ -53,6 +53,6 @@ a {
   text-decoration: none;
 }
 @media (max-width: 720px) {
-  section { grid-template-columns: 1fr; }
+  & { grid-template-columns: 1fr; }
 }
 </style>

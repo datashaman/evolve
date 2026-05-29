@@ -24,7 +24,7 @@ new class extends Component {
 </header>
 
 <style>
-header {
+& {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -64,6 +64,6 @@ nav :is(a) {
   text-decoration: none;
 }
 @media (max-width: 720px) {
-  header, nav { align-items: flex-start; flex-direction: column; }
+  &, nav { align-items: flex-start; flex-direction: column; }
 }
 </style>

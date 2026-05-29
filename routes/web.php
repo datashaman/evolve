@@ -11,13 +11,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('api/library', [EvolveLibraryController::class, 'index']);
     Route::put('api/library', [EvolveLibraryController::class, 'update']);
-    Route::put('api/tokens', [EvolveLibraryController::class, 'updateTokens']);
     Route::get('workbench/preview/{kind}/{id}', [EvolvePreviewController::class, 'show'])
         ->where('kind', 'component|layout|page')
         ->where('id', '[A-Za-z0-9_\\-\\/]+');
 });
 
-Route::get('tokens.css', [EvolveLibraryController::class, 'tokens'])->name('tokens');
 Route::get('evolve.css', [EvolveLibraryController::class, 'stylesheet'])->name('evolve.styles');
 
 require __DIR__.'/settings.php';

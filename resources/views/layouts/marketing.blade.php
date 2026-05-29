@@ -9,7 +9,9 @@
         @endif
 
         @if (trim((string) $slot) !== '')
-            {!! $slot !!}
+            <section class="marketing-content">
+                {!! $slot !!}
+            </section>
         @else
             <section class="slot-note">Main content slot</section>
         @endif

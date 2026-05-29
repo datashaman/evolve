@@ -38,6 +38,10 @@
   clear: both;
 }
 
+.content > #contact {
+  margin-top: 40px;
+}
+
 @media (max-width: 860px) {
   .about-main { padding: 48px 0; }
   .content > aside {
