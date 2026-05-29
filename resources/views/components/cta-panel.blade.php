@@ -3,11 +3,11 @@
 use Livewire\Component;
 
 new class extends Component {
-    public string $title = 'Ready to turn this into your site?';
+    public string $title = '';
 
-    public string $action = 'hello@example.com';
+    public string $action = '';
 
-    public string $href = 'mailto:hello@example.com';
+    public string $href = '';
 };
 ?>
 

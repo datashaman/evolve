@@ -3,9 +3,9 @@
 use Livewire\Component;
 
 new class extends Component {
-    public string $icon = '01';
+    public string $icon = '';
 
-    public string $title = 'Service card';
+    public string $title = '';
 };
 ?>
 
