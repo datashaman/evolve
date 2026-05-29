@@ -60,6 +60,12 @@
             "name": "About",
             "slug": "/about",
             "usage": "<livewire:pages::about />"
+        },
+        {
+            "id": "new-48a90d9d",
+            "name": "New page",
+            "slug": "/new-48a90d9d",
+            "usage": "<livewire:pages::new-48a90d9d />"
         }
     ]
 }

@@ -69,17 +69,35 @@
     .metadata-field input { width: 100%; padding: 7px 9px; border: 1px solid #3f3f46; border-radius: 6px; background: #27272a; color: #fafafa; font: 13px ui-monospace, "SF Mono", Menlo, monospace; }
     .content-index { flex: 1; min-height: 0; overflow: auto; padding: 12px; background: #1e1e1e; }
     .content-index[hidden] { display: none; }
+    .content-page-header { display: grid; gap: 3px; padding: 2px 0 12px; }
+    .content-page-header h2 { margin: 0; color: #fafafa; font-size: 18px; line-height: 1.2; }
+    .content-page-header p { margin: 0; color: #71717a; font: 12px ui-monospace, "SF Mono", Menlo, monospace; }
+    .content-toolbar { display: flex; gap: 8px; align-items: center; padding: 0 0 10px; }
+    .content-toolbar input { flex: 1; min-width: 160px; padding: 8px 10px; border: 1px solid #3f3f46; border-radius: 7px; background: #18181b; color: #fafafa; font: 13px system-ui, sans-serif; }
+    .content-toolbar input:focus { outline: 2px solid #4f46e5; outline-offset: 0; }
+    .content-toolbar button, .row-actions button { padding: 7px 10px; border: 1px solid #3f3f46; border-radius: 7px; background: #303036; color: #fafafa; cursor: pointer; font-weight: 700; }
+    .content-toolbar button:hover, .row-actions button:hover { background: #3a3a42; }
     .content-index table { width: 100%; border-collapse: collapse; table-layout: fixed; color: #e4e4e7; font-size: 12px; }
     .content-index th { padding: 8px; color: #a1a1aa; font-size: 11px; text-align: left; text-transform: uppercase; letter-spacing: .04em; background: #27272a; position: sticky; top: 0; z-index: 1; }
-    .content-index td { padding: 6px 8px; border-top: 1px solid #27272a; vertical-align: top; }
+    .content-index td { padding: 8px; border-top: 1px solid #27272a; vertical-align: top; }
+    .content-index tbody tr { cursor: pointer; }
+    .content-index tbody tr:hover { background: #242428; }
+    .content-index tbody tr.editing { background: #252538; cursor: default; }
+    .content-index .cell-title { font-weight: 700; }
+    .content-index .cell-summary { color: #a1a1aa; line-height: 1.45; }
+    .content-index .cell-muted { color: #71717a; }
     .content-index input, .content-index textarea { width: 100%; padding: 7px 8px; border: 1px solid #3f3f46; border-radius: 6px; background: #27272a; color: #fafafa; font: 12px ui-monospace, "SF Mono", Menlo, monospace; }
     .content-index textarea { min-height: 70px; resize: vertical; line-height: 1.4; }
     .content-index input[type="checkbox"] { width: auto; margin-top: 9px; }
     .content-index .position-cell { width: 72px; }
     .content-index .icon-cell { width: 76px; }
     .content-index .published-cell { width: 92px; text-align: center; }
-    .content-index .content-actions { display: flex; justify-content: flex-end; padding: 0 0 10px; }
-    .content-index .content-actions button { padding: 7px 10px; border: 1px solid #3f3f46; border-radius: 7px; background: #303036; color: #fafafa; cursor: pointer; font-weight: 700; }
+    .content-index .status-cell { width: 92px; color: #71717a; font-size: 11px; }
+    .content-index .actions-cell { width: 116px; }
+    .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+    .row-actions button { min-width: 34px; padding: 5px 8px; font-size: 12px; }
+    .row-actions .danger { color: #fecaca; border-color: #7f1d1d; background: #3f1f24; }
+    .row-actions .danger:hover { background: #52252b; }
     .code-editor { position: relative; flex: 1; min-height: 60px; overflow: hidden; background: #1e1e1e; }
     .code-editor textarea, .syntax-highlight {
       position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 8px 16px 12px; border: 0; overflow: auto;
@@ -129,7 +147,14 @@
             </div>
           </section>
           <div class="content-index" id="content-index" hidden>
-            <div class="content-actions"><button id="btn-add-content-row" type="button">Add row</button></div>
+            <div class="content-page-header">
+              <h2 id="content-model-name">Service</h2>
+              <p id="content-model-path">app/Models/Service.php</p>
+            </div>
+            <div class="content-toolbar">
+              <input id="content-search" type="search" placeholder="Search services">
+              <button id="btn-add-content-row" type="button">Add row</button>
+            </div>
             <table>
               <thead>
                 <tr>
@@ -138,6 +163,8 @@
                   <th>Title</th>
                   <th>Summary</th>
                   <th class="published-cell">Published</th>
+                  <th class="status-cell">Status</th>
+                  <th class="actions-cell">Actions</th>
                 </tr>
               </thead>
               <tbody id="content-rows"></tbody>
@@ -162,10 +189,16 @@
     const CONTENT_API = '/api/content';
     const csrf = document.querySelector('meta[name="csrf-token"]').content;
     let library = [];
+    let contentModels = [];
+    let contentData = {};
     let contentRows = [];
+    let selectedContentId = 'services';
     let selectedKey = '';
     let saveTimer = 0;
     let contentSaveTimer = 0;
+    let contentFilter = '';
+    let editingContentKey = '';
+    let contentStatus = {};
     let draggedStyleKey = '';
     const frame = document.getElementById('frame');
     const workspace = document.querySelector('.workspace');
@@ -173,6 +206,9 @@
     const editorFields = document.querySelector('#editor .editor-fields');
     const contentIndex = document.getElementById('content-index');
     const contentRowsEl = document.getElementById('content-rows');
+    const contentSearch = document.getElementById('content-search');
+    const contentModelName = document.getElementById('content-model-name');
+    const contentModelPath = document.getElementById('content-model-path');
     const fields = {
       name: document.getElementById('meta-name'),
       slug: document.getElementById('meta-slug'),
@@ -195,16 +231,22 @@
     const artifactKey = c => c ? `${c.kind}:${c.id}` : '';
     const selected = () => library.find(c => artifactKey(c) === selectedKey) ?? null;
     const byKind = kind => library.filter(c => c.kind === kind);
-    const serviceModel = () => ({ kind: 'content', id: 'services', name: 'Service', model: 'Service', meta: `${contentRows.length} rows` });
-    const refreshContentModel = () => { library = [...byKind('layout'), ...byKind('style'), ...byKind('component'), serviceModel(), ...byKind('page')]; };
+    const selectedContentModel = () => contentModels.find(model => model.id === selectedContentId) ?? contentModels[0] ?? { id: 'services', name: 'Service', model: 'Service' };
+    const refreshContentModel = () => {
+      contentModels = contentModels.map(model => ({ ...model, meta: `${(contentData[model.id] ?? []).length} rows` }));
+      library = [...byKind('layout'), ...byKind('style'), ...byKind('component'), ...contentModels, ...byKind('page')];
+    };
 
     async function load() {
       const [data, content] = await Promise.all([
         fetch(API, { headers: { accept: 'application/json' } }).then(r => r.json()),
         fetch(CONTENT_API, { headers: { accept: 'application/json' } }).then(r => r.json()),
       ]);
-      contentRows = content.services ?? [];
-      library = [...data.layouts, ...data.styles, ...data.components, serviceModel(), ...data.pages];
+      contentModels = content.models ?? [{ kind: 'content', id: 'services', name: 'Service', model: 'Service', meta: `${(content.services ?? []).length} rows` }];
+      contentData = content.data ?? { services: content.services ?? [] };
+      selectedContentId = contentModels.find(model => model.id === selectedContentId)?.id ?? contentModels[0]?.id ?? 'services';
+      contentRows = contentData[selectedContentId] ?? [];
+      library = [...data.layouts, ...data.styles, ...data.components, ...contentModels, ...data.pages];
       selectedKey ||= artifactKey(library[0]);
       renderLists();
       syncInputs();
@@ -225,14 +267,27 @@
       }).then(() => { if (refresh) renderFrame(); });
     }
 
+    const contentRowKey = row => String(row.id ?? '');
+
     function saveContent(refresh = false) {
+      const currentModel = selectedContentModel();
+      contentData[selectedContentId] = contentRows.map(row => ({ ...row, model: currentModel.model }));
       const shouldRebuildTable = contentRows.some(row => String(row.id ?? '').startsWith('new-')) || !contentIndex.contains(document.activeElement);
+      const previousEditingKey = editingContentKey;
+      if (previousEditingKey) contentStatus[previousEditingKey] = 'Saving';
       return fetch(CONTENT_API, {
         method: 'PUT',
         headers: { 'content-type': 'application/json', 'x-csrf-token': csrf },
-        body: JSON.stringify({ services: contentRows }),
-      }).then(r => r.json()).then(data => {
-        const savedRows = data.services ?? [];
+        body: JSON.stringify({ data: contentData }),
+      }).then(r => {
+        if (!r.ok) throw new Error('Content save failed');
+        return r.json();
+      }).then(data => {
+        contentModels = data.models ?? contentModels;
+        contentData = data.data ?? contentData;
+        const savedRows = contentData[selectedContentId] ?? [];
+        const replacement = savedRows.find(row => row.client_id === previousEditingKey);
+        if (replacement) editingContentKey = replacement.id;
         if (shouldRebuildTable) {
           contentRows = savedRows;
         } else {
@@ -243,10 +298,27 @@
             }
           });
         }
-        library = [...byKind('layout'), ...byKind('style'), ...byKind('component'), serviceModel(), ...byKind('page')];
+        if (previousEditingKey) contentStatus[editingContentKey || previousEditingKey] = 'Saved';
+        refreshContentModel();
         renderLists();
-        if (shouldRebuildTable) renderContentIndex();
+        if (shouldRebuildTable) {
+          renderContentIndex();
+        } else {
+          const statusCell = contentRowsEl.querySelector('[data-row-status]');
+          if (statusCell) {
+            statusCell.textContent = 'Saved';
+            setTimeout(() => {
+              if (statusCell.textContent === 'Saved') statusCell.textContent = '';
+            }, 1200);
+          }
+          contentStatus = {};
+        }
         if (refresh) renderFrame();
+      }).catch(() => {
+        if (previousEditingKey) contentStatus[previousEditingKey] = 'Error';
+        const statusCell = contentRowsEl.querySelector('[data-row-status]');
+        if (statusCell) statusCell.textContent = 'Error';
+        else renderContentIndex();
       });
     }
 
@@ -294,7 +366,14 @@
             reorderStyle(draggedStyleKey || event.dataTransfer.getData('text/plain'), li.dataset.key);
           };
         }
-        li.onclick = () => { selectedKey = artifactKey(item); syncInputs(); renderLists(); renderFrame(); };
+        li.onclick = () => {
+          selectedKey = artifactKey(item);
+          if (kind === 'content') {
+            selectedContentId = item.id;
+            contentRows = contentData[selectedContentId] ?? [];
+          }
+          syncInputs(); renderLists(); renderFrame();
+        };
         list.append(li);
       });
       document.getElementById(emptyId).hidden = items.length > 0;
@@ -302,31 +381,89 @@
 
     function renderContentIndex() {
       if (!contentRowsEl) return;
+      const filter = contentFilter.trim().toLowerCase();
+      const model = selectedContentModel();
+      contentModelName.textContent = model.name;
+      contentModelPath.textContent = model.path ?? `app/Models/${model.name}.php`;
+      contentSearch.placeholder = `Search ${model.name}`;
+      const rows = filter
+        ? contentRows.filter(row => [row.title, row.summary, row.icon].some(value => String(value ?? '').toLowerCase().includes(filter)))
+        : contentRows;
       contentRowsEl.innerHTML = '';
-      contentRows.forEach((row, index) => {
+      if (!rows.length) {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
+        tr.innerHTML = `<td colspan="7" class="cell-muted">${contentRows.length ? `No matching ${escapeHtml(selectedContentModel().name)} rows.` : `No ${escapeHtml(selectedContentModel().name)} rows yet.`}</td>`;
+        contentRowsEl.append(tr);
+        return;
+      }
+      rows.forEach((row, index) => {
+        const key = contentRowKey(row);
+        const editing = editingContentKey === key;
+        const tr = document.createElement('tr');
+        tr.className = editing ? 'editing' : '';
+        tr.innerHTML = editing ? `
           <td class="position-cell"><input type="number" min="0" step="1" data-field="position"></td>
           <td class="icon-cell"><input data-field="icon"></td>
           <td><input data-field="title"></td>
           <td><textarea data-field="summary"></textarea></td>
           <td class="published-cell"><input type="checkbox" data-field="is_published"></td>
+          <td class="status-cell" data-row-status>${contentStatus[key] ?? ''}</td>
+          <td class="actions-cell"><div class="row-actions"><button type="button" data-action="done">Done</button><button class="danger" type="button" data-action="delete">Delete</button></div></td>
+        ` : `
+          <td class="position-cell">${escapeHtml(row.position ?? index + 1)}</td>
+          <td class="icon-cell">${escapeHtml(row.icon ?? '')}</td>
+          <td class="cell-title">${escapeHtml(row.title ?? '')}</td>
+          <td class="cell-summary">${escapeHtml(row.summary ?? '')}</td>
+          <td class="published-cell">${row.is_published ? 'Yes' : 'No'}</td>
+          <td class="status-cell">${contentStatus[key] ?? ''}</td>
+          <td class="actions-cell"><div class="row-actions"><button type="button" data-action="edit">Edit</button><button class="danger" type="button" data-action="delete">Delete</button></div></td>
         `;
-        tr.querySelector('[data-field="position"]').value = row.position ?? index + 1;
-        tr.querySelector('[data-field="icon"]').value = row.icon ?? '';
-        tr.querySelector('[data-field="title"]').value = row.title ?? '';
-        tr.querySelector('[data-field="summary"]').value = row.summary ?? '';
-        tr.querySelector('[data-field="is_published"]').checked = !!row.is_published;
-        tr.querySelectorAll('[data-field]').forEach(input => {
-          const eventName = input.type === 'checkbox' ? 'change' : 'input';
-          input.addEventListener(eventName, () => {
-            const field = input.dataset.field;
-            row[field] = input.type === 'checkbox' ? input.checked : field === 'position' ? Number(input.value || 0) : input.value;
-            row.name = row.title;
-            refreshContentModel();
-            renderLists();
-            scheduleContentSave(true);
+        if (!editing) {
+          tr.addEventListener('click', event => {
+            if (event.target.closest('button')) return;
+            editingContentKey = key;
+            renderContentIndex();
           });
+        } else {
+          tr.querySelector('[data-field="position"]').value = row.position ?? index + 1;
+          tr.querySelector('[data-field="icon"]').value = row.icon ?? '';
+          tr.querySelector('[data-field="title"]').value = row.title ?? '';
+          tr.querySelector('[data-field="summary"]').value = row.summary ?? '';
+          tr.querySelector('[data-field="is_published"]').checked = !!row.is_published;
+          tr.querySelectorAll('[data-field]').forEach(input => {
+            const eventName = input.type === 'checkbox' ? 'change' : 'input';
+            input.addEventListener(eventName, () => {
+              const field = input.dataset.field;
+              row[field] = input.type === 'checkbox' ? input.checked : field === 'position' ? Number(input.value || 0) : input.value;
+              row.name = row.title;
+              contentData[selectedContentId] = contentRows;
+              refreshContentModel();
+              renderLists();
+              contentStatus[contentRowKey(row)] = 'Saving';
+              const statusCell = tr.querySelector('[data-row-status]');
+              if (statusCell) statusCell.textContent = 'Saving';
+              scheduleContentSave(true);
+            });
+          });
+        }
+        tr.querySelector('[data-action="edit"]')?.addEventListener('click', () => {
+          editingContentKey = key;
+          renderContentIndex();
+        });
+        tr.querySelector('[data-action="done"]')?.addEventListener('click', () => {
+          editingContentKey = '';
+          renderContentIndex();
+        });
+        tr.querySelector('[data-action="delete"]')?.addEventListener('click', () => {
+          if (!confirm(`Delete "${row.title || 'this service'}"?`)) return;
+          contentRows = contentRows.filter(entry => entry !== row);
+          contentData[selectedContentId] = contentRows;
+          if (editingContentKey === key) editingContentKey = '';
+          contentStatus[key] = 'Deleting';
+          refreshContentModel();
+          renderLists();
+          renderContentIndex();
+          saveContent(true);
         });
         contentRowsEl.append(tr);
       });
@@ -422,14 +559,16 @@
       contentRows.push({
         id: `new-${crypto.randomUUID().slice(0, 8)}`,
         kind: 'content',
-        model: 'Service',
-        name: 'New service',
-        title: 'New service',
+        model: selectedContentModel().model,
+        name: `New ${selectedContentModel().name.toLowerCase()}`,
+        title: `New ${selectedContentModel().name.toLowerCase()}`,
         icon: String(contentRows.length + 1).padStart(2, '0'),
         summary: 'Describe the customer outcome this service creates.',
         position: contentRows.length + 1,
         is_published: true,
       });
+      contentData[selectedContentId] = contentRows;
+      editingContentKey = contentRows[contentRows.length - 1].id;
       selectedKey = 'content:services';
       refreshContentModel();
       renderLists();
@@ -437,12 +576,36 @@
       saveContent(true);
     }
 
+    function addContentModel() {
+      const name = prompt('Content model name');
+      if (!name?.trim()) return;
+      fetch('/api/content/models', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': csrf, accept: 'application/json' },
+        body: JSON.stringify({ name: name.trim() }),
+      }).then(r => {
+        if (!r.ok) throw new Error('Could not create content model');
+        return r.json();
+      }).then(data => {
+        contentModels = data.models ?? contentModels;
+        contentData = data.data ?? contentData;
+        const created = contentModels.find(model => model.name.toLowerCase() === name.trim().replace(/[^A-Za-z0-9]+/g, '').toLowerCase())
+          ?? contentModels[contentModels.length - 1];
+        selectedContentId = created?.id ?? selectedContentId;
+        contentRows = contentData[selectedContentId] ?? [];
+        selectedKey = `content:${selectedContentId}`;
+        library = [...byKind('layout'), ...byKind('style'), ...byKind('component'), ...contentModels, ...byKind('page')];
+        renderLists(); syncInputs();
+      }).catch(error => alert(error.message));
+    }
+
     document.getElementById('btn-new-style').onclick = () => newArtifact('style');
     document.getElementById('btn-new-component').onclick = () => newArtifact('component');
     document.getElementById('btn-new-layout').onclick = () => newArtifact('layout');
     document.getElementById('btn-new-page').onclick = () => newArtifact('page');
-    document.getElementById('btn-new-content').onclick = () => addContentRow();
+    document.getElementById('btn-new-content').onclick = () => addContentModel();
     document.getElementById('btn-add-content-row').onclick = () => addContentRow();
+    contentSearch.addEventListener('input', () => { contentFilter = contentSearch.value; renderContentIndex(); });
     document.getElementById('btn-reload').onclick = () => load();
     document.getElementById('btn-open').onclick = () => { const c = selected(); if (c) window.open(previewUrl(c), '_blank'); };
 

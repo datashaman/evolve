@@ -13,6 +13,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('api/library', [EvolveLibraryController::class, 'index']);
     Route::put('api/library', [EvolveLibraryController::class, 'update']);
     Route::get('api/content', [EvolveContentController::class, 'index']);
+    Route::post('api/content/models', [EvolveContentController::class, 'storeModel']);
     Route::put('api/content', [EvolveContentController::class, 'update']);
     Route::get('workbench/preview/{kind}/{id}', [EvolvePreviewController::class, 'show'])
         ->where('kind', 'component|layout|page')

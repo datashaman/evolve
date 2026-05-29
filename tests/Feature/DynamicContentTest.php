@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Service;
 use App\Models\User;
+use App\Services\EvolveContentModelScaffolder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -84,5 +85,60 @@ class DynamicContentTest extends TestCase
             'id' => $id,
             'title' => 'Edited again',
         ]);
+    }
+
+    public function test_workbench_content_api_deletes_services_missing_from_payload(): void
+    {
+        $this->actingAs(User::factory()->create([
+            'email_verified_at' => now(),
+        ]));
+
+        $kept = Service::query()->create([
+            'icon' => '01',
+            'title' => 'Keep this',
+            'summary' => 'Still present.',
+            'position' => 1,
+            'is_published' => true,
+        ]);
+
+        $deleted = Service::query()->create([
+            'icon' => '02',
+            'title' => 'Delete this',
+            'summary' => 'Removed from the table.',
+            'position' => 2,
+            'is_published' => true,
+        ]);
+
+        $this->putJson('/api/content', [
+            'services' => [
+                [
+                    'id' => (string) $kept->id,
+                    'icon' => '01',
+                    'title' => 'Keep this',
+                    'summary' => 'Still present.',
+                    'position' => 1,
+                    'is_published' => true,
+                ],
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('services', ['id' => $kept->id]);
+        $this->assertDatabaseMissing('services', ['id' => $deleted->id]);
+    }
+
+    public function test_workbench_content_model_endpoint_invokes_scaffolder(): void
+    {
+        $this->actingAs(User::factory()->create([
+            'email_verified_at' => now(),
+        ]));
+
+        $this->mock(EvolveContentModelScaffolder::class)
+            ->shouldReceive('create')
+            ->once()
+            ->with('Case Study');
+
+        $this->postJson('/api/content/models', [
+            'name' => 'Case Study',
+        ])->assertOk();
     }
 }
