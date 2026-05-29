@@ -95,9 +95,9 @@
 
   <div class="workspace">
     <nav class="sidebar">
+      <section><header><span>Layouts</span><button id="btn-new-layout">+</button></header><ul id="list-layouts"></ul><div class="empty" id="empty-layouts" hidden>No layouts yet.</div></section>
       <section><header><span>Styles</span><button id="btn-new-style">+</button></header><ul id="list-styles"></ul><div class="empty" id="empty-styles" hidden>No styles yet.</div></section>
       <section><header><span>Components</span><button id="btn-new-component">+</button></header><ul id="list-components"></ul><div class="empty" id="empty-components" hidden>No components yet.</div></section>
-      <section><header><span>Layouts</span><button id="btn-new-layout">+</button></header><ul id="list-layouts"></ul><div class="empty" id="empty-layouts" hidden>No layouts yet.</div></section>
       <section><header><span>Pages</span><button id="btn-new-page">+</button></header><ul id="list-pages"></ul><div class="empty" id="empty-pages" hidden>No pages yet.</div></section>
     </nav>
     <div class="sidebar-resize" id="sidebar-resize"></div>
@@ -162,7 +162,7 @@
 
     async function load() {
       const data = await fetch(API, { headers: { accept: 'application/json' } }).then(r => r.json());
-      library = [...data.styles, ...data.components, ...data.layouts, ...data.pages];
+      library = [...data.layouts, ...data.styles, ...data.components, ...data.pages];
       selectedKey ||= artifactKey(library[0]);
       renderLists();
       syncInputs();
@@ -189,9 +189,9 @@
     }
 
     function renderLists() {
+      renderList('layout', 'list-layouts', 'empty-layouts');
       renderList('style', 'list-styles', 'empty-styles');
       renderList('component', 'list-components', 'empty-components');
-      renderList('layout', 'list-layouts', 'empty-layouts');
       renderList('page', 'list-pages', 'empty-pages');
     }
 
@@ -235,7 +235,7 @@
       if (from < 0 || to < 0) return;
       const [moved] = styles.splice(from, 1);
       styles.splice(to, 0, moved);
-      library = [...styles, ...byKind('component'), ...byKind('layout'), ...byKind('page')];
+      library = [...byKind('layout'), ...styles, ...byKind('component'), ...byKind('page')];
       renderLists();
       save(true);
     }
