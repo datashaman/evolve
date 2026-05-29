@@ -24,32 +24,29 @@
     "layouts": [
         {
             "id": "base",
-            "name": "Base",
-            "usage": "<x-layouts::base>\n  <main style=\"width: min(1200px, calc(100vw - 48px)); margin: 0 auto; padding: 48px 0 72px;\">\n    <h1>Base layout preview</h1>\n    <p>This frame owns the document shell, header, and footer.</p>\n  </main>\n</x-layouts::base>"
+            "name": "Base"
         },
         {
             "id": "marketing",
-            "name": "Marketing",
-            "usage": "<x-layouts::marketing>\n  <x-slot:hero><livewire:hero-section /></x-slot:hero>\n  <livewire:feature-card icon=\"01\" title=\"Layout preview\" />\n  <x-slot:cta><livewire:cta-panel title=\"Drop page content into this shell.\" action=\"Preview action\" href=\"#contact\" /></x-slot:cta>\n</x-layouts::marketing>"
+            "name": "Marketing"
         },
         {
             "id": "about",
-            "name": "About",
-            "usage": "<x-layouts::about>\n  <x-slot:hero><h1>An editorial shell for trust-building pages.</h1></x-slot:hero>\n  <x-slot:aside>Preview side-panel content.</x-slot:aside>\n  <livewire:feature-card icon=\"01\" title=\"Narrative first\" />\n</x-layouts::about>"
+            "name": "About"
         }
     ],
     "pages": [
         {
             "id": "home",
             "name": "Home",
-            "usage": "<livewire:pages::home />",
-            "slug": "/"
+            "slug": "/",
+            "usage": "<livewire:pages::home />"
         },
         {
             "id": "about",
             "name": "About",
-            "usage": "<livewire:pages::about />",
-            "slug": "/about"
+            "slug": "/about",
+            "usage": "<livewire:pages::about />"
         }
     ]
 }

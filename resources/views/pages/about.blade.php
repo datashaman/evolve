@@ -4,7 +4,10 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Layout('layouts::about')] #[Title('About Northstar Studio')] class extends Component {
+new
+    #[Layout('layouts::about')]
+    #[Title('About Northstar Studio')]
+class extends Component {
     //
 };
 ?>

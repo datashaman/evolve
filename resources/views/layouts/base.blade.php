@@ -1,12 +1,3 @@
-<?php
-
-use Livewire\Component;
-
-new class extends Component {
-    //
-};
-?>
-
 <!DOCTYPE html>
 @php(config(['livewire.inject_assets' => false]))
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -35,23 +26,3 @@ new class extends Component {
     </div>
 </body>
 </html>
-
-<style>
-.site-shell {
-  width: 100%;
-  min-height: 100vh;
-  background: var(--surface-soft);
-  color: var(--text);
-  font-family: var(--font-sans);
-}
-footer {
-  width: min(1200px, calc(100vw - 48px));
-  margin: 0 auto;
-  padding: 36px 0 48px;
-  color: var(--muted);
-}
-html,
-body {
-  margin: 0;
-}
-</style>

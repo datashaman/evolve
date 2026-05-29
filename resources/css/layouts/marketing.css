@@ -1,0 +1,15 @@
+.marketing-main {
+  display: grid;
+  gap: 64px;
+  padding-bottom: 72px;
+}
+
+.slot-note {
+  width: min(1200px, calc(100vw - 48px));
+  margin: 0 auto;
+  padding: 32px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted);
+}

@@ -1,12 +1,3 @@
-<?php
-
-use Livewire\Component;
-
-new class extends Component {
-    //
-};
-?>
-
 <x-layouts::base :title="$title ?? null">
     <x-slot:action>Plan the site</x-slot:action>
 
@@ -32,20 +23,3 @@ new class extends Component {
 
     <x-slot:footer>{!! $footer ?? 'Built with the component workbench.' !!}</x-slot:footer>
 </x-layouts::base>
-
-<style>
-.marketing-main {
-  display: grid;
-  gap: 64px;
-  padding-bottom: 72px;
-}
-.slot-note {
-  width: min(1200px, calc(100vw - 48px));
-  margin: 0 auto;
-  padding: 32px;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--muted);
-}
-</style>

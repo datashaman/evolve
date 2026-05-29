@@ -41,6 +41,7 @@
     .editor-fields { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
     .editor-fields.resizing { cursor: row-resize; user-select: none; }
     .source-section { display: flex; flex-direction: column; min-height: 38px; }
+    .source-section[hidden] { display: none; }
     .source-section[data-block="metadata"] { flex: 0 0 auto; }
     .source-section[data-block="php"] { flex: 1.2 1 0; }
     .source-section[data-block="blade"] { flex: 2 1 0; }
@@ -235,7 +236,10 @@
       fields.style.value = c?.style ?? '';
       fields.usage.value = c?.usage ?? '';
       document.querySelector('[data-meta="slug"]').hidden = c?.kind !== 'page';
+      sourceSection('php').hidden = c?.kind === 'layout';
+      sourceSection('usage').hidden = c?.kind === 'layout';
       updateHighlights();
+      updateResizeHandles();
       requestAnimationFrame(fitSourceHeights);
     }
 
@@ -255,10 +259,10 @@
       if (!c) return;
       c.name = fields.name.value;
       c.slug = fields.slug.value || '/';
-      c.php = fields.php.value;
+      c.php = c.kind === 'layout' ? '' : fields.php.value;
       c.blade = fields.blade.value;
       c.style = fields.style.value;
-      c.usage = fields.usage.value;
+      c.usage = c.kind === 'layout' ? '' : fields.usage.value;
       updateHighlights();
       renderLists();
       scheduleSave(true);
@@ -272,10 +276,10 @@
       const item = {
         id, kind, name: kind === 'page' ? 'New page' : kind === 'layout' ? 'New layout' : 'New component',
         slug: kind === 'page' ? `/${id}` : '',
-        php: "use Livewire\\Component;\n\nnew class extends Component {\n    //\n};",
-        blade: kind === 'component' ? '<div>New component</div>' : '<div>@{{ $slot }}</div>',
+        php: kind === 'layout' ? '' : "use Livewire\\Component;\n\nnew class extends Component {\n    //\n};",
+        blade: kind === 'component' ? '<div>New component</div>' : '@{{ $slot }}',
         style: '',
-        usage: kind === 'component' ? `<livewire:${component} />` : kind === 'layout' ? `<x-layouts::${component}></x-layouts::${component}>` : `<livewire:pages::${component} />`,
+        usage: kind === 'component' ? `<livewire:${component} />` : kind === 'layout' ? '' : `<livewire:pages::${component} />`,
       };
       library.push(item);
       selectedKey = artifactKey(item);
@@ -329,7 +333,7 @@
       updateResizeHandles(); fitSourceHeights();
     }
     function sourceSection(block) { return sourceSections.find(section => section.dataset.block === block); }
-    function visibleCodeSections() { return ['php','blade','style','usage'].map(sourceSection).filter(section => section && !section.classList.contains('collapsed')); }
+    function visibleCodeSections() { return ['php','blade','style','usage'].map(sourceSection).filter(section => section && !section.hidden && !section.classList.contains('collapsed')); }
     function availableCodeHeight() {
       const fixed = [...editorFields.children].reduce((sum, child) => child.hidden || (child.classList.contains('source-section') && ['php','blade','style','usage'].includes(child.dataset.block) && !child.classList.contains('collapsed')) ? sum : sum + child.getBoundingClientRect().height, 0);
       return Math.max(0, editorFields.clientHeight - fixed);
@@ -350,7 +354,7 @@
     function updateResizeHandles() {
       sourceResizeHandles.forEach(handle => {
         const before = sourceSection(handle.dataset.before), after = sourceSection(handle.dataset.after);
-        handle.hidden = !before || !after || before.classList.contains('collapsed') || after.classList.contains('collapsed');
+        handle.hidden = !before || !after || before.hidden || after.hidden || before.classList.contains('collapsed') || after.classList.contains('collapsed');
       });
     }
     function initSectionResize() {
