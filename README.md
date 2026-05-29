@@ -1,6 +1,6 @@
 # Evolve
 
-Evolve is a Laravel and Livewire-native workbench for building sites from the same artifacts the application runs in production: layouts, styles, components, and pages.
+Evolve is a Laravel and Livewire-native workbench for building sites from the same artifacts the application runs in production: layouts, styles, components, pages, and content models.
 
 The goal is not to maintain a separate CMS renderer. The workbench edits framework files and previews the real Laravel/Livewire runtime.
 
