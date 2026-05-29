@@ -7,31 +7,31 @@ new class extends Component {
 };
 ?>
 
-<livewire:layouts::base>
-    <livewire:slot name="action">Plan the site</livewire:slot>
+<x-layouts::base :title="$title ?? null">
+    <x-slot:action>Plan the site</x-slot:action>
 
     <main class="marketing-main">
-        @if ($slots->has('hero'))
-            {!! $slots->get('hero')->toHtml() !!}
+        @if (isset($hero))
+            {!! $hero !!}
         @else
             <livewire:hero-section />
         @endif
 
-        @if ($slots->has('main'))
-            {!! $slots->get('main')->toHtml() !!}
+        @if (trim((string) $slot) !== '')
+            {!! $slot !!}
         @else
             <section class="slot-note">Main content slot</section>
         @endif
 
-        @if ($slots->has('cta'))
-            {!! $slots->get('cta')->toHtml() !!}
+        @if (isset($cta))
+            {!! $cta !!}
         @else
             <livewire:cta-panel />
         @endif
     </main>
 
-    <livewire:slot name="footer">{!! $slots->has('footer') ? $slots->get('footer')->toHtml() : 'Built with the component workbench.' !!}</livewire:slot>
-</livewire:layouts::base>
+    <x-slot:footer>{!! $footer ?? 'Built with the component workbench.' !!}</x-slot:footer>
+</x-layouts::base>
 
 <style>
 .marketing-main {

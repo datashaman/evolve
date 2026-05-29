@@ -20,10 +20,12 @@ class EvolveLibrary
 
     public function write(array $payload): void
     {
+        $previous = $this->manifest();
+
         $manifest = [
-            'components' => $this->writeGroup('component', $payload['components'] ?? []),
-            'layouts' => $this->writeGroup('layout', $payload['layouts'] ?? []),
-            'pages' => $this->writeGroup('page', $payload['pages'] ?? []),
+            'components' => $this->writeGroup('component', $payload['components'] ?? [], $previous['components'] ?? []),
+            'layouts' => $this->writeGroup('layout', $payload['layouts'] ?? [], $previous['layouts'] ?? []),
+            'pages' => $this->writeGroup('page', $payload['pages'] ?? [], $previous['pages'] ?? []),
         ];
 
         $this->writeFile($this->manifestPath(), json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
@@ -112,9 +114,7 @@ class EvolveLibrary
                     'id' => $id,
                     'kind' => $kind,
                     'name' => $entry['name'] ?? Str::headline(basename($id)),
-                    'title' => $entry['title'] ?? '',
                     'slug' => $entry['slug'] ?? '',
-                    'layout' => $entry['layout'] ?? '',
                     'usage' => $entry['usage'] ?? '',
                     'path' => $this->relativePath($kind, $id),
                     'component' => $this->componentReference($kind, $id),
@@ -126,7 +126,7 @@ class EvolveLibrary
             ->all();
     }
 
-    protected function writeGroup(string $kind, array $artifacts): array
+    protected function writeGroup(string $kind, array $artifacts, array $previousEntries): array
     {
         $entries = [];
         $keep = [];
@@ -151,19 +151,13 @@ class EvolveLibrary
             ];
 
             if ($kind === 'page') {
-                $entry['title'] = (string) ($artifact['title'] ?? '');
                 $entry['slug'] = $this->safeSlug($artifact['slug'] ?? '');
-                $entry['layout'] = $this->safeId($artifact['layout'] ?? '');
-            }
-
-            if ($kind === 'layout') {
-                $entry['layout'] = $this->safeId($artifact['layout'] ?? '');
             }
 
             $entries[] = $entry;
         }
 
-        $this->deleteMissing($kind, $keep);
+        $this->deleteMissing($kind, $keep, $previousEntries);
 
         return $entries;
     }
@@ -252,25 +246,13 @@ class EvolveLibrary
         }
     }
 
-    protected function deleteMissing(string $kind, array $keep): void
+    protected function deleteMissing(string $kind, array $keep, array $previousEntries): void
     {
-        $root = $this->rootFor($kind);
-        if (! File::isDirectory($root)) {
-            return;
-        }
+        foreach ($previousEntries as $entry) {
+            $id = $this->safeId($entry['id'] ?? '');
 
-        foreach (File::allFiles($root) as $file) {
-            if (! str_ends_with($file->getFilename(), '.blade.php')) {
-                continue;
-            }
-
-            if ($kind === 'layout' && str_starts_with($file->getRelativePathname(), 'app')) {
-                continue;
-            }
-
-            $id = str_replace('.blade.php', '', str_replace(DIRECTORY_SEPARATOR, '/', $file->getRelativePathname()));
-            if (! in_array($id, $keep, true)) {
-                File::delete($file->getPathname());
+            if ($id !== '' && ! in_array($id, $keep, true)) {
+                File::delete($this->filePath($kind, $id));
             }
         }
     }

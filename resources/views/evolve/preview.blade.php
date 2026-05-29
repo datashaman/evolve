@@ -25,10 +25,24 @@
                 linear-gradient(90deg, #0000000a 1px, transparent 1px);
             background-size: 16px 16px;
         }
+        body.preview-full {
+            display: block;
+            padding: 0;
+            background: #fff;
+        }
+        body.preview-full > * {
+            width: 100%;
+            min-height: 100vh;
+        }
         body > [wire\:id],
         body > [wire\:name] {
             align-self: center;
             justify-self: center;
+        }
+        body.preview-full > [wire\:id],
+        body.preview-full > [wire\:name] {
+            align-self: auto;
+            justify-self: auto;
         }
         .empty-preview {
             padding: 16px 20px;
@@ -39,7 +53,7 @@
         }
     </style>
 </head>
-<body>
+<body class="{{ ($kind ?? '') === 'layout' ? 'preview-full' : '' }}">
     {!! $content !!}
 </body>
 </html>

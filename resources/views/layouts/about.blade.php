@@ -7,22 +7,22 @@ new class extends Component {
 };
 ?>
 
-<livewire:layouts::base>
-    <livewire:slot name="action">Start a conversation</livewire:slot>
+<x-layouts::base :title="$title ?? null">
+    <x-slot:action>Start a conversation</x-slot:action>
 
     <main class="about-main">
         <article class="content">
-            {!! $slots->has('hero') ? $slots->get('hero')->toHtml() : '<h1>An editorial shell for trust-building pages.</h1>' !!}
+            {!! $hero ?? '<h1>An editorial shell for trust-building pages.</h1>' !!}
             <aside>
-                {!! $slots->has('aside') ? $slots->get('aside')->toHtml() : 'Preview side-panel content.' !!}
+                {!! $aside ?? 'Preview side-panel content.' !!}
             </aside>
-            {!! $slots->has('main') ? $slots->get('main')->toHtml() : '<p>Page narrative content appears here.</p>' !!}
-            {!! $slots->has('cta') ? $slots->get('cta')->toHtml() : '' !!}
+            {!! trim((string) $slot) !== '' ? $slot : '<p>Page narrative content appears here.</p>' !!}
+            {!! $cta ?? '' !!}
         </article>
     </main>
 
-    <livewire:slot name="footer">{!! $slots->has('footer') ? $slots->get('footer')->toHtml() : 'Built with the component workbench.' !!}</livewire:slot>
-</livewire:layouts::base>
+    <x-slot:footer>{!! $footer ?? 'Built with the component workbench.' !!}</x-slot:footer>
+</x-layouts::base>
 
 <style>
 .about-main {
@@ -41,7 +41,8 @@ new class extends Component {
 .content > * + * {
   margin-top: 40px;
 }
-.content > .story {
+.content > .story,
+.content > .about-content {
   margin-top: 16px;
 }
 .content > aside {

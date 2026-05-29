@@ -4,48 +4,47 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Layout('layouts.site')] #[Title('About Northstar Studio')] class extends Component {
+new #[Layout('layouts::about')] #[Title('About Northstar Studio')] class extends Component {
     //
 };
 ?>
 
-<livewire:layouts::about>
-    <livewire:slot name="hero">
-        <section class="intro">
-            <p class="eyebrow">About the system</p>
-            <h1>Small pieces, clear ownership, real framework runtime.</h1>
-            <p class="lede">Evolve now edits Livewire single-file components directly, so the workbench and production app share the same component model.</p>
-        </section>
-    </livewire:slot>
+<x-slot:hero>
+    <section class="intro">
+        <p class="eyebrow">About the system</p>
+        <h1>Small pieces, clear ownership, real framework runtime.</h1>
+        <p class="lede">Evolve now edits Livewire single-file components directly, so the workbench and production app share the same component model.</p>
+    </section>
+</x-slot:hero>
 
-    <livewire:slot name="main">
-        <section class="story">
-            <h2>The workbench is no longer a parallel CMS.</h2>
-            <p>Pages, layouts, and components are Livewire SFCs with anonymous classes, Blade markup, and scoped style. The editor is an affordance over framework files, not a separate renderer.</p>
-        </section>
-        <div class="principles">
-            <livewire:feature-card icon="01" title="Native files">
-                <livewire:slot name="body">Source lives under resources/views, where Laravel and Livewire already expect it.</livewire:slot>
-            </livewire:feature-card>
-            <livewire:feature-card icon="02" title="Real previews">
-                <livewire:slot name="body">The preview iframe loads Laravel routes and Livewire components, not generated srcdoc.</livewire:slot>
-            </livewire:feature-card>
-        </div>
-    </livewire:slot>
+<x-slot:aside>
+    <strong>Studio profile</strong>
+    <p>Server-rendered pages, reusable SFCs, authenticated workbench.</p>
+</x-slot:aside>
 
-    <livewire:slot name="aside">
-        <strong>Studio profile</strong>
-        <p>Server-rendered pages, reusable SFCs, authenticated workbench.</p>
-    </livewire:slot>
+<div class="about-content">
+    <section class="story">
+        <h2>The workbench is no longer a parallel CMS.</h2>
+        <p>Pages, layouts, and components are Livewire SFCs with anonymous classes, Blade markup, and scoped style. The editor is an affordance over framework files, not a separate renderer.</p>
+    </section>
 
-    <livewire:slot name="cta">
-        <livewire:cta-panel title="Make this your starting point." action="about@northstar.test" href="mailto:about@northstar.test">
-            <livewire:slot name="body">Build on a Laravel starter kit instead of maintaining auth and app shell by hand.</livewire:slot>
-        </livewire:cta-panel>
-    </livewire:slot>
+    <div class="principles">
+        <livewire:feature-card icon="01" title="Native files">
+            <livewire:slot name="body">Source lives under resources/views, where Laravel and Livewire already expect it.</livewire:slot>
+        </livewire:feature-card>
+        <livewire:feature-card icon="02" title="Real previews">
+            <livewire:slot name="body">The preview iframe loads Laravel routes and Livewire components, not generated srcdoc.</livewire:slot>
+        </livewire:feature-card>
+    </div>
+</div>
 
-    <livewire:slot name="footer">Northstar Studio. About this Livewire SFC scaffold.</livewire:slot>
-</livewire:layouts::about>
+<x-slot:cta>
+    <livewire:cta-panel title="Make this your starting point." action="about@northstar.test" href="mailto:about@northstar.test">
+        <livewire:slot name="body">Build on a Laravel starter kit instead of maintaining auth and app shell by hand.</livewire:slot>
+    </livewire:cta-panel>
+</x-slot:cta>
+
+<x-slot:footer>Northstar Studio. About this Livewire SFC scaffold.</x-slot:footer>
 
 <style>
 .intro h1 {
@@ -72,6 +71,10 @@ aside p {
   margin: 0 0 12px;
   color: var(--ink);
   font-size: clamp(1.8rem, 4vw, 3rem);
+}
+.about-content {
+  display: grid;
+  gap: 40px;
 }
 .principles {
   display: grid;

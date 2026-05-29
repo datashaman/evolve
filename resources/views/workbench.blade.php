@@ -114,8 +114,6 @@
             <button class="field-label" type="button" data-toggle-source="metadata">Metadata</button>
             <div class="metadata-grid">
               <label class="metadata-field"><span>Name</span><input id="meta-name"></label>
-              <label class="metadata-field" data-meta="layout"><span id="meta-layout-label">Layout</span><input id="meta-layout"></label>
-              <label class="metadata-field" data-meta="title"><span>Title</span><input id="meta-title"></label>
               <label class="metadata-field" data-meta="slug"><span>Slug</span><input id="meta-slug"></label>
             </div>
           </section>
@@ -152,8 +150,6 @@
     const tokenEditor = document.getElementById('token-editor');
     const fields = {
       name: document.getElementById('meta-name'),
-      layout: document.getElementById('meta-layout'),
-      title: document.getElementById('meta-title'),
       slug: document.getElementById('meta-slug'),
       php: document.getElementById('php-source'),
       blade: document.getElementById('blade-source'),
@@ -233,17 +229,12 @@
       const c = selected();
       document.getElementById('kind').textContent = c?.kind ?? '-';
       fields.name.value = c?.name ?? '';
-      fields.layout.value = c?.layout ?? '';
-      fields.title.value = c?.title ?? '';
       fields.slug.value = c?.slug ?? '';
       fields.php.value = c?.php ?? '';
       fields.blade.value = c?.blade ?? '';
       fields.style.value = c?.style ?? '';
       fields.usage.value = c?.usage ?? '';
-      document.querySelector('[data-meta="title"]').hidden = c?.kind !== 'page';
       document.querySelector('[data-meta="slug"]').hidden = c?.kind !== 'page';
-      document.querySelector('[data-meta="layout"]').hidden = c?.kind === 'component';
-      document.getElementById('meta-layout-label').textContent = c?.kind === 'layout' ? 'Extends' : 'Layout';
       updateHighlights();
       requestAnimationFrame(fitSourceHeights);
     }
@@ -263,8 +254,6 @@
       const c = selected();
       if (!c) return;
       c.name = fields.name.value;
-      c.layout = fields.layout.value;
-      c.title = fields.title.value;
       c.slug = fields.slug.value || '/';
       c.php = fields.php.value;
       c.blade = fields.blade.value;
@@ -279,13 +268,14 @@
 
     function newArtifact(kind) {
       const id = `new-${crypto.randomUUID().slice(0, 8)}`;
+      const component = id.replaceAll('/', '.');
       const item = {
         id, kind, name: kind === 'page' ? 'New page' : kind === 'layout' ? 'New layout' : 'New component',
-        title: kind === 'page' ? 'New page' : '', slug: kind === 'page' ? `/${id}` : '', layout: '',
+        slug: kind === 'page' ? `/${id}` : '',
         php: "use Livewire\\Component;\n\nnew class extends Component {\n    //\n};",
         blade: kind === 'component' ? '<div>New component</div>' : '<div>@{{ $slot }}</div>',
         style: '',
-        usage: kind === 'component' ? `<livewire:${id} />` : kind === 'layout' ? `<livewire:layouts::${id}></livewire:layouts::${id}>` : `<livewire:pages::${id} />`,
+        usage: kind === 'component' ? `<livewire:${component} />` : kind === 'layout' ? `<x-layouts::${component}></x-layouts::${component}>` : `<livewire:pages::${component} />`,
       };
       library.push(item);
       selectedKey = artifactKey(item);
