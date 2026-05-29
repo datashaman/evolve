@@ -1,0 +1,62 @@
+{
+  "components": [
+    {
+      "id": "site-header",
+      "name": "Site header",
+      "usage": "<livewire:site-header>\n  <livewire:slot name=\"brand\">Northstar Studio</livewire:slot>\n  <livewire:slot name=\"action\">Start a conversation</livewire:slot>\n  <a href=\"/about\">About</a>\n  <a href=\"#contact\">Contact</a>\n</livewire:site-header>"
+    },
+    {
+      "id": "hero-section",
+      "name": "Hero section",
+      "usage": "<livewire:hero-section>\n  <livewire:slot name=\"eyebrow\">Studio starter</livewire:slot>\n  <livewire:slot name=\"title\">A practical website scaffold for a service business.</livewire:slot>\n  <livewire:slot name=\"body\">Use this seed as a realistic starting point: navigation, hero, service cards, CTA, layout, and page composition.</livewire:slot>\n</livewire:hero-section>"
+    },
+    {
+      "id": "feature-card",
+      "name": "Feature card",
+      "usage": "<livewire:feature-card icon=\"01\" title=\"Positioning sprint\">\n  <livewire:slot name=\"body\">Clarify the offer, audience, proof, and page structure before design begins.</livewire:slot>\n</livewire:feature-card>"
+    },
+    {
+      "id": "cta-panel",
+      "name": "CTA panel",
+      "usage": "<livewire:cta-panel title=\"Book a focused site sprint.\" action=\"Start the brief\" href=\"#contact\">\n  <livewire:slot name=\"body\">Use the seed as a realistic baseline for a studio, consultant, or productized service.</livewire:slot>\n</livewire:cta-panel>"
+    }
+  ],
+  "layouts": [
+    {
+      "id": "base",
+      "name": "Base",
+      "layout": "",
+      "usage": "<livewire:layouts::base>\n  <main style=\"padding: 48px 0 72px;\">\n    <h1>Base layout preview</h1>\n    <p>This frame owns the document shell, header, and footer.</p>\n  </main>\n</livewire:layouts::base>"
+    },
+    {
+      "id": "marketing",
+      "name": "Marketing",
+      "layout": "base",
+      "usage": "<livewire:layouts::marketing>\n  <livewire:slot name=\"hero\"><livewire:hero-section /></livewire:slot>\n  <livewire:slot name=\"main\"><livewire:feature-card icon=\"01\" title=\"Layout preview\" /></livewire:slot>\n  <livewire:slot name=\"cta\"><livewire:cta-panel title=\"Drop page content into this shell.\" action=\"Preview action\" href=\"#contact\" /></livewire:slot>\n</livewire:layouts::marketing>"
+    },
+    {
+      "id": "about",
+      "name": "About",
+      "layout": "base",
+      "usage": "<livewire:layouts::about>\n  <livewire:slot name=\"hero\"><h1>An editorial shell for trust-building pages.</h1></livewire:slot>\n  <livewire:slot name=\"main\"><livewire:feature-card icon=\"01\" title=\"Narrative first\" /></livewire:slot>\n  <livewire:slot name=\"aside\">Preview side-panel content.</livewire:slot>\n</livewire:layouts::about>"
+    }
+  ],
+  "pages": [
+    {
+      "id": "home",
+      "name": "Home",
+      "title": "Northstar Studio",
+      "slug": "/",
+      "layout": "marketing",
+      "usage": "<livewire:pages::home />"
+    },
+    {
+      "id": "about",
+      "name": "About",
+      "title": "About Northstar Studio",
+      "slug": "/about",
+      "layout": "about",
+      "usage": "<livewire:pages::about />"
+    }
+  ]
+}
