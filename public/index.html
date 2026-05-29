@@ -31,26 +31,6 @@
       padding: 5px 10px; border: 1px solid #3f3f46; border-radius: 6px;
       background: #27272a; color: #fafafa; min-width: 160px;
     }
-    .toolbar .page-meta {
-      display: none; align-items: center; gap: 6px;
-    }
-    .toolbar .page-meta.visible { display: flex; }
-    .toolbar .page-field {
-      display: flex; align-items: center; gap: 6px;
-      padding: 0 6px 0 8px; border: 1px solid #3f3f46; border-radius: 6px;
-      background: #27272a; color: #fafafa;
-    }
-    .toolbar .page-field span {
-      color: #a1a1aa; font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
-    }
-    .toolbar .page-meta input {
-      font: inherit; font-size: 13px;
-      padding: 5px 0; border: 0;
-      background: transparent; color: #fafafa;
-    }
-    .toolbar .page-meta input:focus { outline: none; }
-    .toolbar .page-meta #page-title { width: 220px; }
-    .toolbar .page-meta #page-slug { width: 120px; }
     .toolbar button {
       font: inherit; font-size: 13px; font-weight: 650;
       min-height: 32px; padding: 0 12px; border: 1px solid #3f3f46; border-radius: 7px;
@@ -63,12 +43,27 @@
     .toolbar .spacer { flex: 1; }
 
     .workspace { flex: 1; display: flex; min-height: 0; }
+    .workspace.resizing {
+      cursor: col-resize;
+      user-select: none;
+    }
+    .workspace.resizing iframe { pointer-events: none; }
 
     .sidebar {
-      width: 220px; flex-shrink: 0;
+      width: var(--sidebar-width, 220px); flex-shrink: 0;
       display: flex; flex-direction: column;
       background: #27272a; color: #e4e4e7;
-      border-right: 1px solid #3f3f46; overflow-y: auto;
+      overflow-y: auto;
+    }
+    .sidebar-resize {
+      width: 9px;
+      flex: 0 0 9px;
+      background: #18181b;
+      cursor: col-resize;
+    }
+    .sidebar-resize:hover,
+    .workspace.resizing .sidebar-resize {
+      background: #24242a;
     }
     .sidebar section { display: flex; flex-direction: column; }
     .sidebar header {
@@ -119,18 +114,33 @@
     .stage {
       flex: 1;
       display: grid;
-      grid-template-columns: minmax(340px, 42%) minmax(0, 1fr);
+      grid-template-columns: minmax(340px, var(--editor-width, 42%)) 9px minmax(320px, 1fr);
       position: relative;
       min-width: 0;
       min-height: 0;
       overflow: hidden;
       background: #18181b;
     }
+    .stage.resizing {
+      cursor: col-resize;
+      user-select: none;
+    }
+    .stage.resizing iframe { pointer-events: none; }
+    .resize-handle {
+      min-width: 9px;
+      background: #18181b;
+      cursor: col-resize;
+      position: relative;
+      z-index: 1;
+    }
+    .resize-handle:hover,
+    .stage.resizing .resize-handle {
+      background: #24242a;
+    }
     .preview {
       min-width: 0;
       min-height: 0;
       background: #fff;
-      border-left: 1px solid #3f3f46;
     }
     iframe { width: 100%; height: 100%; border: 0; background: #fff; }
 
@@ -144,24 +154,47 @@
     }
     #token-editor.open { display: flex; }
     .editor-fields { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    #editor .editor-fields.resizing {
+      cursor: row-resize;
+      user-select: none;
+    }
+    #editor .editor-fields.resizing textarea,
+    #editor .editor-fields.resizing iframe { pointer-events: none; }
     .source-section {
       display: flex;
       flex-direction: column;
       min-height: 38px;
-      border-bottom: 1px solid #3f3f46;
     }
     .source-section[data-block="template"] { flex: 2 1 0; }
+    .source-section[data-block="metadata"] { flex: 0 0 auto; }
+    .source-section[data-block="props"] { flex: 0 0 auto; }
     .source-section[data-block="style"],
     .source-section[data-block="usage"] { flex: 1 1 0; }
-    .source-section.collapsed { flex: 0 0 auto; }
+    .source-section.collapsed { flex: 0 0 auto !important; }
+    .source-section[data-block="usage"].collapsed { margin-top: auto; }
+    .source-section[data-block="usage"]:not(.collapsed) { margin-top: 0; }
+    .source-section.collapsed .metadata-grid,
+    .source-section.collapsed .props-editor,
     .source-section.collapsed .code-editor { display: none; }
+    .section-resize {
+      flex: 0 0 6px;
+      background: #18181b;
+      cursor: row-resize;
+    }
+    .section-resize:hover,
+    #editor .editor-fields.resizing .section-resize {
+      background: #24242a;
+    }
+    .section-resize[hidden] { display: none; }
     .field-label {
       display: flex; align-items: center; gap: 8px;
-      padding: 8px 12px; border: 0; cursor: pointer;
+      padding: 8px 12px; border: 0; border-bottom: 1px solid #3f3f46; cursor: pointer;
       font: inherit; font-size: 11px; text-align: left;
       text-transform: uppercase; letter-spacing: .05em;
-      color: #a1a1aa; background: #1e1e1e;
+      color: #d4d4d8;
+      background: linear-gradient(180deg, #32323a, #282830);
     }
+    .field-label:hover { background: linear-gradient(180deg, #3a3a44, #303038); }
     .field-label::before {
       content: "▾";
       display: inline-grid;
@@ -169,13 +202,42 @@
       width: 22px;
       height: 22px;
       border-radius: 6px;
-      background: #2f2f36;
-      color: #71717a;
+      background: #18181b;
+      color: #a5b4fc;
       font-size: 16px;
       line-height: 1;
     }
     .source-section.collapsed .field-label::before { content: "▸"; }
     .field-label span { text-transform: none; letter-spacing: 0; color: #71717a; }
+    .metadata-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      padding: 8px 12px 12px;
+    }
+    .metadata-field {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+    .metadata-field[hidden] { display: none; }
+    .metadata-field span {
+      color: #a1a1aa;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .metadata-field input {
+      width: 100%;
+      box-sizing: border-box;
+      font: 13px ui-monospace, "SF Mono", Menlo, monospace;
+      padding: 7px 9px;
+      border: 1px solid #3f3f46;
+      border-radius: 6px;
+      background: #27272a;
+      color: #fafafa;
+    }
+    .metadata-field input:focus { outline: 1px solid #6366f1; outline-offset: 0; }
     .panel textarea {
       border: 0; resize: none; padding: 6px 16px 12px;
       font: 13px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
@@ -224,6 +286,49 @@
     #style-source,
     #template-source,
     #usage { flex: 1; }
+    .props-editor {
+      display: grid;
+      gap: 8px;
+      padding: 8px 12px 12px;
+    }
+    .props-head,
+    .prop-row {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) 112px minmax(120px, 1fr) 30px;
+      gap: 8px;
+      align-items: center;
+    }
+    #props-list {
+      display: grid;
+      gap: 8px;
+    }
+    .props-head {
+      color: #a1a1aa;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .prop-row input,
+    .prop-row select {
+      min-width: 0;
+      box-sizing: border-box;
+      font: 13px ui-monospace, "SF Mono", Menlo, monospace;
+      padding: 7px 9px;
+      border: 1px solid #3f3f46;
+      border-radius: 6px;
+      background: #27272a;
+      color: #fafafa;
+    }
+    .prop-row button,
+    .props-add {
+      border: 1px solid #3f3f46;
+      border-radius: 6px;
+      background: #27272a;
+      color: #fafafa;
+      cursor: pointer;
+      min-height: 30px;
+    }
+    .props-add { justify-self: start; padding: 0 10px; }
     #tokens { flex: 1; }
     .panel-bar {
       display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: #111;
@@ -236,6 +341,7 @@
     .btn-cancel { background: #3f3f46; color: #fafafa; }
     @media (max-width: 900px) {
       .stage { grid-template-columns: 1fr; grid-template-rows: minmax(320px, 48%) minmax(0, 1fr); }
+      .resize-handle { display: none; }
       .preview { border-left: 0; border-top: 1px solid #3f3f46; }
     }
 
@@ -245,17 +351,6 @@
   <header class="toolbar">
     <h1>Component Workbench</h1>
     <span class="kind" id="kind">component</span>
-    <input id="name" class="name" placeholder="name" />
-    <span class="page-meta" id="page-meta">
-      <label class="page-field">
-        <span>Title</span>
-        <input id="page-title" />
-      </label>
-      <label class="page-field">
-        <span>Slug</span>
-        <input id="page-slug" />
-      </label>
-    </span>
     <button id="btn-tokens">Tokens</button>
     <button id="btn-reload">Reload</button>
     <span class="spacer"></span>
@@ -298,10 +393,46 @@
       </section>
     </nav>
 
+    <div class="sidebar-resize" id="sidebar-resize" role="separator" aria-orientation="vertical" aria-label="Resize sidebar and editor columns"></div>
+
     <main class="stage">
-      <!-- Artifact editor: source parts + usage markup -->
+      <!-- Artifact editor: source blocks + usage markup -->
       <div class="panel" id="editor">
         <div class="editor-fields">
+          <section class="source-section" data-block="metadata">
+            <button class="field-label" type="button" data-toggle-source="metadata">Metadata</button>
+            <div class="metadata-grid">
+              <label class="metadata-field">
+                <span>Name</span>
+                <input id="meta-name" />
+              </label>
+              <label class="metadata-field" data-meta="layout">
+                <span id="meta-layout-label">Layout</span>
+                <input id="meta-layout" />
+              </label>
+              <label class="metadata-field" data-meta="title">
+                <span>Title</span>
+                <input id="meta-title" />
+              </label>
+              <label class="metadata-field" data-meta="slug">
+                <span>Slug</span>
+                <input id="meta-slug" />
+              </label>
+            </div>
+          </section>
+          <section class="source-section" data-block="props">
+            <button class="field-label" type="button" data-toggle-source="props">Props</button>
+            <div class="props-editor">
+              <div class="props-head">
+                <span>Name</span>
+                <span>Type</span>
+                <span>Default</span>
+                <span></span>
+              </div>
+              <div id="props-list"></div>
+              <button class="props-add" type="button" id="btn-add-prop">+ Add prop</button>
+            </div>
+          </section>
           <section class="source-section" data-block="template">
             <button class="field-label" type="button" data-toggle-source="template">Template</button>
             <div class="code-editor">
@@ -309,6 +440,7 @@
               <textarea id="template-source" spellcheck="false"></textarea>
             </div>
           </section>
+          <div class="section-resize" data-resize-source data-before="template" data-after="style" role="separator" aria-orientation="horizontal" aria-label="Resize template and style sections"></div>
           <section class="source-section" data-block="style">
             <button class="field-label" type="button" data-toggle-source="style">Style</button>
             <div class="code-editor">
@@ -316,6 +448,7 @@
               <textarea id="style-source" spellcheck="false"></textarea>
             </div>
           </section>
+          <div class="section-resize" data-resize-source data-before="style" data-after="usage" role="separator" aria-orientation="horizontal" aria-label="Resize style and usage sections"></div>
           <section class="source-section" data-block="usage">
             <button class="field-label" type="button" data-toggle-source="usage">Usage</button>
             <div class="code-editor">
@@ -325,6 +458,8 @@
           </section>
         </div>
       </div>
+
+      <div class="resize-handle" id="stage-resize" role="separator" aria-orientation="vertical" aria-label="Resize editor and preview columns"></div>
 
       <div class="preview">
         <iframe id="frame" sandbox="allow-scripts" title="preview"></iframe>
@@ -348,74 +483,19 @@
   <script>
     const API = '/api/library';
 
-    // Shared design tokens live in library/tokens.css — one source of truth read
-    // by both this client preview and the server-rendered /p and /c routes.
+    // Shared design tokens live in library/tokens.css — the server-rendered
+    // preview routes read the same file as the public site.
     let tokens = '';
     let savedTokens = '';
 
-    // Host shell: shared tokens plus server-rendered artifact markup. Component
-    // previews are centered; pages/layouts own the full canvas.
-    function buildDocument(usage, definitions, mode, title = 'Component Workbench Preview') {
-      const body = mode === 'page'
-        ? `html { scrollbar-gutter: stable; }
-          html, body { min-height: 100%; }
-          body {
-            margin: 0;
-            min-height: 100vh;
-            font-family: var(--font-sans, system-ui, sans-serif);
-            color: var(--text);
-            background: var(--surface-soft, var(--surface));
-          }
-          body > * {
-            display: block;
-            min-height: 100vh;
-          }`
-        : `html { scrollbar-gutter: stable; }
-          html, body { min-height: 100%; }
-          body {
-            margin: 0; min-height: 100vh;
-            display: grid; place-items: center; padding: 40px;
-            font-family: var(--font-sans, system-ui, sans-serif);
-            background: #fafafa;
-            background-image:
-              linear-gradient(#0000000a 1px, transparent 1px),
-              linear-gradient(90deg, #0000000a 1px, transparent 1px);
-            background-size: 16px 16px;
-          }`;
-      return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>${escapeHtml(title)}</title>
-  <style>${tokens} ${body}</style>
-  <script>
-    (() => {
-      const activate = (root = document) => {
-        root.querySelectorAll('template[shadowrootmode]').forEach((tpl) => {
-          const host = tpl.parentElement;
-          if (!host || host.shadowRoot) return;
-          const shadow = host.attachShadow({ mode: tpl.getAttribute('shadowrootmode') || 'open' });
-          shadow.append(tpl.content);
-          tpl.remove();
-          activate(shadow);
-        });
-      };
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => activate());
-      } else {
-        activate();
-      }
-    })();
-  <\/script>
-</head>
-<body>
-${usage}
-</body>
-</html>`;
-    }
-
     const frame = document.getElementById('frame');
+    const workspace = document.querySelector('.workspace');
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarResize = document.getElementById('sidebar-resize');
     const editor = document.getElementById('editor');
+    const editorFields = document.querySelector('#editor .editor-fields');
+    const stage = document.querySelector('.stage');
+    const stageResize = document.getElementById('stage-resize');
     const tokenEditor = document.getElementById('token-editor');
     const styleInput = document.getElementById('style-source');
     const templateInput = document.getElementById('template-source');
@@ -423,11 +503,16 @@ ${usage}
     const styleHighlight = document.getElementById('style-highlight');
     const templateHighlight = document.getElementById('template-highlight');
     const usageHighlight = document.getElementById('usage-highlight');
+    const propsList = document.getElementById('props-list');
     const tokensInput = document.getElementById('tokens');
-    const nameInput = document.getElementById('name');
-    const pageMeta = document.getElementById('page-meta');
-    const pageTitleInput = document.getElementById('page-title');
-    const pageSlugInput = document.getElementById('page-slug');
+    const nameInput = document.getElementById('meta-name');
+    const pageTitleInput = document.getElementById('meta-title');
+    const pageSlugInput = document.getElementById('meta-slug');
+    const layoutInput = document.getElementById('meta-layout');
+    const layoutLabel = document.getElementById('meta-layout-label');
+    const titleField = document.querySelector('[data-meta="title"]');
+    const slugField = document.querySelector('[data-meta="slug"]');
+    const layoutField = document.querySelector('[data-meta="layout"]');
     const kindBadge = document.getElementById('kind');
 
     let library = [];
@@ -435,8 +520,16 @@ ${usage}
     let pendingDeleteKey = null;
     let loadError = '';
     let saveTimer = 0;
+    let savePromise = Promise.resolve();
+    let sidebarPointerId = null;
+    let resizingPointerId = null;
+    let sectionResizeState = null;
     const sourceCollapseKey = 'evolve.source-collapse';
+    const sourceHeightsKey = 'evolve.source-heights';
+    const sidebarWidthKey = 'evolve.sidebar-width';
+    const stageWidthKey = 'evolve.stage-editor-width';
     const sourceSections = [...document.querySelectorAll('.source-section')];
+    const sourceResizeHandles = [...document.querySelectorAll('[data-resize-source]')];
 
     async function load() {
       loadError = '';
@@ -471,23 +564,28 @@ ${usage}
     }
 
     // Persist the whole library; the backend fans it out to files and removes
-    // any that are gone. Fire-and-forget — local single-user, optimistic UI.
+    // any that are gone.
     function save() {
       const payload = {
-        components: components().map(({ id, name, tag, definition, usage }) => ({ id, name, tag, definition, usage })),
-        layouts: layouts().map(({ id, name, tag, layout, definition, usage }) => ({ id, name, tag, layout, definition, usage })),
-        pages: pages().map(({ id, name, tag, title, slug, layout, definition, usage }) => ({ id, name, tag, title, slug, layout, definition, usage })),
+        components: components().map(({ id, name, tag, props, definition, usage }) => ({ id, name, tag, props, definition, usage })),
+        layouts: layouts().map(({ id, name, tag, layout, props, definition, usage }) => ({ id, name, tag, layout, props, definition, usage })),
+        pages: pages().map(({ id, name, tag, title, slug, layout, props, definition, usage }) => ({ id, name, tag, title, slug, layout, props, definition, usage })),
       };
-      fetch(API, {
+      savePromise = fetch(API, {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),
       }).catch(e => console.error('save failed', e));
+      return savePromise;
     }
 
-    function scheduleSave() {
+    function scheduleSave(refreshPreview = false) {
       clearTimeout(saveTimer);
-      saveTimer = setTimeout(save, 250);
+      saveTimer = setTimeout(() => {
+        save().then(() => {
+          if (refreshPreview) renderFrame();
+        });
+      }, 250);
     }
 
     function storedSourceCollapse() {
@@ -503,6 +601,8 @@ ${usage}
       sourceSections.forEach(section => {
         section.classList.toggle('collapsed', !!state[section.dataset.block]);
       });
+      updateSectionResizeHandles();
+      fitSourceHeights();
     }
 
     function setSourceCollapsed(block, collapsed) {
@@ -510,6 +610,244 @@ ${usage}
       localStorage.setItem(sourceCollapseKey, JSON.stringify(state));
       applySourceCollapse();
     }
+
+    function sourceSection(block) {
+      return sourceSections.find(section => section.dataset.block === block) ?? null;
+    }
+
+    function storedSourceHeights() {
+      try {
+        return JSON.parse(localStorage.getItem(sourceHeightsKey) || '{}');
+      } catch {
+        return {};
+      }
+    }
+
+    function applyStoredSourceHeights() {
+      const state = storedSourceHeights();
+      ['template', 'style', 'usage'].forEach(block => {
+        const section = sourceSection(block);
+        const height = Number(state[block]);
+        if (!section || !Number.isFinite(height)) return;
+        section.style.flex = `0 0 ${Math.max(90, height)}px`;
+      });
+      fitSourceHeights();
+    }
+
+    function visibleCodeSections() {
+      return ['template', 'style', 'usage']
+        .map(sourceSection)
+        .filter(section => section && !section.classList.contains('collapsed'));
+    }
+
+    function availableCodeHeight() {
+      const fixedHeight = [...editorFields.children].reduce((total, child) => {
+        if (child.classList.contains('source-section') && ['template', 'style', 'usage'].includes(child.dataset.block) && !child.classList.contains('collapsed')) {
+          return total;
+        }
+        if (child.hidden) return total;
+        return total + child.getBoundingClientRect().height;
+      }, 0);
+      return Math.max(0, editorFields.clientHeight - fixedHeight);
+    }
+
+    function fitSourceHeights() {
+      const sections = visibleCodeSections();
+      if (!sections.length) return;
+
+      const available = availableCodeHeight();
+      const total = sections.reduce((sum, section) => sum + section.getBoundingClientRect().height, 0);
+      if (Math.abs(total - available) < 1) return;
+
+      const minHeight = Math.min(96, Math.max(44, available / sections.length));
+      if (total < available) {
+        const last = sections[sections.length - 1];
+        last.style.flex = `0 0 ${last.getBoundingClientRect().height + available - total}px`;
+        return;
+      }
+
+      let remainingHeight = available;
+      let remainingTotal = total;
+      sections.forEach((section, index) => {
+        let height;
+        if (index === sections.length - 1) {
+          height = remainingHeight;
+        } else {
+          height = Math.max(minHeight, (section.getBoundingClientRect().height / remainingTotal) * remainingHeight);
+        }
+        section.style.flex = `0 0 ${height}px`;
+        remainingHeight -= height;
+        remainingTotal -= section.getBoundingClientRect().height;
+      });
+    }
+
+    function persistSourceHeights() {
+      const state = storedSourceHeights();
+      ['template', 'style', 'usage'].forEach(block => {
+        const section = sourceSection(block);
+        if (!section || section.classList.contains('collapsed')) return;
+        state[block] = Math.round(section.getBoundingClientRect().height);
+      });
+      localStorage.setItem(sourceHeightsKey, JSON.stringify(state));
+    }
+
+    function updateSectionResizeHandles() {
+      sourceResizeHandles.forEach(handle => {
+        const before = sourceSection(handle.dataset.before);
+        const after = sourceSection(handle.dataset.after);
+        handle.hidden = !before || !after || before.classList.contains('collapsed') || after.classList.contains('collapsed');
+      });
+    }
+
+    function initSourceSectionResize() {
+      sourceResizeHandles.forEach(handle => {
+        handle.addEventListener('pointerdown', event => {
+          const before = sourceSection(handle.dataset.before);
+          const after = sourceSection(handle.dataset.after);
+          if (!before || !after || before.classList.contains('collapsed') || after.classList.contains('collapsed')) return;
+          event.preventDefault();
+          sectionResizeState = {
+            pointerId: event.pointerId,
+            startY: event.clientY,
+            before,
+            after,
+            beforeHeight: before.getBoundingClientRect().height,
+            afterHeight: after.getBoundingClientRect().height,
+          };
+          try {
+            handle.setPointerCapture(event.pointerId);
+          } catch {}
+          editorFields.classList.add('resizing');
+        });
+
+        handle.addEventListener('pointermove', event => {
+          if (!sectionResizeState || sectionResizeState.pointerId !== event.pointerId) return;
+          const delta = event.clientY - sectionResizeState.startY;
+          const total = sectionResizeState.beforeHeight + sectionResizeState.afterHeight;
+          const minHeight = Math.min(96, Math.max(44, total / 2));
+          const beforeHeight = Math.min(Math.max(sectionResizeState.beforeHeight + delta, minHeight), total - minHeight);
+          const afterHeight = total - beforeHeight;
+          sectionResizeState.before.style.flex = `0 0 ${beforeHeight}px`;
+          sectionResizeState.after.style.flex = `0 0 ${afterHeight}px`;
+          fitSourceHeights();
+        });
+
+        function stopResize(event) {
+          if (!sectionResizeState || sectionResizeState.pointerId !== event.pointerId) return;
+          if (handle.hasPointerCapture(event.pointerId)) {
+            handle.releasePointerCapture(event.pointerId);
+          }
+          sectionResizeState = null;
+          editorFields.classList.remove('resizing');
+          fitSourceHeights();
+          persistSourceHeights();
+        }
+
+        handle.addEventListener('pointerup', stopResize);
+        handle.addEventListener('pointercancel', stopResize);
+      });
+      window.addEventListener('resize', fitSourceHeights);
+    }
+
+    function applyStoredSidebarWidth() {
+      const value = Number(localStorage.getItem(sidebarWidthKey));
+      if (!Number.isFinite(value)) return;
+      setSidebarWidth(value, false);
+    }
+
+    function setSidebarWidth(width, persist = true) {
+      const bounds = workspace.getBoundingClientRect();
+      const minSidebar = 180;
+      const maxSidebar = Math.max(minSidebar, Math.min(420, bounds.width - 560));
+      const next = Math.min(Math.max(width, minSidebar), maxSidebar);
+      workspace.style.setProperty('--sidebar-width', `${next}px`);
+      if (persist) localStorage.setItem(sidebarWidthKey, String(Math.round(next)));
+    }
+
+    function initSidebarResize() {
+      sidebarResize.addEventListener('pointerdown', event => {
+        event.preventDefault();
+        sidebarPointerId = event.pointerId;
+        try {
+          sidebarResize.setPointerCapture(event.pointerId);
+        } catch {}
+        workspace.classList.add('resizing');
+      });
+
+      sidebarResize.addEventListener('pointermove', event => {
+        if (sidebarPointerId !== event.pointerId) return;
+        const bounds = workspace.getBoundingClientRect();
+        setSidebarWidth(event.clientX - bounds.left);
+      });
+
+      function stopResize(event) {
+        if (sidebarPointerId !== event.pointerId) return;
+        sidebarPointerId = null;
+        if (sidebarResize.hasPointerCapture(event.pointerId)) {
+          sidebarResize.releasePointerCapture(event.pointerId);
+        }
+        workspace.classList.remove('resizing');
+      }
+
+      sidebarResize.addEventListener('pointerup', stopResize);
+      sidebarResize.addEventListener('pointercancel', stopResize);
+      window.addEventListener('resize', () => {
+        const value = Number(localStorage.getItem(sidebarWidthKey));
+        if (Number.isFinite(value)) setSidebarWidth(value, false);
+      });
+    }
+
+    function applyStoredStageWidth() {
+      const value = Number(localStorage.getItem(stageWidthKey));
+      if (!Number.isFinite(value)) return;
+      setStageEditorWidth(value, false);
+    }
+
+    function setStageEditorWidth(width, persist = true) {
+      const bounds = stage.getBoundingClientRect();
+      const handleWidth = stageResize.offsetWidth || 9;
+      const minEditor = 340;
+      const minPreview = 320;
+      const maxEditor = Math.max(minEditor, bounds.width - handleWidth - minPreview);
+      const next = Math.min(Math.max(width, minEditor), maxEditor);
+      stage.style.setProperty('--editor-width', `${next}px`);
+      if (persist) localStorage.setItem(stageWidthKey, String(Math.round(next)));
+    }
+
+    function initStageResize() {
+      stageResize.addEventListener('pointerdown', event => {
+        if (window.matchMedia('(max-width: 900px)').matches) return;
+        event.preventDefault();
+        resizingPointerId = event.pointerId;
+        try {
+          stageResize.setPointerCapture(event.pointerId);
+        } catch {}
+        stage.classList.add('resizing');
+      });
+
+      stageResize.addEventListener('pointermove', event => {
+        if (resizingPointerId !== event.pointerId) return;
+        const bounds = stage.getBoundingClientRect();
+        setStageEditorWidth(event.clientX - bounds.left);
+      });
+
+      function stopResize(event) {
+        if (resizingPointerId !== event.pointerId) return;
+        resizingPointerId = null;
+        if (stageResize.hasPointerCapture(event.pointerId)) {
+          stageResize.releasePointerCapture(event.pointerId);
+        }
+        stage.classList.remove('resizing');
+      }
+
+      stageResize.addEventListener('pointerup', stopResize);
+      stageResize.addEventListener('pointercancel', stopResize);
+      window.addEventListener('resize', () => {
+        const value = Number(localStorage.getItem(stageWidthKey));
+        if (Number.isFinite(value)) setStageEditorWidth(value, false);
+      });
+    }
+
     function artifactKey(c) {
       if (!c) return '';
       if (c.path) return c.path;
@@ -522,18 +860,6 @@ ${usage}
     function layouts() { return library.filter(c => c.kind === 'layout'); }
     function pages() { return library.filter(c => c.kind === 'page'); }
 
-    function artifactByRef(ref) {
-      return [...components(), ...layouts(), ...pages()].find(c => c.path === ref) ?? null;
-    }
-
-    function componentRef(src) {
-      let ref = String(src ?? '').trim().replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\/+|\/+$/g, '');
-      if (!ref || ref.includes('..')) return '';
-      if (ref.startsWith('components/')) ref = ref.slice('components/'.length);
-      if (ref.endsWith('.html')) ref = ref.slice(0, -5);
-      return `components/${ref}.html`;
-    }
-
     function layoutRef(src) {
       let ref = String(src ?? '').trim().replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\/+|\/+$/g, '');
       if (!ref || ref.includes('..')) return '';
@@ -542,104 +868,44 @@ ${usage}
       return `layouts/${ref}.html`;
     }
 
-    function safePartName(name) {
-      const part = String(name ?? '').trim().toLowerCase();
-      return /^[a-z0-9-]+$/.test(part) ? part : '';
+    function layoutName(value) {
+      let ref = String(value ?? '').trim().toLowerCase().replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\/+|\/+$/g, '');
+      if (ref.startsWith('layouts/')) ref = ref.slice('layouts/'.length);
+      if (ref.endsWith('.html')) ref = ref.slice(0, -5);
+      return ref.includes('..') ? '' : ref.replace(/[^a-z0-9/-]/g, '-').replace(/-+/g, '-');
+    }
+
+    function normalizePropName(value) {
+      return String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+    }
+
+    function normalizePropType(value) {
+      const type = String(value ?? '').trim().toLowerCase();
+      return ['string', 'number', 'boolean'].includes(type) ? type : 'string';
+    }
+
+    function normalizePropDefs(value) {
+      const source = Array.isArray(value) ? value : [];
+      const props = new Map();
+      source.forEach(prop => {
+        const raw = typeof prop === 'string' ? { name: prop } : (prop ?? {});
+        const name = normalizePropName(raw.name);
+        if (!/^[a-z][a-z0-9-]*$/.test(name)) return;
+        props.set(name, {
+          name,
+          type: normalizePropType(raw.type),
+          default: String(raw.default ?? ''),
+        });
+      });
+      return [...props.values()];
     }
 
     function artifactTag(c) {
       return c?.tag ?? '';
     }
 
-    function expandUses(html, defs, seen, context = {}) {
-      let expanded = html ?? '';
-      expanded = expandPages(expanded, defs, seen, context);
-      const paired = /<(x-use|x-component|x-layout)\b([^>]*)>((?:(?!<x-use\b|<x-component\b|<x-layout\b).)*?)<\/\1>/gis;
-      while (paired.test(expanded)) {
-        paired.lastIndex = 0;
-        expanded = expanded.replace(paired, (_match, tag, attrs, inner) => (
-          tag === 'x-component'
-            ? expandComponentTag(attrs, inner, defs, seen, context)
-            : tag === 'x-layout'
-              ? expandLayoutTag(attrs, inner, defs, seen, context)
-              : expandUseTag(attrs, inner, defs, seen, context)
-        ));
-      }
-      return expanded.replace(/<(x-use|x-component|x-layout)\b([^>]*)\/>/gis, (_match, tag, attrs) => (
-        tag === 'x-component'
-          ? expandComponentTag(attrs, '', defs, seen, context)
-          : tag === 'x-layout'
-            ? expandLayoutTag(attrs, '', defs, seen, context)
-            : expandUseTag(attrs, '', defs, seen, context)
-      ));
-    }
-
-    function expandUseTag(attrs, inner, defs, seen, context) {
-      const node = parseCompositionNode('x-use', attrs);
-      const artifact = artifactByRef(node?.getAttribute('src') ?? '');
-      return renderArtifactInstance(node, artifact, inner, defs, seen, context);
-    }
-
-    function expandComponentTag(attrs, inner, defs, seen, context) {
-      const node = parseCompositionNode('x-component', attrs);
-      const artifact = artifactByRef(componentRef(node?.getAttribute('src') ?? ''));
-      return renderArtifactInstance(node, artifact, inner, defs, seen, context);
-    }
-
-    function expandLayoutTag(attrs, inner, defs, seen, context) {
-      const node = parseCompositionNode('x-layout', attrs);
-      const artifact = artifactByRef(layoutRef(node?.getAttribute('src') ?? ''));
-      return renderLayoutChain(artifact, pageParts(inner), '', defs, seen, context);
-    }
-
-    function parseCompositionNode(tag, attrs) {
-      const tpl = document.createElement('template');
-      tpl.innerHTML = `<${tag} ${attrs}></${tag}>`;
-      return tpl.content.firstElementChild;
-    }
-
-    function renderArtifactInstance(node, artifact, inner, defs, seen, context = {}, templateOverride = null) {
-      if (!artifact) return '';
-
-      const tag = artifactTag(artifact);
-      if (!tag) return inner;
-
-      const passthrough = [...node.attributes]
-        .filter(attr => attr.name !== 'src')
-        .map(attr => ` ${attr.name}="${escapeHtml(attr.value)}"`)
-        .join('');
-      const style = artifactStyle(artifact);
-      const template = templateOverride ?? expandPartFallbacks(expandUses(artifactTemplate(artifact), defs, seen, context), defs, seen, context);
-      const children = expandUses(inner, defs, seen, context);
-      return `<${tag}${passthrough}><template shadowrootmode="open"><style>${style}</style>${template}</template>${children}</${tag}>`;
-    }
-
-    function renderArtifactUsage(c, usage, defs, seen, context = {}) {
-      const tag = artifactTag(c);
-      if (!tag) return usage;
-      const paired = new RegExp(`<${tag}\\b([^>]*)>((?:(?!<${tag}\\b).)*?)<\\/${tag}>`, 'gis');
-      let rendered = usage ?? '';
-      rendered = rendered.replace(paired, (_match, attrs, inner) => {
-        if (/^\s*<template\b[^>]*\bshadowrootmode=/i.test(inner)) return _match;
-        const node = parseCompositionNode(tag, attrs);
-        return renderArtifactInstance(node, c, inner, defs, seen, context);
-      });
-      return rendered.replace(new RegExp(`<${tag}\\b([^>]*)\\/>`, 'gis'), (_match, attrs) => {
-        const node = parseCompositionNode(tag, attrs);
-        return renderArtifactInstance(node, c, '', defs, seen, context);
-      });
-    }
-
-    function artifactStyle(c) {
-      return c?.definition?.match(/<style\b[^>]*>\s*([\s\S]*?)\s*<\/style>/i)?.[1] ?? '';
-    }
-
     function artifactStyleSource(c) {
       return c?.definition?.match(/<style\b[^>]*>[\s\S]*?<\/style>/i)?.[0] ?? '';
-    }
-
-    function artifactTemplate(c) {
-      return c?.definition?.match(/<template\b[^>]*>\s*([\s\S]*?)\s*<\/template>/i)?.[1] ?? '';
     }
 
     function artifactTemplateSource(c) {
@@ -667,115 +933,12 @@ ${templateSource}`;
       return `${openTag}\n${text}\n</${tag}>`;
     }
 
-    function pageParts(html) {
-      const parts = {};
-      const paired = /<part\b([^>]*)>((?:(?!<part\b).)*?)<\/part>/gis;
-      let match;
-      while ((match = paired.exec(html ?? ''))) {
-        const node = parseCompositionNode('part', match[1]);
-        const name = safePartName(node?.getAttribute('name'));
-        if (name) parts[name] = match[2];
-      }
-      return parts;
-    }
-
-    function expandParts(html, parts, defs, seen, context = {}) {
-      const paired = /<x-part\b([^>]*)>((?:(?!<x-part\b).)*?)<\/x-part>/gis;
-      let expanded = (html ?? '').replace(paired, (_match, attrs, fallback) => renderPartTag(attrs, fallback, parts, defs, seen, context));
-      return expanded.replace(/<x-part\b([^>/]*?)\s*\/>/gis, (_match, attrs) => renderPartTag(attrs, '', parts, defs, seen, context));
-    }
-
-    function renderPartTag(attrs, fallback, parts, defs, seen, context) {
-      const node = parseCompositionNode('x-part', attrs);
-      const name = safePartName(node?.getAttribute('name'));
-      return expandUses(parts[name] ?? fallback, defs, seen, context);
-    }
-
-    function expandPartFallbacks(html, defs, seen, context = {}) {
-      return expandParts(html, {}, defs, seen, context);
-    }
-
-    function expandPages(html, defs, seen, context = {}) {
-      const paired = /<x-pages\b([^>]*)>((?:(?!<x-pages\b).)*?)<\/x-pages>/gis;
-      return (html ?? '').replace(paired, (_match, attrs, inner) => {
-        const parent = pageParentFromAttrs(attrs, context);
-        return childPages(parent).map(page => expandUses(renderPageTemplate(inner, page), defs, seen, { page })).join('');
-      });
-    }
-
-    function pageParentFromAttrs(attrs, context = {}) {
-      const node = parseCompositionNode('x-pages', attrs);
-      return slugify(node?.getAttribute('parent') ?? context.page?.slug ?? '/');
-    }
-
-    function childPages(parent) {
-      return pages()
-        .map(page => ({ ...page, url: page.slug, parent: parentSlug(page.slug) }))
-        .filter(page => page.parent === parent)
-        .sort((a, b) => a.slug.localeCompare(b.slug));
-    }
-
     function parentSlug(slug) {
       const clean = slugify(slug);
       if (clean === '/') return '';
       const parts = clean.replace(/^\/+|\/+$/g, '').split('/');
       if (parts.length <= 1) return '/';
       return '/' + parts.slice(0, -1).join('/');
-    }
-
-    function renderPageTemplate(template, page) {
-      const values = {
-        name: page.name ?? '',
-        title: page.title || page.name || '',
-        slug: page.slug ?? '',
-        url: page.url ?? page.slug ?? '',
-      };
-      return String(template ?? '').replace(/\{(name|title|slug|url)\}/g, (_match, key) => escapeHtml(values[key] ?? ''));
-    }
-
-    function renderPageWithLayout(c, defs, seen) {
-      const layout = artifactByRef(layoutRef(c.layout));
-      const context = { page: c };
-      if (!layout) return expandUses(c.definition, defs, seen, context);
-      return renderLayoutChain(layout, pageParts(c.definition), artifactStyle(c), defs, seen, context);
-    }
-
-    function renderLayoutChain(layout, parts, childStyle, defs, seen, context = {}) {
-      let template = expandParts(expandUses(artifactTemplate(layout), defs, seen, context), parts, defs, seen, context);
-
-      if (!layout?.layout) {
-        childStyle = String(childStyle ?? '').trim();
-        if (childStyle) template = `<style>${childStyle}</style>${template}`;
-        return renderArtifactInstance(parseCompositionNode('x-layout', ''), layout, '', defs, seen, context, template);
-      }
-
-      const parent = artifactByRef(layoutRef(layout.layout));
-      if (!parent) {
-        const style = String(childStyle ?? '').trim();
-        if (style) template = `<style>${style}</style>${template}`;
-        return renderArtifactInstance(parseCompositionNode('x-layout', ''), layout, '', defs, seen, context, template);
-      }
-
-      const parentParts = pageParts(template);
-      if (!Object.keys(parentParts).length) parentParts.main = template;
-      const style = [artifactStyle(layout), childStyle].filter(Boolean).join('\n').trim();
-      if (style) {
-        const target = Object.hasOwn(parentParts, 'main') ? 'main' : Object.keys(parentParts)[0];
-        parentParts[target] = `<style>${style}</style>${parentParts[target]}`;
-      }
-      return renderLayoutChain(parent, parentParts, '', defs, seen, context);
-    }
-
-    // Build the full preview document for any artifact. Authoring tags are
-    // expanded to rendered artifact instances before they reach the iframe.
-    function documentFor(c) {
-      if (!c) return '';
-      const defs = [];
-      const seen = new Set();
-      const usage = c.kind === 'page' && c.layout
-        ? renderPageWithLayout(c, defs, seen)
-        : renderArtifactUsage(c, expandUses(c.usage, defs, seen, { page: c }), defs, seen, { page: c });
-      return buildDocument(usage, defs, c.kind === 'component' ? 'component' : 'page', c.title || c.name);
     }
 
     function escapeHtml(value) {
@@ -969,10 +1132,81 @@ ${templateSource}`;
       kindBadge.textContent = c ? c.kind : '—';
       nameInput.value = c ? c.name : '';
       if (c?.kind === 'page' && c.layout === undefined) c.layout = '';
-      pageMeta.classList.toggle('visible', c?.kind === 'page');
+      titleField.hidden = c?.kind !== 'page';
+      slugField.hidden = c?.kind !== 'page';
+      layoutField.hidden = c?.kind !== 'page' && c?.kind !== 'layout';
+      layoutLabel.textContent = c?.kind === 'layout' ? 'Extends' : 'Layout';
       pageTitleInput.value = c?.kind === 'page' ? (c.title ?? c.name ?? '') : '';
       pageSlugInput.value = c?.kind === 'page' ? (c.slug || '/') : '';
-      frame.srcdoc = documentFor(c);
+      layoutInput.value = c?.kind === 'page' || c?.kind === 'layout' ? (c.layout ?? '') : '';
+      if (!c) {
+        frame.removeAttribute('src');
+        frame.srcdoc = '';
+        return;
+      }
+      frame.removeAttribute('srcdoc');
+      frame.src = `${previewUrl(c)}?workbench=${Date.now()}`;
+    }
+
+    function previewUrl(c) {
+      if (c.kind === 'page') return slugify(c.slug);
+      return c.kind === 'layout' ? `/l/${c.id}` : `/c/${c.id}`;
+    }
+
+    function renderPropsEditor(c) {
+      propsList.innerHTML = '';
+      normalizePropDefs(c?.props ?? []).forEach(prop => propsList.append(propRow(prop)));
+    }
+
+    function propRow(prop) {
+      const row = document.createElement('div');
+      row.className = 'prop-row';
+
+      const name = document.createElement('input');
+      name.placeholder = 'name';
+      name.value = prop.name ?? '';
+      name.oninput = updateSelectedProps;
+
+      const type = document.createElement('select');
+      ['string', 'number', 'boolean'].forEach(optionValue => {
+        const option = document.createElement('option');
+        option.value = optionValue;
+        option.textContent = optionValue;
+        type.append(option);
+      });
+      type.value = normalizePropType(prop.type);
+      type.onchange = updateSelectedProps;
+
+      const fallback = document.createElement('input');
+      fallback.placeholder = 'default';
+      fallback.value = prop.default ?? '';
+      fallback.oninput = updateSelectedProps;
+
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.textContent = '×';
+      remove.title = 'Remove prop';
+      remove.onclick = () => {
+        row.remove();
+        updateSelectedProps();
+      };
+
+      row.append(name, type, fallback, remove);
+      return row;
+    }
+
+    function propsFromEditor() {
+      return normalizePropDefs([...propsList.querySelectorAll('.prop-row')].map(row => {
+        const [name, type, fallback] = row.querySelectorAll('input, select');
+        return { name: name.value, type: type.value, default: fallback.value };
+      }));
+    }
+
+    function updateSelectedProps() {
+      const c = selected();
+      if (!c) return;
+      c.props = propsFromEditor();
+      scheduleSave(true);
     }
 
     function syncSourceInputs() {
@@ -980,7 +1214,9 @@ ${templateSource}`;
       styleInput.value = c ? artifactStyleSource(c) : '';
       templateInput.value = c ? artifactTemplateSource(c) : '';
       usageInput.value = c ? (c.usage ?? '') : '';
+      renderPropsEditor(c);
       updateSourceHighlights();
+      requestAnimationFrame(fitSourceHeights);
     }
 
     function updateSelectedSource() {
@@ -989,8 +1225,7 @@ ${templateSource}`;
       updateSourceHighlights();
       c.definition = definitionFromParts(c, styleInput.value, templateInput.value);
       c.usage = usageInput.value;
-      frame.srcdoc = documentFor(c);
-      scheduleSave();
+      scheduleSave(true);
     }
 
     function closePanels() {
@@ -1064,16 +1299,21 @@ ${templateSource}`;
       nameInput.focus(); nameInput.select();
     };
 
+    document.getElementById('btn-add-prop').onclick = () => {
+      propsList.append(propRow({ name: '', type: 'string', default: '' }));
+      propsList.querySelector('.prop-row:last-child input')?.focus();
+    };
+
     function newArtifact(kind, name, slotContent) {
       const tag = 'x-' + crypto.randomUUID().replace(/-/g, '').slice(0, 8);
       const id = crypto.randomUUID();
       const usage = kind === 'layout'
-        ? `<x-layout src="${id}">\n  <part name="main">${slotContent}</part>\n</x-layout>`
+        ? `<x-layout src="${id}">\n  <div slot="main">${slotContent}</div>\n</x-layout>`
         : kind === 'page'
           ? '<!-- Served at /untitled-page. -->'
           : `<x-component src="${id}"></x-component>`;
       return {
-        id, kind, name, tag,
+        id, kind, name, tag, props: [],
         definition: `<style>
   :host { display: ${kind === 'component' ? 'inline-block' : 'block'}; }
   .box { padding: var(--space-lg, 20px); border-radius: var(--radius, 14px);
@@ -1100,8 +1340,7 @@ ${templateSource}`;
       const c = selected();
       if (!c || c.kind !== 'page') return;
       c.title = pageTitleInput.value;
-      save();
-      renderFrame();
+      save().then(renderFrame);
     };
 
     pageSlugInput.oninput = () => {
@@ -1109,7 +1348,17 @@ ${templateSource}`;
       if (!c || c.kind !== 'page') return;
       c.slug = slugify(pageSlugInput.value);
       pageSlugInput.value = c.slug;
-      save();
+      save().then(renderFrame);
+      renderLists();
+    };
+
+    layoutInput.oninput = () => {
+      const c = selected();
+      if (!c || (c.kind !== 'page' && c.kind !== 'layout')) return;
+      c.layout = layoutName(layoutInput.value);
+      layoutInput.value = c.layout;
+      save().then(renderFrame);
+      renderLists();
     };
 
     document.getElementById('btn-tokens').onclick = () => {
@@ -1181,14 +1430,16 @@ ${templateSource}`;
     document.getElementById('btn-export').onclick = () => {
       const c = selected();
       if (!c) return;
-      // Export a full standalone document: tokens plus rendered artifact usage.
-      const blob = new Blob([documentFor(c)], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = (c.name || c.kind).toLowerCase().replace(/\s+/g, '-') + '.html';
-      a.click();
-      URL.revokeObjectURL(url);
+      save().then(async () => {
+        const html = await fetch(previewUrl(c), { cache: 'no-store' }).then(r => r.text());
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = (c.name || c.kind).toLowerCase().replace(/\s+/g, '-') + '.html';
+        a.click();
+        URL.revokeObjectURL(url);
+      });
     };
 
     (async function init() {
@@ -1198,7 +1449,14 @@ ${templateSource}`;
       selectedKey = artifactKey(library[0]);
       renderLists();
       applySourceCollapse();
+      updateSectionResizeHandles();
+      applyStoredSidebarWidth();
+      applyStoredStageWidth();
+      initSourceSectionResize();
+      initSidebarResize();
+      initStageResize();
       syncSourceInputs();
+      applyStoredSourceHeights();
       renderFrame();
     })();
   </script>

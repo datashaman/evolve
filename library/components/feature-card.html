@@ -1,5 +1,6 @@
 <!-- name: Feature card -->
 <!-- tag: x-feature-card -->
+<!-- props: [{"name":"icon","type":"string","default":"01"},{"name":"title","type":"string","default":"Service card"}] -->
 <style>
     :host { display: block; }
     article {
@@ -38,16 +39,14 @@
 
 <template>
   <article>
-    <div class="icon"><slot name="icon">01</slot></div>
-    <h3><slot name="title">Service card</slot></h3>
+    <div class="icon">{icon}</div>
+    <h3>{title}</h3>
     <p><slot name="body">Describe a focused customer outcome, not a generic capability.</slot></p>
   </article>
 </template>
 
 <script type="text/html" data-usage>
-<x-component src="feature-card">
-  <span slot="icon">01</span>
-  <span slot="title">Positioning sprint</span>
+<x-component src="feature-card" icon="01" title="Positioning sprint">
   <span slot="body">Clarify the offer, audience, proof, and page structure before design begins.</span>
 </x-component>
 </script>

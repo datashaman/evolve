@@ -118,70 +118,54 @@
 </style>
 
 <template>
-  <part name="hero">
-    <section class="intro">
-      <p class="eyebrow">About Northstar Studio</p>
-      <h1>A small studio for practical, durable service-business websites.</h1>
-      <p class="lede">We shape compact web systems from reusable content parts, server-rendered components, and design tokens that stay understandable after launch.</p>
-      <div class="actions">
-        <a class="button" href="#contact">Start a conversation</a>
-        <a class="button secondary" href="#approach">Read the approach</a>
-      </div>
-    </section>
-  </part>
-
-  <part name="main">
-    <section id="approach" class="story">
-      <div class="section-head">
-        <h2>Built for teams that need the website to stay legible.</h2>
-        <p>Northstar keeps the production site close to the language people already use: pages, layouts, parts, and reusable components. The goal is a system a designer, developer, or operator can inspect without reverse-engineering a bundle.</p>
-      </div>
-      <p>Every page starts with the real content structure, then gets wrapped by a layout suited to the job. A landing page can be campaign-led. An about page can be editorial. The components underneath stay reusable without forcing every page into the same shape.</p>
-      <div class="principles">
-        <x-component src="feature-card">
-          <span slot="icon">01</span>
-          <span slot="title">Clear boundaries</span>
-          <span slot="body">Components own local markup and style. Layouts own the page frame. Pages own the content parts.</span>
-        </x-component>
-        <x-component src="feature-card">
-          <span slot="icon">02</span>
-          <span slot="title">HTML composition</span>
-          <span slot="body">Authors compose with readable tags while the server renders final HTML for the browser.</span>
-        </x-component>
-      </div>
-    </section>
-  </part>
-
-  <part name="aside">
-    <div class="profile">
-      <dl>
-        <div>
-          <dt>Focus</dt>
-          <dd>Service businesses, expert teams, and productized consulting offers.</dd>
-        </div>
-        <div>
-          <dt>System</dt>
-          <dd>Server-rendered pages, reusable components, explicit content parts.</dd>
-        </div>
-        <div>
-          <dt>Baseline</dt>
-          <dd>Fast HTML first, optional client-side enhancement only where it earns its place.</dd>
-        </div>
-      </dl>
+  <section slot="hero" class="intro">
+    <p class="eyebrow">About Northstar Studio</p>
+    <h1>A small studio for practical, durable service-business websites.</h1>
+    <p class="lede">We shape compact web systems from reusable content slots, server-rendered components, and design tokens that stay understandable after launch.</p>
+    <div class="actions">
+      <a class="button" href="#contact">Start a conversation</a>
+      <a class="button secondary" href="#approach">Read the approach</a>
     </div>
-  </part>
+  </section>
 
-  <part name="cta">
-    <x-component src="cta-panel" id="contact">
-      <span slot="title">Make this your starting point.</span>
-      <span slot="body">Rename the brand, update the service cards, tune the tokens, and extend the library with real sections.</span>
-      <span slot="action">about@northstar.test</span>
-    </x-component>
-  </part>
+  <section slot="main" id="approach" class="story">
+    <div class="section-head">
+      <h2>Built for teams that need the website to stay legible.</h2>
+      <p>Northstar keeps the production site close to the language people already use: pages, layouts, slots, and reusable components. The goal is a system a designer, developer, or operator can inspect without reverse-engineering a bundle.</p>
+    </div>
+    <p>Every page starts with the real content structure, then gets wrapped by a layout suited to the job. A landing page can be campaign-led. An about page can be editorial. The components underneath stay reusable without forcing every page into the same shape.</p>
+    <div class="principles">
+      <x-component src="feature-card" icon="01" title="Clear boundaries">
+        <span slot="body">Components own local markup and style. Layouts own the page frame. Pages own the slotted content.</span>
+      </x-component>
+      <x-component src="feature-card" icon="02" title="HTML composition">
+        <span slot="body">Authors compose with readable tags while the server renders final HTML for the browser.</span>
+      </x-component>
+    </div>
+  </section>
 
-  <part name="footer">
-    <span slot="footer">Northstar Studio. About this site scaffold.</span>
-  </part>
+  <div slot="aside" class="profile">
+    <dl>
+      <div>
+        <dt>Focus</dt>
+        <dd>Service businesses, expert teams, and productized consulting offers.</dd>
+      </div>
+      <div>
+        <dt>System</dt>
+        <dd>Server-rendered pages, reusable components, explicit content slots.</dd>
+      </div>
+      <div>
+        <dt>Baseline</dt>
+        <dd>Fast HTML first, optional client-side enhancement only where it earns its place.</dd>
+      </div>
+    </dl>
+  </div>
+
+  <x-component slot="cta" src="cta-panel" id="contact" title="Make this your starting point." action="about@northstar.test" href="mailto:about@northstar.test">
+    <span slot="body">Rename the brand, update the service cards, tune the tokens, and extend the library with real sections.</span>
+  </x-component>
+
+  <span slot="footer">Northstar Studio. About this site scaffold.</span>
 </template>
 
 <script type="text/html" data-usage>

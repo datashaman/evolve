@@ -29,11 +29,11 @@
           <a slot="nav" href="{url}">{title}</a>
         </x-pages>
         <a slot="nav" href="#contact">Contact</a>
-        <span slot="action"><x-part name="action">Plan the site</x-part></span>
+        <span slot="action"><slot name="action">Plan the site</slot></span>
       </x-component>
-      <x-part name="main" />
+      <slot name="main"></slot>
       <footer>
-        <x-part name="footer">Built with the component workbench.</x-part>
+        <slot name="footer">Built with the component workbench.</slot>
       </footer>
     </div>
   </div>
@@ -41,13 +41,11 @@
 
 <script type="text/html" data-usage>
 <x-layout src="base">
-  <part name="action">Preview action</part>
-  <part name="main">
-    <main style="padding: 48px 0 72px;">
-      <h1>Base layout preview.</h1>
-      <p>This layout owns the shared site shell, header, navigation, and footer.</p>
-    </main>
-  </part>
-  <part name="footer">Base layout preview footer.</part>
+  <span slot="action">Preview action</span>
+  <main slot="main" style="padding: 48px 0 72px;">
+    <h1>Base layout preview.</h1>
+    <p>This layout owns the shared site shell, header, navigation, and footer.</p>
+  </main>
+  <span slot="footer">Base layout preview footer.</span>
 </x-layout>
 </script>

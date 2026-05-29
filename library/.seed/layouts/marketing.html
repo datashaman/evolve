@@ -19,39 +19,31 @@
 </style>
 
 <template>
-  <part name="action">Plan the site</part>
-  <part name="main">
-    <main class="marketing-main">
-      <x-part name="hero" />
-      <x-part name="main" />
-      <x-part name="cta" />
-    </main>
-  </part>
-  <part name="footer">
-    <x-part name="footer">Built with the component workbench.</x-part>
-  </part>
+  <span slot="action">Plan the site</span>
+  <main slot="main" class="marketing-main">
+    <slot name="hero">Hero slot</slot>
+    <slot name="main">Main content slot</slot>
+    <slot name="cta">CTA slot</slot>
+  </main>
+  <span slot="footer">
+    <slot name="footer">Built with the component workbench.</slot>
+  </span>
 </template>
 
 <script type="text/html" data-usage>
 <x-layout src="marketing">
-  <part name="hero">
-    <x-component src="hero-section">
-      <span slot="eyebrow">Layout preview</span>
-      <span slot="title">A marketing shell with a built-in header.</span>
-      <span slot="body">This layout owns the navigation and renders supplied page sections into its main content slot.</span>
-      <div slot="aside">
-        <strong>Marketing preview</strong>
-        <p>Place campaign proof, launch metrics, or a featured offer in this side panel.</p>
-      </div>
-    </x-component>
-  </part>
-  <part name="cta">
-    <x-component src="cta-panel">
-      <span slot="title">Drop page content into this shell.</span>
-      <span slot="body">Use layout usage to preview the frame with realistic sections.</span>
-      <span slot="action">Preview action</span>
-    </x-component>
-  </part>
-  <part name="footer">Layout preview footer content.</part>
+  <x-component slot="hero" src="hero-section">
+    <span slot="eyebrow">Layout preview</span>
+    <span slot="title">A marketing shell with a built-in header.</span>
+    <span slot="body">This layout owns the navigation and renders supplied page sections into its main content slot.</span>
+    <div slot="aside">
+      <strong>Marketing preview</strong>
+      <p>Place campaign proof, launch metrics, or a featured offer in this side panel.</p>
+    </div>
+  </x-component>
+  <x-component slot="cta" src="cta-panel" title="Drop page content into this shell." action="Preview action" href="#contact">
+    <span slot="body">Use layout usage to preview the frame with realistic sections.</span>
+  </x-component>
+  <span slot="footer">Layout preview footer content.</span>
 </x-layout>
 </script>

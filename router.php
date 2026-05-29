@@ -193,6 +193,7 @@ function serializeComponent(array $c): string {
     $title      = $c['title'] ?? '';
     $slug       = array_key_exists('slug', $c) ? safeSlug($c['slug']) : '';
     $layout     = safeLayoutName($c['layout'] ?? '');
+    $props      = normalizePropDefs($c['props'] ?? []);
     $definition = rtrim($c['definition'] ?? '');
     $usage      = trim($c['usage'] ?? '');
     $header = "<!-- name: {$name} -->\n";
@@ -207,6 +208,9 @@ function serializeComponent(array $c): string {
     }
     if ($layout !== '') {
         $header .= "<!-- layout: {$layout} -->\n";
+    }
+    if ($props) {
+        $header .= '<!-- props: ' . json_encode($props, JSON_UNESCAPED_SLASHES) . " -->\n";
     }
     return "{$header}{$definition}\n\n<script type=\"text/html\" data-usage>\n{$usage}\n</script>\n";
 }
@@ -232,6 +236,14 @@ function parseComponent(string $id, string $content): array {
     if (preg_match('/<!--\s*layout:\s*(.*?)\s*-->/', $content, $m)) {
         $layout = safeLayoutName($m[1]);
     }
+    $props = [];
+    if (preg_match('/<!--\s*props:\s*(.*?)\s*-->/', $content, $m)) {
+        $rawProps = trim($m[1]);
+        $decoded = json_decode($rawProps, true);
+        $props = is_array($decoded)
+            ? normalizePropDefs($decoded)
+            : normalizePropDefs(preg_split('/\s*,\s*|\s+/', $rawProps) ?: []);
+    }
     $usage = '';
     if (preg_match('/<script type="text\/html" data-usage>\s*([\s\S]*?)\s*<\/script>\s*$/', $content, $m)) {
         $usage = $m[1];
@@ -243,6 +255,7 @@ function parseComponent(string $id, string $content): array {
     $definition = preg_replace('/<!--\s*title:.*?-->\s*/', '', $definition, 1);
     $definition = preg_replace('/<!--\s*slug:.*?-->\s*/', '', $definition, 1);
     $definition = preg_replace('/<!--\s*layout:.*?-->\s*/', '', $definition, 1);
+    $definition = preg_replace('/<!--\s*props:.*?-->\s*/', '', $definition, 1);
     $definition = preg_replace('/<script type="text\/html" data-usage>[\s\S]*?<\/script>\s*$/', '', $definition);
     return [
         'id'         => $id,
@@ -251,6 +264,7 @@ function parseComponent(string $id, string $content): array {
         'title'      => $title,
         'slug'       => $slug,
         'layout'     => $layout,
+        'props'      => $props,
         'definition' => trim($definition),
         'usage'      => $usage,
     ];
@@ -261,8 +275,8 @@ function loadTokens(): string {
     return is_file($path) ? file_get_contents($path) : '';
 }
 
-// Mirror of the client's buildDocument: tokens plus rendered artifact markup.
-// Component previews center a single artifact; pages/layouts own the full canvas.
+// Route shell: tokens plus server-rendered artifact markup. The workbench iframe
+// loads these same routes, so preview and public rendering share one renderer.
 function buildDocument(string $usage, array $definitions, string $mode, string $title = 'Component Workbench'): string {
     $body = $mode === 'page'
         ? "html { scrollbar-gutter: stable; }
@@ -375,8 +389,8 @@ function renderedArtifactParts(array $artifact): array {
     return [$usage, $defs];
 }
 
-function expandPartFallbacks(string $html, array &$defs, array &$seen, array $context): string {
-    return expandParts($html, [], $defs, $seen, $context);
+function expandSlotFallbacks(string $html, array &$defs, array &$seen, array $context): string {
+    return expandSlots($html, [], $defs, $seen, $context);
 }
 
 function renderPageParts(array $page, array &$defs, array &$seen, array $context): string {
@@ -384,63 +398,66 @@ function renderPageParts(array $page, array &$defs, array &$seen, array $context
     if (!is_file($layoutPath)) return expandUses($page['definition'], $defs, $seen);
 
     $layout = parseComponent(basename($layoutPath, '.html'), file_get_contents($layoutPath));
-    return renderLayoutChain($layout, pageParts($page['definition']), artifactStyle($page), $defs, $seen, $context);
+    return renderLayoutChain($layout, slotAssignments($page['definition']), artifactStyle($page), $defs, $seen, $context);
 }
 
-function renderLayoutChain(array $layout, array $parts, string $childStyle, array &$defs, array &$seen, array $context): string {
-    $template = expandParts(expandUses(artifactTemplate($layout), $defs, $seen, $context), $parts, $defs, $seen, $context);
+function renderLayoutChain(array $layout, array $slots, string $childStyle, array &$defs, array &$seen, array $context, array $props = []): string {
+    $props = declaredProps($layout, $props);
+    $template = expandSlots(expandUses(applyProps(artifactTemplate($layout), $props), $defs, $seen, $context), $slots, $defs, $seen, $context);
 
     if (($layout['layout'] ?? '') === '') {
         $childStyle = trim($childStyle);
         if ($childStyle !== '') $template = "<style>{$childStyle}</style>{$template}";
-        return renderArtifactInstance($layout, '', '', $defs, $seen, $context, $template);
+        return renderArtifactInstance($layout, '', '', $defs, $seen, $context, $template, $props);
     }
 
     $parentPath = requiredPath(layoutRef($layout['layout']));
     if (!is_file($parentPath)) {
         $style = trim($childStyle);
         if ($style !== '') $template = "<style>{$style}</style>{$template}";
-        return renderArtifactInstance($layout, '', '', $defs, $seen, $context, $template);
+        return renderArtifactInstance($layout, '', '', $defs, $seen, $context, $template, $props);
     }
 
     $parent = parseComponent(basename($parentPath, '.html'), file_get_contents($parentPath));
-    $parentParts = pageParts($template);
-    if (!$parentParts) $parentParts = ['main' => $template];
-    $style = trim(artifactStyle($layout) . "\n" . $childStyle);
+    $parentSlots = slotAssignments($template);
+    if (!$parentSlots) $parentSlots = ['main' => $template];
+    $style = trim(applyProps(artifactStyle($layout), $props) . "\n" . $childStyle);
     if ($style !== '') {
-        $target = array_key_exists('main', $parentParts) ? 'main' : array_key_first($parentParts);
-        $parentParts[$target] = "<style>{$style}</style>" . $parentParts[$target];
+        $target = array_key_exists('main', $parentSlots) ? 'main' : array_key_first($parentSlots);
+        $parentSlots[$target] = "<style>{$style}</style>" . $parentSlots[$target];
     }
-    return renderLayoutChain($parent, $parentParts, '', $defs, $seen, $context);
+    return renderLayoutChain($parent, $parentSlots, '', $defs, $seen, $context);
 }
 
-function pageParts(string $html): array {
-    $parts = [];
-    $pattern = '#<part\b([^>]*)>((?:(?!<part\b).)*?)</part>#is';
+function slotAssignments(string $html): array {
+    $slots = [];
+    $pattern = '#<([a-z][\w:-]*)\b([^>]*)\bslot\s*=\s*(["\'])(.*?)\3([^>]*)>((?:(?!<\1\b).)*?)</\1>#is';
     preg_match_all($pattern, $html, $matches, PREG_SET_ORDER);
     foreach ($matches as $m) {
-        if (!preg_match('/\bname\s*=\s*(["\'])(.*?)\1/i', $m[1], $name)) continue;
-        $key = safePartName($name[2]);
-        if ($key !== '') $parts[$key] = $m[2];
+        $key = safeSlotName($m[4]);
+        if ($key === '') continue;
+        $slots[$key] = ($slots[$key] ?? '') . $m[0];
     }
-    return $parts;
+    return $slots;
 }
 
-function expandParts(string $html, array $parts, array &$defs, array &$seen, array $context): string {
-    $paired = '#<x-part\b([^>]*)>((?:(?!<x-part\b).)*?)</x-part>#is';
-    $html = preg_replace_callback($paired, function ($m) use ($parts, &$defs, &$seen, $context) {
-        return renderPartTag($m[1], $m[2], $parts, $defs, $seen, $context);
+function expandSlots(string $html, array $slots, array &$defs, array &$seen, array $context): string {
+    $paired = '#<slot\b([^>]*)>((?:(?!<slot\b).)*?)</slot>#is';
+    $html = preg_replace_callback($paired, function ($m) use ($slots, &$defs, &$seen, $context) {
+        return renderSlotTag($m[1], $m[2], $slots, $defs, $seen, $context);
     }, $html);
 
-    return preg_replace_callback('#<x-part\b([^>/]*?)\s*/>#is', function ($m) use ($parts, &$defs, &$seen, $context) {
-        return renderPartTag($m[1], '', $parts, $defs, $seen, $context);
+    return preg_replace_callback('#<slot\b([^>/]*?)\s*/>#is', function ($m) use ($slots, &$defs, &$seen, $context) {
+        return renderSlotTag($m[1], '', $slots, $defs, $seen, $context);
     }, $html);
 }
 
-function renderPartTag(string $attrs, string $fallback, array $parts, array &$defs, array &$seen, array $context): string {
-    if (!preg_match('/\bname\s*=\s*(["\'])(.*?)\1/i', $attrs, $m)) return '';
-    $name = safePartName($m[2]);
-    return expandUses($parts[$name] ?? $fallback, $defs, $seen, $context);
+function renderSlotTag(string $attrs, string $fallback, array $slots, array &$defs, array &$seen, array $context): string {
+    $name = '';
+    if (preg_match('/\bname\s*=\s*(["\'])(.*?)\1/i', $attrs, $m)) {
+        $name = safeSlotName($m[2]);
+    }
+    return expandUses($slots[$name] ?? $fallback, $defs, $seen, $context);
 }
 
 function expandPages(string $html, array &$defs, array &$seen, array $context): string {
@@ -561,7 +578,7 @@ function expandLayoutTag(string $attrs, string $inner, array &$defs, array &$see
     if (!is_file($path)) return '';
 
     $artifact = parseComponent(basename($path, '.html'), file_get_contents($path));
-    return renderLayoutChain($artifact, pageParts($inner), '', $defs, $seen, $context);
+    return renderLayoutChain($artifact, slotAssignments($inner), '', $defs, $seen, $context, propsFromAttrs($attrs));
 }
 
 function renderArtifactUsage(array $artifact, string $usage, array &$defs, array &$seen, array $context): string {
@@ -579,17 +596,76 @@ function renderArtifactUsage(array $artifact, string $usage, array &$defs, array
     }, $usage);
 }
 
-function renderArtifactInstance(array $artifact, string $attrs, string $inner, array &$defs, array &$seen, array $context, ?string $templateOverride = null): string {
+function renderArtifactInstance(array $artifact, string $attrs, string $inner, array &$defs, array &$seen, array $context, ?string $templateOverride = null, ?array $propsOverride = null): string {
     $tag = artifactTag($artifact);
     if ($tag === '') return $inner;
 
-    $style = artifactStyle($artifact);
-    $template = $templateOverride ?? expandPartFallbacks(expandUses(artifactTemplate($artifact), $defs, $seen, $context), $defs, $seen, $context);
-    $inner = expandUses($inner, $defs, $seen, $context);
-    $attrs = trim($attrs);
+    $props = declaredProps($artifact, $propsOverride ?? propsFromAttrs($attrs));
+    $style = applyProps(artifactStyle($artifact), $props);
+    $slots = slotAssignments($inner);
+    $source = applyProps($templateOverride ?? artifactTemplate($artifact), $props);
+    $template = $templateOverride !== null
+        ? $source
+        : expandSlots(expandUses($source, $defs, $seen, $context), $slots, $defs, $seen, $context);
+    $attrs = rootAttrsFromAttrs($attrs);
     $attrs = $attrs === '' ? '' : ' ' . $attrs;
 
-    return "<{$tag}{$attrs}><template shadowrootmode=\"open\"><style>{$style}</style>{$template}</template>{$inner}</{$tag}>";
+    return "<{$tag}{$attrs}><template shadowrootmode=\"open\"><style>{$style}</style>{$template}</template></{$tag}>";
+}
+
+function propsFromAttrs(string $attrs): array {
+    $props = [];
+    preg_match_all('/\s*([a-zA-Z_:][\w:.-]*)(?:\s*=\s*(["\'])(.*?)\2)?/s', $attrs, $matches, PREG_SET_ORDER);
+    foreach ($matches as $m) {
+        $name = strtolower($m[1]);
+        if ($name === 'src' || $name === 'slot') continue;
+        $props[$name] = html_entity_decode($m[3] ?? 'true', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+    return $props;
+}
+
+function declaredProps(array $artifact, array $props): array {
+    $out = [];
+    foreach (normalizePropDefs($artifact['props'] ?? []) as $def) {
+        $value = array_key_exists($def['name'], $props) ? $props[$def['name']] : $def['default'];
+        $out[$def['name']] = coercePropValue($value, $def);
+    }
+    return $out;
+}
+
+function coercePropValue(string $value, array $def): string {
+    $value = trim($value);
+    if ($def['type'] === 'number') {
+        return is_numeric($value) ? $value : (is_numeric($def['default']) ? (string)$def['default'] : '0');
+    }
+    if ($def['type'] === 'boolean') {
+        $bool = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        if ($bool === null) {
+            $bool = filter_var((string)$def['default'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
+        }
+        return $bool ? 'true' : 'false';
+    }
+    return $value;
+}
+
+function rootAttrsFromAttrs(string $attrs): string {
+    $out = [];
+    preg_match_all('/\s*([a-zA-Z_:][\w:.-]*)(?:\s*=\s*(["\'])(.*?)\2)?/s', $attrs, $matches, PREG_SET_ORDER);
+    foreach ($matches as $m) {
+        $name = strtolower($m[1]);
+        if ($name === 'src') continue;
+        if ($name !== 'slot' && $name !== 'id' && $name !== 'class' && $name !== 'role' && !str_starts_with($name, 'aria-') && !str_starts_with($name, 'data-')) continue;
+        $value = htmlspecialchars(html_entity_decode($m[3] ?? 'true', ENT_QUOTES | ENT_HTML5, 'UTF-8'), ENT_QUOTES, 'UTF-8');
+        $out[] = "{$name}=\"{$value}\"";
+    }
+    return implode(' ', $out);
+}
+
+function applyProps(string $html, array $props): string {
+    return preg_replace_callback('/\{([a-zA-Z][\w-]*)\}/', function ($m) use ($props) {
+        $key = strtolower($m[1]);
+        return array_key_exists($key, $props) ? htmlspecialchars($props[$key], ENT_QUOTES, 'UTF-8') : $m[0];
+    }, $html);
 }
 
 function artifactStyle(array $artifact): string {
@@ -649,9 +725,34 @@ function safeLayoutName(string $layout): string {
     return $layout !== '' && !str_contains($layout, '..') && preg_match('/^[a-z0-9-\/]+$/', $layout) ? $layout : '';
 }
 
-function safePartName(string $name): string {
+function safeSlotName(string $name): string {
     $name = strtolower(trim($name));
     return preg_match('/^[a-z0-9-]+$/', $name) ? $name : '';
+}
+
+function safePropName(string $name): string {
+    $name = strtolower(trim($name));
+    return preg_match('/^[a-z][a-z0-9-]*$/', $name) ? $name : '';
+}
+
+function safePropType(string $type): string {
+    $type = strtolower(trim($type));
+    return in_array($type, ['string', 'number', 'boolean'], true) ? $type : 'string';
+}
+
+function normalizePropDefs(array $props): array {
+    $out = [];
+    foreach ($props as $prop) {
+        $raw = is_array($prop) ? $prop : ['name' => (string)$prop];
+        $name = safePropName((string)($raw['name'] ?? ''));
+        if ($name === '') continue;
+        $out[$name] = [
+            'name' => $name,
+            'type' => safePropType((string)($raw['type'] ?? 'string')),
+            'default' => (string)($raw['default'] ?? ''),
+        ];
+    }
+    return array_values($out);
 }
 
 function requiredPath(string $ref): string {

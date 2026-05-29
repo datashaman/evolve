@@ -1,5 +1,6 @@
 <!-- name: CTA panel -->
 <!-- tag: x-cta-panel -->
+<!-- props: [{"name":"title","type":"string","default":"Ready to turn this into your site?"},{"name":"action","type":"string","default":"hello@example.com"},{"name":"href","type":"string","default":"mailto:hello@example.com"}] -->
 <style>
     :host { display: block; }
     section {
@@ -46,17 +47,15 @@
 <template>
   <section id="contact">
     <div>
-      <h2><slot name="title">Ready to turn this into your site?</slot></h2>
+      <h2>{title}</h2>
       <p><slot name="body">Swap the copy, adjust tokens, and extend the components into a complete production-ready system.</slot></p>
     </div>
-    <a href="mailto:hello@example.com"><slot name="action">hello@example.com</slot></a>
+    <a href="{href}">{action}</a>
   </section>
 </template>
 
 <script type="text/html" data-usage>
-<x-component src="cta-panel">
-  <span slot="title">Book a focused site sprint.</span>
+<x-component src="cta-panel" title="Book a focused site sprint." action="Start the brief" href="#contact">
   <span slot="body">Use the seed as a realistic baseline for a studio, consultant, or productized service.</span>
-  <span slot="action">Start the brief</span>
 </x-component>
 </script>

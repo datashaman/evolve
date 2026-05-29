@@ -61,43 +61,35 @@
 </style>
 
 <template>
-  <part name="action">Start a conversation</part>
-  <part name="main">
-    <main class="about-main">
-      <div class="content">
-        <x-part name="hero" />
-        <x-part name="main" />
-        <x-part name="cta" />
-      </div>
-      <aside class="aside">
-        <p class="aside-title">Studio profile</p>
-        <x-part name="aside">
-          A compact layout for about pages, case-study intros, and credibility-led content.
-        </x-part>
-      </aside>
-    </main>
-  </part>
-  <part name="footer">
-    <x-part name="footer">Built with the component workbench.</x-part>
-  </part>
+  <span slot="action">Start a conversation</span>
+  <main slot="main" class="about-main">
+    <div class="content">
+      <slot name="hero"></slot>
+      <slot name="main"></slot>
+      <slot name="cta"></slot>
+    </div>
+    <aside class="aside">
+      <p class="aside-title">Studio profile</p>
+      <slot name="aside">
+        A compact layout for about pages, case-study intros, and credibility-led content.
+      </slot>
+    </aside>
+  </main>
+  <span slot="footer">
+    <slot name="footer">Built with the component workbench.</slot>
+  </span>
 </template>
 
 <script type="text/html" data-usage>
 <x-layout src="about">
-  <part name="hero">
-    <section data-layout-preview>
-      <h1>Editorial layout preview.</h1>
-      <p>This layout provides the content column, sticky side panel, inherited site header, and footer slots. Page-specific typography belongs in the page.</p>
-    </section>
-  </part>
-  <part name="main">
-    <x-component src="feature-card">
-      <span slot="icon">01</span>
-      <span slot="title">Narrative first</span>
-      <span slot="body">The main column carries the story while the side panel holds compact proof points.</span>
-    </x-component>
-  </part>
-  <part name="aside">Preview side-panel content.</part>
-  <part name="footer">About layout preview footer.</part>
+  <section slot="hero" data-layout-preview>
+    <h1>Editorial layout preview.</h1>
+    <p>This layout provides the content column, sticky side panel, inherited site header, and footer slots. Page-specific typography belongs in the page.</p>
+  </section>
+  <x-component slot="main" src="feature-card" icon="01" title="Narrative first">
+    <span slot="body">The main column carries the story while the side panel holds compact proof points.</span>
+  </x-component>
+  <span slot="aside">Preview side-panel content.</span>
+  <span slot="footer">About layout preview footer.</span>
 </x-layout>
 </script>

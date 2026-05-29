@@ -52,82 +52,66 @@
 </style>
 
 <template>
-  <part name="hero">
-    <x-component src="hero-section">
-      <span slot="eyebrow">Website systems for service teams</span>
-      <span slot="title">A lean site scaffold that already behaves like a real project.</span>
-      <span slot="body">This seed gives you a credible home page, reusable sections, shared tokens, and server-rendered artifact composition you can reshape into your own offer.</span>
-      <span slot="primary">Start from this scaffold</span>
-      <span slot="secondary">Review the sections</span>
-      <div slot="aside" class="proof">
-        <div class="metric">
-          <strong>6</strong>
-          <p>Server-rendered artifacts</p>
-        </div>
-        <div class="metric">
-          <strong>3</strong>
-          <p>Library types sharing one model</p>
-        </div>
-        <div class="metric">
-          <strong>1</strong>
-          <p>Token file controlling the theme</p>
-        </div>
-      </div>
-    </x-component>
-  </part>
-
-  <part name="main">
-    <section id="services" class="services">
-      <div class="section-head">
-        <h2>Everything starts as a component.</h2>
-        <p>Components, layouts, and pages all keep template, style, and usage HTML together. Composition stays visible and editable.</p>
-      </div>
-      <div class="grid">
-        <x-component src="feature-card">
-          <span slot="icon">01</span>
-          <span slot="title">Offer clarity</span>
-          <span slot="body">Structure the page around the customer problem, service promise, and next step.</span>
-        </x-component>
-        <x-component src="feature-card">
-          <span slot="icon">02</span>
-          <span slot="title">Reusable sections</span>
-          <span slot="body">Edit once, reuse across pages, and keep the site system small enough to understand.</span>
-        </x-component>
-        <x-component src="feature-card">
-          <span slot="icon">03</span>
-          <span slot="title">Token-driven theme</span>
-          <span slot="body">Adjust color, spacing, radius, and typography without hunting through every artifact.</span>
-        </x-component>
-      </div>
-    </section>
-
-    <section id="proof" class="proof">
+  <x-component slot="hero" src="hero-section">
+    <span slot="eyebrow">Website systems for service teams</span>
+    <span slot="title">A lean site scaffold that already behaves like a real project.</span>
+    <span slot="body">This seed gives you a credible home page, reusable sections, shared tokens, and server-rendered artifact composition you can reshape into your own offer.</span>
+    <span slot="primary">Start from this scaffold</span>
+    <span slot="secondary">Review the sections</span>
+    <div slot="aside" class="proof">
       <div class="metric">
-        <strong>HTML</strong>
-        <p>Pages author layouts and components with HTML-like composition tags that render on the server.</p>
+        <strong>6</strong>
+        <p>Server-rendered artifacts</p>
       </div>
       <div class="metric">
-        <strong>CSS</strong>
-        <p>Design tokens stay shared while each rendered artifact keeps its local style boundary.</p>
+        <strong>3</strong>
+        <p>Library types sharing one model</p>
       </div>
       <div class="metric">
-        <strong>JS</strong>
-        <p>Client scripts become optional enhancement, not the mechanism that makes the page render.</p>
+        <strong>1</strong>
+        <p>Token file controlling the theme</p>
       </div>
-    </section>
-  </part>
+    </div>
+  </x-component>
 
-  <part name="cta">
-    <x-component src="cta-panel" id="contact">
-      <span slot="title">Make this your starting point.</span>
-      <span slot="body">Rename the brand, update the service cards, tune the tokens, and extend the library with real sections.</span>
-      <span slot="action">hello@northstar.test</span>
-    </x-component>
-  </part>
+  <section slot="main" id="services" class="services">
+    <div class="section-head">
+      <h2>Everything starts as a component.</h2>
+      <p>Components, layouts, and pages all keep template, style, and usage HTML together. Composition stays visible and editable.</p>
+    </div>
+    <div class="grid">
+      <x-component src="feature-card" icon="01" title="Offer clarity">
+        <span slot="body">Structure the page around the customer problem, service promise, and next step.</span>
+      </x-component>
+      <x-component src="feature-card" icon="02" title="Reusable sections">
+        <span slot="body">Edit once, reuse across pages, and keep the site system small enough to understand.</span>
+      </x-component>
+      <x-component src="feature-card" icon="03" title="Token-driven theme">
+        <span slot="body">Adjust color, spacing, radius, and typography without hunting through every artifact.</span>
+      </x-component>
+    </div>
+  </section>
 
-  <part name="footer">
-    <span slot="footer">Northstar Studio. A seeded workbench site scaffold.</span>
-  </part>
+  <section slot="main" id="proof" class="proof">
+    <div class="metric">
+      <strong>HTML</strong>
+      <p>Pages author layouts and components with HTML-like composition tags that render on the server.</p>
+    </div>
+    <div class="metric">
+      <strong>CSS</strong>
+      <p>Design tokens stay shared while each rendered artifact keeps its local style boundary.</p>
+    </div>
+    <div class="metric">
+      <strong>JS</strong>
+      <p>Client scripts become optional enhancement, not the mechanism that makes the page render.</p>
+    </div>
+  </section>
+
+  <x-component slot="cta" src="cta-panel" id="contact" title="Make this your starting point." action="hello@northstar.test" href="mailto:hello@northstar.test">
+    <span slot="body">Rename the brand, update the service cards, tune the tokens, and extend the library with real sections.</span>
+  </x-component>
+
+  <span slot="footer">Northstar Studio. A seeded workbench site scaffold.</span>
 </template>
 
 <script type="text/html" data-usage>
