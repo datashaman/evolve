@@ -45,13 +45,13 @@
     .source-section { display: flex; flex-direction: column; min-height: 38px; }
     .source-section[hidden] { display: none; }
     .source-section[data-block="metadata"] { flex: 0 0 auto; }
-    .source-section[data-block="content"] { flex: 0 0 auto; }
+    .source-section[data-block="data"] { flex: 1 1 0; }
     .source-section[data-block="php"] { flex: 1.2 1 0; }
     .source-section[data-block="blade"] { flex: 2 1 0; }
     .source-section[data-block="style"], .source-section[data-block="usage"] { flex: 1 1 0; }
     .source-section.collapsed { flex: 0 0 auto !important; }
     .source-section[data-block="usage"].collapsed { margin-top: auto; }
-    .source-section.collapsed .metadata-grid, .source-section.collapsed .code-editor { display: none; }
+    .source-section.collapsed .metadata-grid, .source-section.collapsed .content-index, .source-section.collapsed .code-editor { display: none; }
     .section-resize { flex: 0 0 6px; background: #18181b; cursor: row-resize; }
     .section-resize:hover, .editor-fields.resizing .section-resize { background: #24242a; }
     .section-resize[hidden] { display: none; }
@@ -75,6 +75,19 @@
     .content-grid textarea { min-height: 120px; resize: vertical; line-height: 1.45; }
     .content-grid .checkbox { display: flex; gap: 8px; align-items: center; align-self: end; color: #e4e4e7; font-size: 13px; }
     .content-grid .checkbox input { width: auto; }
+    .content-index { flex: 1; min-height: 0; overflow: auto; padding: 12px; background: #1e1e1e; }
+    .content-index[hidden] { display: none; }
+    .content-index table { width: 100%; border-collapse: collapse; table-layout: fixed; color: #e4e4e7; font-size: 12px; }
+    .content-index th { padding: 8px; color: #a1a1aa; font-size: 11px; text-align: left; text-transform: uppercase; letter-spacing: .04em; background: #27272a; position: sticky; top: 0; z-index: 1; }
+    .content-index td { padding: 6px 8px; border-top: 1px solid #27272a; vertical-align: top; }
+    .content-index input, .content-index textarea { width: 100%; padding: 7px 8px; border: 1px solid #3f3f46; border-radius: 6px; background: #27272a; color: #fafafa; font: 12px ui-monospace, "SF Mono", Menlo, monospace; }
+    .content-index textarea { min-height: 70px; resize: vertical; line-height: 1.4; }
+    .content-index input[type="checkbox"] { width: auto; margin-top: 9px; }
+    .content-index .position-cell { width: 72px; }
+    .content-index .icon-cell { width: 76px; }
+    .content-index .published-cell { width: 92px; text-align: center; }
+    .content-index .content-actions { display: flex; justify-content: flex-end; padding: 0 0 10px; }
+    .content-index .content-actions button { padding: 7px 10px; border: 1px solid #3f3f46; border-radius: 7px; background: #303036; color: #fafafa; cursor: pointer; font-weight: 700; }
     .code-editor { position: relative; flex: 1; min-height: 60px; overflow: hidden; background: #1e1e1e; }
     .code-editor textarea, .syntax-highlight {
       position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 8px 16px 12px; border: 0; overflow: auto;
@@ -122,14 +135,22 @@
               <label class="metadata-field" data-meta="slug"><span>Slug</span><input id="meta-slug"></label>
             </div>
           </section>
-          <section class="source-section" data-block="content" hidden>
-            <button class="field-label" type="button" data-toggle-source="content">Content</button>
-            <div class="content-grid">
-              <label><span>Icon</span><input id="content-icon"></label>
-              <label><span>Title</span><input id="content-title"></label>
-              <label class="full"><span>Summary</span><textarea id="content-summary" spellcheck="false"></textarea></label>
-              <label><span>Position</span><input id="content-position" type="number" min="0" step="1"></label>
-              <label class="checkbox"><input id="content-published" type="checkbox"> Published</label>
+          <section class="source-section" data-block="data" hidden>
+            <button class="field-label" type="button" data-toggle-source="data">Data</button>
+            <div class="content-index" id="content-index">
+              <div class="content-actions"><button id="btn-add-content-row" type="button">Add row</button></div>
+              <table>
+                <thead>
+                  <tr>
+                    <th class="position-cell">Order</th>
+                    <th class="icon-cell">Icon</th>
+                    <th>Title</th>
+                    <th>Summary</th>
+                    <th class="published-cell">Published</th>
+                  </tr>
+                </thead>
+                <tbody id="content-rows"></tbody>
+              </table>
             </div>
           </section>
           <section class="source-section" data-block="php"><button class="field-label" type="button" data-toggle-source="php">PHP</button><div class="code-editor"><pre class="syntax-highlight" id="php-highlight"></pre><textarea id="php-source" spellcheck="false"></textarea></div></section>
@@ -151,6 +172,7 @@
     const CONTENT_API = '/api/content';
     const csrf = document.querySelector('meta[name="csrf-token"]').content;
     let library = [];
+    let contentRows = [];
     let selectedKey = '';
     let saveTimer = 0;
     let contentSaveTimer = 0;
@@ -159,6 +181,8 @@
     const workspace = document.querySelector('.workspace');
     const stage = document.querySelector('.stage');
     const editorFields = document.querySelector('#editor .editor-fields');
+    const contentIndex = document.getElementById('content-index');
+    const contentRowsEl = document.getElementById('content-rows');
     const fields = {
       name: document.getElementById('meta-name'),
       slug: document.getElementById('meta-slug'),
@@ -166,11 +190,6 @@
       blade: document.getElementById('blade-source'),
       style: document.getElementById('style-source'),
       usage: document.getElementById('usage'),
-      contentIcon: document.getElementById('content-icon'),
-      contentTitle: document.getElementById('content-title'),
-      contentSummary: document.getElementById('content-summary'),
-      contentPosition: document.getElementById('content-position'),
-      contentPublished: document.getElementById('content-published'),
     };
     const highlights = {
       php: document.getElementById('php-highlight'),
@@ -186,13 +205,16 @@
     const artifactKey = c => c ? `${c.kind}:${c.id}` : '';
     const selected = () => library.find(c => artifactKey(c) === selectedKey) ?? null;
     const byKind = kind => library.filter(c => c.kind === kind);
+    const serviceModel = () => ({ kind: 'content', id: 'services', name: 'Service', model: 'Service', meta: `${contentRows.length} rows` });
+    const refreshContentModel = () => { library = [...byKind('layout'), ...byKind('style'), ...byKind('component'), serviceModel(), ...byKind('page')]; };
 
     async function load() {
       const [data, content] = await Promise.all([
         fetch(API, { headers: { accept: 'application/json' } }).then(r => r.json()),
         fetch(CONTENT_API, { headers: { accept: 'application/json' } }).then(r => r.json()),
       ]);
-      library = [...data.layouts, ...data.styles, ...data.components, ...content.services, ...data.pages];
+      contentRows = content.services ?? [];
+      library = [...data.layouts, ...data.styles, ...data.components, serviceModel(), ...data.pages];
       selectedKey ||= artifactKey(library[0]);
       renderLists();
       syncInputs();
@@ -214,25 +236,26 @@
     }
 
     function saveContent(refresh = false) {
-      const previousKey = selectedKey;
+      const shouldRebuildTable = contentRows.some(row => String(row.id ?? '').startsWith('new-')) || !contentIndex.contains(document.activeElement);
       return fetch(CONTENT_API, {
         method: 'PUT',
         headers: { 'content-type': 'application/json', 'x-csrf-token': csrf },
-        body: JSON.stringify({ services: byKind('content') }),
+        body: JSON.stringify({ services: contentRows }),
       }).then(r => r.json()).then(data => {
-        const current = selected();
-        const services = data.services ?? [];
-        library = [...byKind('layout'), ...byKind('style'), ...byKind('component'), ...services, ...byKind('page')];
-
-        if (current?.kind === 'content') {
-          const replacement = services.find(item => item.client_id === current.id)
-            ?? services.find(item => item.id === current.id)
-            ?? services.find(item => item.title === current.title && Number(item.position) === Number(current.position));
-          selectedKey = replacement ? artifactKey(replacement) : previousKey;
+        const savedRows = data.services ?? [];
+        if (shouldRebuildTable) {
+          contentRows = savedRows;
+        } else {
+          savedRows.forEach((saved, index) => {
+            if (contentRows[index] && !String(contentRows[index].id ?? '').startsWith('new-')) {
+              contentRows[index].id = saved.id;
+              contentRows[index].client_id = saved.client_id;
+            }
+          });
         }
-
+        library = [...byKind('layout'), ...byKind('style'), ...byKind('component'), serviceModel(), ...byKind('page')];
         renderLists();
-        syncInputs();
+        if (shouldRebuildTable) renderContentIndex();
         if (refresh) renderFrame();
       });
     }
@@ -264,7 +287,7 @@
         li.className = artifactKey(item) === selectedKey ? 'active' : '';
         li.innerHTML = `<span class="label"></span><span class="meta"></span>`;
         li.querySelector('.label').textContent = item.name || item.id;
-        li.querySelector('.meta').textContent = kind === 'page' ? item.slug : kind === 'style' ? `${item.id}.css` : kind === 'content' ? item.model : item.id;
+        li.querySelector('.meta').textContent = kind === 'page' ? item.slug : kind === 'style' ? `${item.id}.css` : kind === 'content' ? item.meta : item.id;
         if (kind === 'style') {
           li.draggable = true;
           li.dataset.key = artifactKey(item);
@@ -285,6 +308,38 @@
         list.append(li);
       });
       document.getElementById(emptyId).hidden = items.length > 0;
+    }
+
+    function renderContentIndex() {
+      if (!contentRowsEl) return;
+      contentRowsEl.innerHTML = '';
+      contentRows.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="position-cell"><input type="number" min="0" step="1" data-field="position"></td>
+          <td class="icon-cell"><input data-field="icon"></td>
+          <td><input data-field="title"></td>
+          <td><textarea data-field="summary"></textarea></td>
+          <td class="published-cell"><input type="checkbox" data-field="is_published"></td>
+        `;
+        tr.querySelector('[data-field="position"]').value = row.position ?? index + 1;
+        tr.querySelector('[data-field="icon"]').value = row.icon ?? '';
+        tr.querySelector('[data-field="title"]').value = row.title ?? '';
+        tr.querySelector('[data-field="summary"]').value = row.summary ?? '';
+        tr.querySelector('[data-field="is_published"]').checked = !!row.is_published;
+        tr.querySelectorAll('[data-field]').forEach(input => {
+          const eventName = input.type === 'checkbox' ? 'change' : 'input';
+          input.addEventListener(eventName, () => {
+            const field = input.dataset.field;
+            row[field] = input.type === 'checkbox' ? input.checked : field === 'position' ? Number(input.value || 0) : input.value;
+            row.name = row.title;
+            refreshContentModel();
+            renderLists();
+            scheduleContentSave(true);
+          });
+        });
+        contentRowsEl.append(tr);
+      });
     }
 
     function reorderStyle(sourceKey, targetKey) {
@@ -309,19 +364,16 @@
       fields.blade.value = c?.blade ?? '';
       fields.style.value = c?.style ?? '';
       fields.usage.value = c?.usage ?? '';
-      fields.contentIcon.value = c?.icon ?? '';
-      fields.contentTitle.value = c?.title ?? '';
-      fields.contentSummary.value = c?.summary ?? '';
-      fields.contentPosition.value = c?.position ?? '';
-      fields.contentPublished.checked = !!c?.is_published;
-      sourceSection('metadata').hidden = c?.kind === 'content';
+      const isContent = c?.kind === 'content';
+      sourceSection('metadata').hidden = false;
       document.querySelector('[data-meta="slug"]').hidden = c?.kind !== 'page';
-      sourceSection('content').hidden = c?.kind !== 'content';
-      sourceSection('php').hidden = ['layout', 'style', 'content'].includes(c?.kind);
-      sourceSection('blade').hidden = ['style', 'content'].includes(c?.kind);
-      sourceSection('style').hidden = c?.kind === 'content';
-      sourceSection('usage').hidden = ['style', 'content'].includes(c?.kind);
+      sourceSection('data').hidden = !isContent;
+      sourceSection('php').hidden = isContent || ['layout', 'style'].includes(c?.kind);
+      sourceSection('blade').hidden = isContent || c?.kind === 'style';
+      sourceSection('style').hidden = isContent;
+      sourceSection('usage').hidden = isContent || c?.kind === 'style';
       updateHighlights();
+      renderContentIndex();
       updateResizeHandles();
       requestAnimationFrame(fitSourceHeights);
     }
@@ -343,14 +395,6 @@
       const c = selected();
       if (!c) return;
       if (c.kind === 'content') {
-        c.name = fields.contentTitle.value;
-        c.title = fields.contentTitle.value;
-        c.icon = fields.contentIcon.value;
-        c.summary = fields.contentSummary.value;
-        c.position = Number(fields.contentPosition.value || 0);
-        c.is_published = fields.contentPublished.checked;
-        renderLists();
-        scheduleContentSave(true);
         return;
       }
 
@@ -366,8 +410,6 @@
     }
 
     Object.values(fields).forEach(input => input.addEventListener('input', updateSelected));
-    fields.contentPublished.addEventListener('change', updateSelected);
-
     function newArtifact(kind) {
       const id = `new-${crypto.randomUUID().slice(0, 8)}`;
       const component = id.replaceAll('/', '.');
@@ -384,28 +426,31 @@
       renderLists(); syncInputs(); save(true);
     }
 
-    function newContent() {
-      const item = {
+    function addContentRow() {
+      contentRows.push({
         id: `new-${crypto.randomUUID().slice(0, 8)}`,
         kind: 'content',
         model: 'Service',
         name: 'New service',
         title: 'New service',
-        icon: String(byKind('content').length + 1).padStart(2, '0'),
+        icon: String(contentRows.length + 1).padStart(2, '0'),
         summary: 'Describe the customer outcome this service creates.',
-        position: byKind('content').length + 1,
+        position: contentRows.length + 1,
         is_published: true,
-      };
-      library.push(item);
-      selectedKey = artifactKey(item);
-      renderLists(); syncInputs(); saveContent(true);
+      });
+      selectedKey = 'content:services';
+      refreshContentModel();
+      renderLists();
+      syncInputs();
+      saveContent(true);
     }
 
     document.getElementById('btn-new-style').onclick = () => newArtifact('style');
     document.getElementById('btn-new-component').onclick = () => newArtifact('component');
     document.getElementById('btn-new-layout').onclick = () => newArtifact('layout');
     document.getElementById('btn-new-page').onclick = () => newArtifact('page');
-    document.getElementById('btn-new-content').onclick = () => newContent();
+    document.getElementById('btn-new-content').onclick = () => addContentRow();
+    document.getElementById('btn-add-content-row').onclick = () => addContentRow();
     document.getElementById('btn-reload').onclick = () => load();
     document.getElementById('btn-open').onclick = () => { const c = selected(); if (c) window.open(previewUrl(c), '_blank'); };
 
@@ -442,9 +487,9 @@
       updateResizeHandles(); fitSourceHeights();
     }
     function sourceSection(block) { return sourceSections.find(section => section.dataset.block === block); }
-    function visibleCodeSections() { return ['php','blade','style','usage'].map(sourceSection).filter(section => section && !section.hidden && !section.classList.contains('collapsed')); }
+    function visibleCodeSections() { return ['data','php','blade','style','usage'].map(sourceSection).filter(section => section && !section.hidden && !section.classList.contains('collapsed')); }
     function availableCodeHeight() {
-      const fixed = [...editorFields.children].reduce((sum, child) => child.hidden || (child.classList.contains('source-section') && ['php','blade','style','usage'].includes(child.dataset.block) && !child.classList.contains('collapsed')) ? sum : sum + child.getBoundingClientRect().height, 0);
+      const fixed = [...editorFields.children].reduce((sum, child) => child.hidden || (child.classList.contains('source-section') && ['data','php','blade','style','usage'].includes(child.dataset.block) && !child.classList.contains('collapsed')) ? sum : sum + child.getBoundingClientRect().height, 0);
       return Math.max(0, editorFields.clientHeight - fixed);
     }
     function fitSourceHeights() {
