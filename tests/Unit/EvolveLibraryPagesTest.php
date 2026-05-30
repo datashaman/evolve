@@ -128,6 +128,7 @@ PHP,
         $this->assertSame([
             [
                 'route' => '/resources/{resource}',
+                'route_name' => 'resources.resource',
                 'component' => 'pages::resources.show',
             ],
         ], $library->pageRoutes());

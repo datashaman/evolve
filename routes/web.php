@@ -37,5 +37,5 @@ if (! collect($artifactRoutes)->contains(fn (array $artifactRoute): bool => $art
 
 foreach ($artifactRoutes as $artifactRoute) {
     Route::livewire($artifactRoute['route'], $artifactRoute['component'])
-        ->name($artifactRoute['route'] === '/' ? 'home' : str_replace('/', '.', trim(preg_replace('#\{([^}/?]+)\??\}#', '$1', $artifactRoute['route']), '/')));
+        ->name($artifactRoute['route_name']);
 }

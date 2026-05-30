@@ -96,16 +96,26 @@ class EvolveLibrary
     public function artifactRoutes(): array
     {
         return collect([
-            ...collect($this->normalizePageTree($this->manifest()['pages'] ?? []))->map(fn (array $page) => [
-                'route' => $this->safeRoute($page['route'] ?? $page['slug'] ?? '/'.($page['id'] ?? '')),
-                'component' => 'pages::'.$this->componentName($page['id'] ?? ''),
-            ]),
+            ...collect($this->normalizePageTree($this->manifest()['pages'] ?? []))->map(function (array $page) {
+                $route = $this->safeRoute($page['route'] ?? $page['slug'] ?? '/'.($page['id'] ?? ''));
+
+                return [
+                    'route' => $route,
+                    'route_name' => $this->resolveRouteName($page['route_name'] ?? null, $route),
+                    'component' => 'pages::'.$this->componentName($page['id'] ?? ''),
+                ];
+            }),
             ...collect($this->manifest()['forms'] ?? [])
                 ->filter(fn (array $form) => filled($form['route'] ?? ''))
-                ->map(fn (array $form) => [
-                    'route' => $this->safeRoute($form['route'] ?? ''),
-                    'component' => 'forms::'.$this->componentName($form['id'] ?? ''),
-                ]),
+                ->map(function (array $form) {
+                    $route = $this->safeRoute($form['route'] ?? '');
+
+                    return [
+                        'route' => $route,
+                        'route_name' => $this->resolveRouteName($form['route_name'] ?? null, $route),
+                        'component' => 'forms::'.$this->componentName($form['id'] ?? ''),
+                    ];
+                }),
         ])
             ->filter(fn (array $route) => $route['component'] !== 'pages::' && $route['component'] !== 'forms::')
             ->values()
@@ -257,13 +267,27 @@ class EvolveLibrary
                     'id' => $id,
                     'kind' => $kind,
                     'name' => $entry['name'] ?? Str::headline(basename($id)),
-                    ...($kind === 'form' ? ['route' => $this->safeRoute($entry['route'] ?? $entry['slug'] ?? '')] : []),
-                    ...($kind === 'page' ? [
-                        'route' => $this->safeRoute($entry['route'] ?? $entry['slug'] ?? ''),
-                        'parent_id' => $this->safeId($entry['parent_id'] ?? ''),
-                        'order' => (int) ($entry['order'] ?? 0),
-                        'depth' => (int) ($entry['depth'] ?? 0),
-                    ] : []),
+                    ...($kind === 'form' ? (function () use ($entry) {
+                        $route = $this->safeRoute($entry['route'] ?? $entry['slug'] ?? '');
+
+                        return [
+                            'route' => $route,
+                            'route_name' => $route === '/' && ! filled($entry['route'] ?? $entry['slug'] ?? '')
+                                ? ''
+                                : $this->resolveRouteName($entry['route_name'] ?? null, $route),
+                        ];
+                    })() : []),
+                    ...($kind === 'page' ? (function () use ($entry) {
+                        $route = $this->safeRoute($entry['route'] ?? $entry['slug'] ?? '');
+
+                        return [
+                            'route' => $route,
+                            'route_name' => $this->resolveRouteName($entry['route_name'] ?? null, $route),
+                            'parent_id' => $this->safeId($entry['parent_id'] ?? ''),
+                            'order' => (int) ($entry['order'] ?? 0),
+                            'depth' => (int) ($entry['depth'] ?? 0),
+                        ];
+                    })() : []),
                     'metadata' => is_array($entry['metadata'] ?? null) ? $entry['metadata'] : [],
                     'usage' => $entry['usage'] ?? '',
                     'path' => $entry['path'] ?? $this->relativePath($kind, $id),
@@ -323,6 +347,7 @@ class EvolveLibrary
             if ($kind === 'page') {
                 $entry['path'] = $this->relativePath($kind, $id);
                 $entry['route'] = $this->safeRoute($artifact['route'] ?? $artifact['slug'] ?? '/'.$id);
+                $entry['route_name'] = $this->resolveRouteName($artifact['route_name'] ?? null, $entry['route']);
                 $entry['parent_id'] = $this->safeId($artifact['parent_id'] ?? '');
                 $entry['order'] = max(0, (int) ($artifact['order'] ?? count($entries) + 1));
                 $entry['usage'] = (string) ($artifact['usage'] ?? '');
@@ -331,6 +356,9 @@ class EvolveLibrary
             if ($kind === 'form') {
                 $entry['path'] = $this->relativePath($kind, $id);
                 $entry['route'] = $this->safeRoute($artifact['route'] ?? $artifact['slug'] ?? '');
+                $entry['route_name'] = filled($artifact['route'] ?? $artifact['slug'] ?? '')
+                    ? $this->resolveRouteName($artifact['route_name'] ?? null, $entry['route'])
+                    : '';
             }
 
             if (in_array($kind, ['component', 'form', 'layout', 'snippet'], true)) {
@@ -703,6 +731,38 @@ class EvolveLibrary
         $route = preg_replace('#[^a-z0-9/_{}?-]#', '-', $route);
 
         return '/'.trim(preg_replace('#/+#', '/', $route), '/-');
+    }
+
+    protected function safeRouteName(string $name): string
+    {
+        $name = strtolower(trim($name));
+        if ($name === '') {
+            return '';
+        }
+
+        $name = preg_replace('#[^a-z0-9._-]#', '.', $name);
+
+        return trim(preg_replace('#\.+#', '.', $name), '.');
+    }
+
+    protected function deriveRouteName(string $route): string
+    {
+        $route = $this->safeRoute($route);
+
+        if ($route === '/') {
+            return 'home';
+        }
+
+        $stripped = preg_replace('#\{([^}/?]+)\??\}#', '$1', $route);
+
+        return str_replace('/', '.', trim($stripped, '/'));
+    }
+
+    protected function resolveRouteName(?string $explicit, string $route): string
+    {
+        $explicit = $this->safeRouteName((string) $explicit);
+
+        return $explicit !== '' ? $explicit : $this->deriveRouteName($route);
     }
 
     protected function defaultPhp(): string

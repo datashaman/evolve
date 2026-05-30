@@ -119,6 +119,7 @@ BLADE,
         $this->assertSame([
             [
                 'route' => '/resources/{resource}/request',
+                'route_name' => 'resources.resource.request',
                 'component' => 'forms::resources.request',
             ],
         ], $library->artifactRoutes());

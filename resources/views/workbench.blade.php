@@ -176,6 +176,7 @@
               <div class="metadata-field"><label for="meta-name">Name</label><input id="meta-name"></div>
               <div class="metadata-field" data-meta="path"><label for="meta-slug">Path</label><input id="meta-slug"></div>
               <div class="metadata-field" data-meta="route"><label for="meta-route">Route</label><input id="meta-route"></div>
+              <div class="metadata-field" data-meta="route-name"><label for="meta-route-name">Route name</label><input id="meta-route-name" placeholder="auto"></div>
               <div class="metadata-field" data-meta="parent"><label for="meta-parent">Parent</label><input id="meta-parent" list="page-parent-options"></div>
               <div class="metadata-field" data-meta="order"><label for="meta-order">Order</label><input id="meta-order" type="number" min="0" step="1"></div>
               <datalist id="page-parent-options"></datalist>
@@ -249,6 +250,7 @@
       name: document.getElementById('meta-name'),
       slug: document.getElementById('meta-slug'),
       route: document.getElementById('meta-route'),
+      routeName: document.getElementById('meta-route-name'),
       parent: document.getElementById('meta-parent'),
       order: document.getElementById('meta-order'),
       php: document.getElementById('php-source'),
@@ -759,6 +761,7 @@
       fields.name.value = c?.name ?? '';
       fields.slug.value = c?.path ?? '';
       fields.route.value = ['form', 'page'].includes(c?.kind) ? c?.route || routeFromPath(c?.path) : '';
+      fields.routeName.value = ['form', 'page'].includes(c?.kind) ? c?.route_name || '' : '';
       fields.parent.value = c?.kind === 'page' ? c?.parent_id || '' : '';
       fields.order.value = c?.kind === 'page' ? c?.order ?? 0 : '';
       fields.php.value = c?.php ?? '';
@@ -771,10 +774,12 @@
       sourceSection('metadata').hidden = isContent;
       const pathField = document.querySelector('[data-meta="path"]');
       const routeField = document.querySelector('[data-meta="route"]');
+      const routeNameField = document.querySelector('[data-meta="route-name"]');
       const parentField = document.querySelector('[data-meta="parent"]');
       const orderField = document.querySelector('[data-meta="order"]');
       pathField.hidden = ['content'].includes(c?.kind);
       routeField.hidden = !['form', 'page'].includes(c?.kind);
+      routeNameField.hidden = !['form', 'page'].includes(c?.kind);
       parentField.hidden = c?.kind !== 'page';
       orderField.hidden = c?.kind !== 'page';
       pathField.querySelector('label').textContent = 'Path';
@@ -830,6 +835,7 @@
       c.slug = '';
       if (['form', 'page'].includes(c.kind)) c.path = fields.slug.value || c.path;
       if (['form', 'page'].includes(c.kind)) c.route = fields.route.value || '';
+      if (['form', 'page'].includes(c.kind)) c.route_name = fields.routeName.value || '';
       if (['form', 'page'].includes(c.kind)) {
         c.id = idFromPath(c.path) || c.id;
         const namespace = c.kind === 'form' ? 'forms' : 'pages';
@@ -880,6 +886,7 @@
         id, kind, name: kind === 'style' ? 'New style' : kind === 'page' ? 'New page' : kind === 'layout' ? 'New layout' : kind === 'form' ? 'New form' : kind === 'snippet' ? 'New snippet' : 'New component',
         slug: '',
         route: ['form', 'page'].includes(kind) ? `/${id}` : '',
+        route_name: '',
         parent_id: '',
         order: kind === 'page' ? byKind('page').length + 1 : 0,
         path: kind === 'form' ? `resources/views/forms/${id}.blade.php` : kind === 'page' ? `resources/views/pages/${id}.blade.php` : kind === 'style' ? `resources/css/${id}.css` : kind === 'layout' ? `resources/views/layouts/${id}.blade.php` : kind === 'snippet' ? `resources/views/snippets/${id}.blade.php` : kind === 'component' ? `resources/views/components/${id}.blade.php` : '',

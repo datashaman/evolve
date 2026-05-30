@@ -54,6 +54,7 @@ trait WorksWithEvolveArtifacts
             'path' => $this->relativePath($kind, $id),
             'source_path' => $this->relativePath($kind, $id),
             'route' => in_array($kind, ['form', 'page'], true) ? (string) ($payload['route'] ?? '') : '',
+            'route_name' => in_array($kind, ['form', 'page'], true) ? (string) ($payload['route_name'] ?? '') : '',
             'parent_id' => $kind === 'page' ? $this->idFromPath((string) ($payload['parent_id'] ?? '')) : '',
             'order' => $kind === 'page' ? (int) ($payload['order'] ?? 0) : 0,
             'metadata' => is_array($payload['metadata'] ?? null) ? $payload['metadata'] : [],
