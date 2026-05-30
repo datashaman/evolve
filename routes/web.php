@@ -6,8 +6,13 @@ use App\Http\Controllers\EvolvePreviewController;
 use App\Services\EvolveLibrary;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::view('dashboard', 'dashboard')->name('dashboard');
+$artifactRoutes = app(EvolveLibrary::class)->artifactRoutes();
+
+Route::middleware(['auth', 'verified'])->group(function () use ($artifactRoutes) {
+    if (! collect($artifactRoutes)->contains(fn (array $artifactRoute): bool => $artifactRoute['route'] === '/dashboard')) {
+        Route::view('dashboard', 'dashboard')->name('dashboard');
+    }
+
     Route::view('workbench', 'workbench')->name('workbench');
 
     Route::get('api/library', [EvolveLibraryController::class, 'index']);
@@ -32,15 +37,14 @@ Route::get('evolve.css', [EvolveLibraryController::class, 'stylesheet'])->name('
 
 require __DIR__.'/settings.php';
 
-$artifactRoutes = app(EvolveLibrary::class)->artifactRoutes();
-
 if (! collect($artifactRoutes)->contains(fn (array $artifactRoute): bool => $artifactRoute['route'] === '/')) {
     Route::view('/', 'welcome')->name('home');
 }
 
 foreach ($artifactRoutes as $artifactRoute) {
-    $registered = Route::livewire($artifactRoute['route'], $artifactRoute['component'])
-        ->name($artifactRoute['route_name']);
+    $registered = ($artifactRoute['kind'] ?? null) === 'view'
+        ? Route::view($artifactRoute['route'], $artifactRoute['view'])->name($artifactRoute['route_name'])
+        : Route::livewire($artifactRoute['route'], $artifactRoute['component'])->name($artifactRoute['route_name']);
 
     if (! empty($artifactRoute['middleware'])) {
         $registered->middleware($artifactRoute['middleware']);

@@ -97,6 +97,39 @@ class EvolveLibraryViewsTest extends TestCase
         $this->assertSame([], $welcome['middleware']);
     }
 
+    public function test_views_can_persist_route_name_and_middleware(): void
+    {
+        $library = new EvolveLibrary;
+
+        $library->write([
+            'views' => [[
+                'id' => 'marketing/about',
+                'name' => 'About',
+                'path' => 'resources/views/marketing/about.blade.php',
+                'route' => '/about',
+                'route_name' => 'about',
+                'middleware' => ['throttle:60,1'],
+                'blade' => '<h1>About</h1>',
+            ]],
+        ]);
+
+        $view = collect($library->all()['views'])->firstWhere('id', 'marketing/about');
+
+        $this->assertSame('/about', $view['route']);
+        $this->assertSame('about', $view['route_name']);
+        $this->assertSame(['throttle:60,1'], $view['middleware']);
+        $this->assertSame([
+            [
+                'route' => '/about',
+                'route_name' => 'about',
+                'middleware' => ['throttle:60,1'],
+                'component' => 'views::marketing.about',
+                'kind' => 'view',
+                'view' => 'marketing.about',
+            ],
+        ], $library->artifactRoutes());
+    }
+
     public function test_view_writes_snapshot_starter_kit_originals_and_can_be_restored(): void
     {
         File::put(resource_path('views/dashboard.blade.php'), '<h1>Original</h1>');

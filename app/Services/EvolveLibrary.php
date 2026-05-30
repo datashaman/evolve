@@ -125,8 +125,22 @@ class EvolveLibrary
                         'component' => 'forms::'.$this->componentName($form['id'] ?? ''),
                     ];
                 }),
+            ...collect($this->manifest()['views'] ?? [])
+                ->map(function (array $view) {
+                    $route = $this->safeOptionalRoute($view['route'] ?? '');
+                    $id = $this->safeId($view['id'] ?? '');
+
+                    return [
+                        'route' => $route,
+                        'route_name' => $route !== '' ? $this->resolveRouteName($view['route_name'] ?? null, $route) : '',
+                        'middleware' => $this->safeMiddleware($view['middleware'] ?? []),
+                        'component' => 'views::'.$this->componentName($id),
+                        'kind' => 'view',
+                        'view' => str_replace('/', '.', $id),
+                    ];
+                }),
         ])
-            ->filter(fn (array $route) => $route['route'] !== '' && $route['component'] !== 'pages::' && $route['component'] !== 'forms::')
+            ->filter(fn (array $route) => $route['route'] !== '' && ! in_array($route['component'], ['pages::', 'forms::', 'views::'], true))
             ->values()
             ->all();
     }
@@ -366,6 +380,7 @@ class EvolveLibrary
                 $relative = $this->relativePath('view', $id);
 
                 $viewRole = $this->viewRole($id);
+                $routeMetadata = $this->viewRouteMetadata($entry, $id);
 
                 return [
                     'id' => $id,
@@ -378,7 +393,7 @@ class EvolveLibrary
                     'is_hidden' => $viewRole === 'kit_internal',
                     'metadata' => is_array($entry['metadata'] ?? null) ? $entry['metadata'] : [],
                     'usage' => $entry['usage'] ?? "@include('".str_replace('/', '.', $id)."')",
-                    ...$this->starterKitRouteMetadata('view', $id),
+                    ...$routeMetadata,
                     'path' => $relative,
                     'source_path' => $relative,
                     'component' => $this->componentReference('view', $id),
@@ -478,6 +493,25 @@ class EvolveLibrary
         ];
     }
 
+    protected function viewRouteMetadata(array $entry, string $id): array
+    {
+        $defaults = $this->starterKitRouteMetadata('view', $id);
+        $hasRoute = array_key_exists('route', $entry);
+        $route = $hasRoute
+            ? $this->safeOptionalRoute($entry['route'] ?? '')
+            : (string) ($defaults['route'] ?? '');
+
+        return [
+            'route' => $route,
+            'route_name' => $route !== ''
+                ? $this->resolveRouteName($entry['route_name'] ?? $defaults['route_name'] ?? null, $route)
+                : '',
+            'middleware' => $route !== ''
+                ? $this->safeMiddleware($entry['middleware'] ?? $defaults['middleware'] ?? [])
+                : [],
+        ];
+    }
+
     protected function writeViews(?array $artifacts, array $previousEntries): array
     {
         if ($artifacts === null) {
@@ -514,6 +548,14 @@ class EvolveLibrary
 
             if (filled($artifact['usage'] ?? '')) {
                 $entry['usage'] = (string) $artifact['usage'];
+            }
+
+            if (array_key_exists('route', $artifact)) {
+                $entry['route'] = $this->safeOptionalRoute($artifact['route'] ?? '');
+                $entry['route_name'] = $entry['route'] !== ''
+                    ? $this->resolveRouteName($artifact['route_name'] ?? null, $entry['route'])
+                    : '';
+                $entry['middleware'] = $entry['route'] !== '' ? $this->safeMiddleware($artifact['middleware'] ?? []) : [];
             }
 
             $entries[] = $entry;

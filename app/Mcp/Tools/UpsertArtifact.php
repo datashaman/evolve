@@ -62,7 +62,7 @@ class UpsertArtifact extends Tool
             'id' => $schema->string()->description('Existing id when updating. Optional for new artifacts if path is supplied.')->nullable(),
             'name' => $schema->string()->nullable(),
             'path' => $schema->string()->description('Target source path, such as resources/views/forms/contact.blade.php.')->nullable(),
-            'route' => $schema->string()->description('Route for pages and hosted forms.')->nullable(),
+            'route' => $schema->string()->description('Route for pages, hosted forms, and route-backed views.')->nullable(),
             'route_name' => $schema->string()->description('Optional named-route alias for use in views (e.g. users.profile). Defaults to a derivation of the route path.')->nullable(),
             'middleware' => $schema->array()->items($schema->string())->description('Optional middleware aliases applied to the generated route (e.g. ["auth", "verified"]).')->nullable(),
             'parent_id' => $schema->string()->description('Parent page id for page tree placement.')->nullable(),

@@ -54,9 +54,9 @@ trait WorksWithEvolveArtifacts
             'name' => (string) ($payload['name'] ?? Str::headline(basename($id))),
             'path' => $this->relativePath($kind, $id),
             'source_path' => $this->relativePath($kind, $id),
-            'route' => in_array($kind, ['form', 'page'], true) ? (string) ($payload['route'] ?? '') : '',
-            'route_name' => in_array($kind, ['form', 'page'], true) ? (string) ($payload['route_name'] ?? '') : '',
-            'middleware' => in_array($kind, ['form', 'page'], true) && is_array($payload['middleware'] ?? null)
+            'route' => in_array($kind, ['form', 'page', 'view'], true) ? (string) ($payload['route'] ?? '') : '',
+            'route_name' => in_array($kind, ['form', 'page', 'view'], true) ? (string) ($payload['route_name'] ?? '') : '',
+            'middleware' => in_array($kind, ['form', 'page', 'view'], true) && is_array($payload['middleware'] ?? null)
                 ? array_values(array_filter(array_map(fn ($value): string => trim((string) $value), $payload['middleware'])))
                 : [],
             'parent_id' => $kind === 'page' ? $this->idFromPath((string) ($payload['parent_id'] ?? '')) : '',

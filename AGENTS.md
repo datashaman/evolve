@@ -21,7 +21,7 @@ Supported artifact groups:
 - `forms`: Livewire SFC form files under `resources/views/forms`.
 - `snippets`: Blade-only snippets under `resources/views/snippets`.
 
-Pages and forms may define routes. Components, layouts, styles, and snippets use path metadata, not routes.
+Pages and forms may define routes. Views are plain Blade files and may optionally define `route`, `route_name`, and `middleware` when they should be served directly as full pages. Components, layouts, styles, and snippets use path metadata, not routes.
 
 Use the artifact boundaries deliberately:
 
@@ -107,7 +107,7 @@ The `view` kind covers plain Blade files under `resources/views/` that aren't al
 Behavior:
 
 - **Discovery.** `EvolveLibrary::readViews()` scans `resources/views/` and excludes the typed kind directories (`components`, `forms`, `layouts`, `pages`, `snippets`), `evolve/`, and `workbench.blade.php` itself. Any other `.blade.php` files surface as view artifacts.
-- **Shape.** Views carry `blade`, `path`, `usage` (defaults to `@include('id.with.dots')`), and metadata. No PHP block, no styles, no Livewire namespace. Route-backed starter-kit views such as `welcome` and `dashboard` also carry their real route metadata so preview identity runs through the same middleware as the public page.
+- **Shape.** Views carry `blade`, `path`, `usage` (defaults to `@include('id.with.dots')`), and metadata. No PHP block, no styles, no Livewire namespace. Views may also carry `route`, `route_name`, and `middleware` when they are served directly as full pages. Route-backed starter-kit views such as `welcome` and `dashboard` carry their real route metadata so preview identity runs through the same middleware as the public page.
 - **Editing.** New views can be created at any path under `resources/views/`. The workbench, the controller, and the MCP `UpsertArtifact` tool all accept `kind: 'view'`.
 - **Starter-kit + restore.** Views matching `dashboard`, `welcome`, `partials/*`, or `flux/*` are flagged starter-kit and follow the snapshot-and-restore flow (see below). `workbench` and `evolve/*` are workbench-internal and hard-locked.
 

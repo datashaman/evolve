@@ -10,7 +10,7 @@ class EvolveLintCommand extends Command
 {
     protected $signature = 'evolve:lint {--json : Emit findings as JSON}';
 
-    protected $description = 'Audit page and form artifacts for route name collisions and unknown middleware aliases.';
+    protected $description = 'Audit route-backed artifacts for route name collisions and unknown middleware aliases.';
 
     public function handle(EvolveLibrary $library, Router $router): int
     {

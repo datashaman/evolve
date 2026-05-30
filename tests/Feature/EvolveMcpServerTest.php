@@ -298,6 +298,31 @@ class EvolveMcpServerTest extends TestCase
         $this->assertSame('<span>Badge</span>', trim(File::get(resource_path('views/snippets/marketing/badge.blade.php'))));
     }
 
+    public function test_mcp_artifact_tools_manage_route_backed_views(): void
+    {
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'view',
+            'name' => 'Landing',
+            'path' => 'resources/views/marketing/landing.blade.php',
+            'route' => '/landing',
+            'route_name' => 'landing',
+            'middleware' => ['throttle:60,1'],
+            'blade' => '<h1>Landing</h1>',
+            'dry_run' => false,
+        ])->assertOk();
+
+        EvolveServer::tool(ListArtifacts::class, ['kind' => 'view'])
+            ->assertOk()
+            ->assertStructuredContent(fn ($json) => $json
+                ->where('artifacts.views.0.id', 'marketing/landing')
+                ->where('artifacts.views.0.route', '/landing')
+                ->where('artifacts.views.0.route_name', 'landing')
+                ->where('artifacts.views.0.middleware.0', 'throttle:60,1')
+            );
+
+        $this->assertSame('<h1>Landing</h1>', trim(File::get(resource_path('views/marketing/landing.blade.php'))));
+    }
+
     public function test_content_tools_list_rows_and_upsert_granularly(): void
     {
         $fixture = $this->fixtureModelClass();

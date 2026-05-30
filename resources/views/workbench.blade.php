@@ -578,6 +578,7 @@
     function navigationMetaFormatter(kind, items) {
       if (kind === 'content') return item => item.meta;
       if (kind === 'page') return item => item.route || item.path;
+      if (kind === 'view') return item => item.route || item.source_path || item.path || item.id;
       if (['component', 'form'].includes(kind)) return item => `<livewire:${item.component} />`;
       if (kind === 'snippet') return item => `<x-${item.component} />`;
       if (kind === 'layout') return item => item.component;
@@ -843,9 +844,9 @@
       document.getElementById('kind').textContent = c?.kind ?? '-';
       fields.name.value = c?.name ?? '';
       fields.slug.value = c?.path ?? '';
-      fields.route.value = ['form', 'page'].includes(c?.kind) ? c?.route || routeFromPath(c?.path) : '';
-      fields.routeName.value = ['form', 'page'].includes(c?.kind) ? c?.route_name || '' : '';
-      fields.middleware.value = ['form', 'page'].includes(c?.kind) ? (Array.isArray(c?.middleware) ? c.middleware.join('\n') : '') : '';
+      fields.route.value = ['form', 'page', 'view'].includes(c?.kind) ? c?.route || (['form', 'page'].includes(c?.kind) ? routeFromPath(c?.path) : '') : '';
+      fields.routeName.value = ['form', 'page', 'view'].includes(c?.kind) ? c?.route_name || '' : '';
+      fields.middleware.value = ['form', 'page', 'view'].includes(c?.kind) ? (Array.isArray(c?.middleware) ? c.middleware.join('\n') : '') : '';
       fields.parent.value = c?.kind === 'page' ? c?.parent_id || '' : '';
       fields.order.value = c?.kind === 'page' ? c?.order ?? 0 : '';
       fields.php.value = c?.php ?? '';
@@ -864,9 +865,9 @@
       const parentField = document.querySelector('[data-meta="parent"]');
       const orderField = document.querySelector('[data-meta="order"]');
       pathField.hidden = ['content'].includes(c?.kind);
-      routeField.hidden = !['form', 'page'].includes(c?.kind);
-      routeNameField.hidden = !['form', 'page'].includes(c?.kind);
-      middlewareField.hidden = !['form', 'page'].includes(c?.kind);
+      routeField.hidden = !['form', 'page', 'view'].includes(c?.kind);
+      routeNameField.hidden = !['form', 'page', 'view'].includes(c?.kind);
+      middlewareField.hidden = !['form', 'page', 'view'].includes(c?.kind);
       parentField.hidden = c?.kind !== 'page';
       orderField.hidden = c?.kind !== 'page';
       pathField.querySelector('label').textContent = 'Path';
@@ -959,10 +960,10 @@
       const locationChanged = source === fields.slug;
       c.name = fields.name.value;
       c.slug = '';
-      if (['form', 'page'].includes(c.kind)) c.path = fields.slug.value || c.path;
-      if (['form', 'page'].includes(c.kind)) c.route = fields.route.value || '';
-      if (['form', 'page'].includes(c.kind)) c.route_name = fields.routeName.value || '';
-      if (['form', 'page'].includes(c.kind)) c.middleware = fields.middleware.value.split(/\r?\n+/).map(s => s.trim()).filter(Boolean);
+      if (['form', 'page', 'view'].includes(c.kind)) c.path = fields.slug.value || c.path;
+      if (['form', 'page', 'view'].includes(c.kind)) c.route = fields.route.value || '';
+      if (['form', 'page', 'view'].includes(c.kind)) c.route_name = fields.routeName.value || '';
+      if (['form', 'page', 'view'].includes(c.kind)) c.middleware = fields.middleware.value.split(/\r?\n+/).map(s => s.trim()).filter(Boolean);
       if (['form', 'page'].includes(c.kind)) {
         c.id = idFromPath(c.path) || c.id;
         const namespace = c.kind === 'form' ? 'forms' : 'pages';
@@ -975,16 +976,17 @@
         if (locationChanged && c.kind === 'component') c.usage = `<livewire:${c.id.replaceAll('/', '.')} />`;
         if (locationChanged && c.kind === 'layout') c.usage = `<x-layouts::${c.id.replaceAll('/', '.')}></x-layouts::${c.id.replaceAll('/', '.')}>`;
         if (locationChanged && c.kind === 'snippet') c.usage = `<x-snippets::${c.id.replaceAll('/', '.')} />`;
-        if (locationChanged && ['component', 'layout', 'snippet'].includes(c.kind)) fields.usage.value = c.usage;
+        if (locationChanged && c.kind === 'view') c.usage = `@@include('${c.id.replaceAll('/', '.')}')`;
+        if (locationChanged && ['component', 'layout', 'snippet', 'view'].includes(c.kind)) fields.usage.value = c.usage;
         selectedKey = artifactKey(c);
       }
       if (c.kind === 'page') {
         c.parent_id = idFromPath(fields.parent.value) === c.id ? '' : idFromPath(fields.parent.value);
         c.order = Number(fields.order.value || 0);
       }
-      c.php = ['layout', 'style', 'snippet'].includes(c.kind) ? '' : fields.php.value;
+      c.php = ['layout', 'style', 'snippet', 'view'].includes(c.kind) ? '' : fields.php.value;
       c.blade = c.kind === 'style' ? '' : fields.blade.value;
-      c.style = c.kind === 'snippet' ? '' : fields.style.value;
+      c.style = ['snippet', 'view'].includes(c.kind) ? '' : fields.style.value;
       c.usage = c.kind === 'style' ? '' : ['form', 'page'].includes(c.kind) ? c.usage : fields.usage.value;
       if (previousId !== c.id) c.previous_id = c.previous_id || previousId;
       updateHighlights();
