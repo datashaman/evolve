@@ -120,6 +120,7 @@ BLADE,
             [
                 'route' => '/resources/{resource}/request',
                 'route_name' => 'resources.resource.request',
+                'middleware' => [],
                 'component' => 'forms::resources.request',
             ],
         ], $library->artifactRoutes());

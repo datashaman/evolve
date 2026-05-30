@@ -75,13 +75,14 @@ Pages support:
 - `path`: filesystem location
 - `route`: public route, including dynamic segments such as `/resources/{resource}`
 - `route_name`: named-route alias used in views (`route('users.profile')`). Optional. When omitted, evolve derives a stable name from the route (`/` → `home`; `/users/{id}` → `users.id`) and persists it on the artifact.
+- `middleware`: optional array of middleware aliases applied to the generated route (e.g. `['auth', 'verified']`). Empty means no extra middleware beyond the framework default.
 - `parent_id`: logical parent page id
 - `order`: order within the parent
 - `metadata`: optional custom metadata
 
 Path and route are intentionally separate. Do not infer that route changes imply file moves unless the user explicitly changes path/slug metadata.
 
-Forms that define a `route` carry a `route_name` on the same terms as pages.
+Forms that define a `route` carry `route_name` and `middleware` on the same terms as pages.
 
 ## Content Helpers
 

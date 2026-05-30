@@ -129,7 +129,41 @@ PHP,
             [
                 'route' => '/resources/{resource}',
                 'route_name' => 'resources.resource',
+                'middleware' => [],
                 'component' => 'pages::resources.show',
+            ],
+        ], $library->pageRoutes());
+    }
+
+    public function test_pages_persist_route_name_and_middleware(): void
+    {
+        $library = new EvolveLibrary;
+
+        $library->write([
+            'pages' => [
+                [
+                    'id' => 'profile',
+                    'name' => 'Profile',
+                    'path' => 'resources/views/pages/profile.blade.php',
+                    'route' => '/profile',
+                    'route_name' => 'profile.show',
+                    'middleware' => ['auth', 'verified'],
+                    'php' => $this->componentPhp(),
+                    'blade' => '<div>Profile</div>',
+                ],
+            ],
+        ]);
+
+        $page = $library->all()['pages'][0];
+
+        $this->assertSame('profile.show', $page['route_name']);
+        $this->assertSame(['auth', 'verified'], $page['middleware']);
+        $this->assertSame([
+            [
+                'route' => '/profile',
+                'route_name' => 'profile.show',
+                'middleware' => ['auth', 'verified'],
+                'component' => 'pages::profile',
             ],
         ], $library->pageRoutes());
     }

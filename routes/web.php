@@ -36,6 +36,10 @@ if (! collect($artifactRoutes)->contains(fn (array $artifactRoute): bool => $art
 }
 
 foreach ($artifactRoutes as $artifactRoute) {
-    Route::livewire($artifactRoute['route'], $artifactRoute['component'])
+    $registered = Route::livewire($artifactRoute['route'], $artifactRoute['component'])
         ->name($artifactRoute['route_name']);
+
+    if (! empty($artifactRoute['middleware'])) {
+        $registered->middleware($artifactRoute['middleware']);
+    }
 }

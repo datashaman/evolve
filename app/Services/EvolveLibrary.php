@@ -102,6 +102,7 @@ class EvolveLibrary
                 return [
                     'route' => $route,
                     'route_name' => $this->resolveRouteName($page['route_name'] ?? null, $route),
+                    'middleware' => $this->safeMiddleware($page['middleware'] ?? []),
                     'component' => 'pages::'.$this->componentName($page['id'] ?? ''),
                 ];
             }),
@@ -113,6 +114,7 @@ class EvolveLibrary
                     return [
                         'route' => $route,
                         'route_name' => $this->resolveRouteName($form['route_name'] ?? null, $route),
+                        'middleware' => $this->safeMiddleware($form['middleware'] ?? []),
                         'component' => 'forms::'.$this->componentName($form['id'] ?? ''),
                     ];
                 }),
@@ -269,12 +271,14 @@ class EvolveLibrary
                     'name' => $entry['name'] ?? Str::headline(basename($id)),
                     ...($kind === 'form' ? (function () use ($entry) {
                         $route = $this->safeRoute($entry['route'] ?? $entry['slug'] ?? '');
+                        $hasRoute = filled($entry['route'] ?? $entry['slug'] ?? '');
 
                         return [
                             'route' => $route,
-                            'route_name' => $route === '/' && ! filled($entry['route'] ?? $entry['slug'] ?? '')
-                                ? ''
-                                : $this->resolveRouteName($entry['route_name'] ?? null, $route),
+                            'route_name' => $hasRoute
+                                ? $this->resolveRouteName($entry['route_name'] ?? null, $route)
+                                : '',
+                            'middleware' => $hasRoute ? $this->safeMiddleware($entry['middleware'] ?? []) : [],
                         ];
                     })() : []),
                     ...($kind === 'page' ? (function () use ($entry) {
@@ -283,6 +287,7 @@ class EvolveLibrary
                         return [
                             'route' => $route,
                             'route_name' => $this->resolveRouteName($entry['route_name'] ?? null, $route),
+                            'middleware' => $this->safeMiddleware($entry['middleware'] ?? []),
                             'parent_id' => $this->safeId($entry['parent_id'] ?? ''),
                             'order' => (int) ($entry['order'] ?? 0),
                             'depth' => (int) ($entry['depth'] ?? 0),
@@ -348,6 +353,7 @@ class EvolveLibrary
                 $entry['path'] = $this->relativePath($kind, $id);
                 $entry['route'] = $this->safeRoute($artifact['route'] ?? $artifact['slug'] ?? '/'.$id);
                 $entry['route_name'] = $this->resolveRouteName($artifact['route_name'] ?? null, $entry['route']);
+                $entry['middleware'] = $this->safeMiddleware($artifact['middleware'] ?? []);
                 $entry['parent_id'] = $this->safeId($artifact['parent_id'] ?? '');
                 $entry['order'] = max(0, (int) ($artifact['order'] ?? count($entries) + 1));
                 $entry['usage'] = (string) ($artifact['usage'] ?? '');
@@ -356,9 +362,11 @@ class EvolveLibrary
             if ($kind === 'form') {
                 $entry['path'] = $this->relativePath($kind, $id);
                 $entry['route'] = $this->safeRoute($artifact['route'] ?? $artifact['slug'] ?? '');
-                $entry['route_name'] = filled($artifact['route'] ?? $artifact['slug'] ?? '')
+                $hasRoute = filled($artifact['route'] ?? $artifact['slug'] ?? '');
+                $entry['route_name'] = $hasRoute
                     ? $this->resolveRouteName($artifact['route_name'] ?? null, $entry['route'])
                     : '';
+                $entry['middleware'] = $hasRoute ? $this->safeMiddleware($artifact['middleware'] ?? []) : [];
             }
 
             if (in_array($kind, ['component', 'form', 'layout', 'snippet'], true)) {
@@ -763,6 +771,23 @@ class EvolveLibrary
         $explicit = $this->safeRouteName((string) $explicit);
 
         return $explicit !== '' ? $explicit : $this->deriveRouteName($route);
+    }
+
+    protected function safeMiddleware(mixed $middleware): array
+    {
+        if (is_string($middleware)) {
+            $middleware = explode(',', $middleware);
+        }
+
+        if (! is_array($middleware)) {
+            return [];
+        }
+
+        return collect($middleware)
+            ->map(fn ($value): string => trim((string) $value))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     protected function defaultPhp(): string
