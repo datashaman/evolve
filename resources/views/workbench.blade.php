@@ -455,7 +455,7 @@
 
     function renderList(kind, listId, emptyId) {
       const list = document.getElementById(listId);
-      const items = byKind(kind);
+      const items = visibleArtifacts(kind);
       const metaFormatter = navigationMetaFormatter(kind, items);
       list.innerHTML = '';
       items.forEach(item => {
@@ -472,6 +472,13 @@
           badge.title = 'Starter-kit artifact. Edits snapshot the original on first write; use Restore to revert.';
           li.querySelector('.label').append(' ', badge);
         }
+        if (kind === 'view' && item.view_role === 'partial') {
+          const badge = document.createElement('span');
+          badge.className = 'starter-kit-badge';
+          badge.textContent = 'partial';
+          badge.title = 'Partial view. Previewed inside the workbench frame.';
+          li.querySelector('.label').append(' ', badge);
+        }
         li.querySelector('.meta').textContent = metaFormatter(item);
         if (['style', 'page'].includes(kind)) enableSortableItem(kind, li);
         li.onclick = () => {
@@ -485,6 +492,16 @@
         list.append(li);
       });
       document.getElementById(emptyId).hidden = items.length > 0;
+    }
+
+    function visibleArtifacts(kind) {
+      const items = byKind(kind);
+
+      if (kind === 'view') {
+        return items.filter(item => !item.is_hidden);
+      }
+
+      return items;
     }
 
     function enableSortableItem(kind, li) {

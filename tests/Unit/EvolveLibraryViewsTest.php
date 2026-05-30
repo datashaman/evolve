@@ -117,7 +117,7 @@ class EvolveLibraryViewsTest extends TestCase
         $this->assertSame('<div>workbench shell</div>', File::get(resource_path('views/workbench.blade.php')));
     }
 
-    public function test_view_is_partial_flag_marks_partials_and_flux_dirs(): void
+    public function test_view_role_classifies_pages_partials_and_kit_internals(): void
     {
         File::put(resource_path('views/dashboard.blade.php'), '<h1>Dashboard</h1>');
         File::ensureDirectoryExists(resource_path('views/partials'));
@@ -128,9 +128,12 @@ class EvolveLibraryViewsTest extends TestCase
         $library = new EvolveLibrary;
         $views = collect($library->all()['views']);
 
-        $this->assertFalse($views->firstWhere('id', 'dashboard')['is_partial']);
-        $this->assertTrue($views->firstWhere('id', 'partials/head')['is_partial']);
-        $this->assertTrue($views->firstWhere('id', 'flux/icon/book-open-text')['is_partial']);
+        $this->assertSame('page', $views->firstWhere('id', 'dashboard')['view_role']);
+        $this->assertFalse($views->firstWhere('id', 'dashboard')['is_hidden']);
+        $this->assertSame('partial', $views->firstWhere('id', 'partials/head')['view_role']);
+        $this->assertFalse($views->firstWhere('id', 'partials/head')['is_hidden']);
+        $this->assertSame('kit_internal', $views->firstWhere('id', 'flux/icon/book-open-text')['view_role']);
+        $this->assertTrue($views->firstWhere('id', 'flux/icon/book-open-text')['is_hidden']);
     }
 
     public function test_non_partial_view_preview_renders_without_preview_shell(): void

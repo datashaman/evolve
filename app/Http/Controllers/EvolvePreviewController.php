@@ -16,7 +16,7 @@ class EvolvePreviewController extends Controller
         $usage = $library->usage($kind, $id);
         $content = $usage !== '' ? Blade::render($usage) : '<div class="empty-preview">No preview usage defined.</div>';
 
-        if ($kind === 'layout' || ($kind === 'view' && ! $library->viewIsPartial($id))) {
+        if ($kind === 'layout' || ($kind === 'view' && $library->viewRole($id) === 'page')) {
             return response($content);
         }
 
