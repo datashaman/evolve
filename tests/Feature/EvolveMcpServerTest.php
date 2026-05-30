@@ -11,6 +11,7 @@ use App\Mcp\Tools\ListContentModels;
 use App\Mcp\Tools\ListContentRows;
 use App\Mcp\Tools\ReadArtifact;
 use App\Mcp\Tools\ReorderStyles;
+use App\Mcp\Tools\RestoreArtifact;
 use App\Mcp\Tools\UpsertArtifact;
 use App\Mcp\Tools\UpsertContentRow;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -171,6 +172,69 @@ class EvolveMcpServerTest extends TestCase
         ])->assertHasErrors(['protected']);
 
         $this->assertSame('/* workbench css */', File::get(resource_path('css/app.css')));
+    }
+
+    public function test_mcp_restore_artifact_round_trips_starter_kit_originals(): void
+    {
+        File::ensureDirectoryExists(resource_path('views/components'));
+        File::put(resource_path('views/components/auth-header.blade.php'), 'original header');
+
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'component',
+            'name' => 'Auth header',
+            'path' => 'resources/views/components/auth-header.blade.php',
+            'php' => $this->componentPhp(),
+            'blade' => '<div>Edited header</div>',
+            'dry_run' => false,
+        ])->assertOk();
+
+        $this->assertStringContainsString('Edited header', File::get(resource_path('views/components/auth-header.blade.php')));
+
+        EvolveServer::tool(RestoreArtifact::class, [
+            'kind' => 'component',
+            'id' => 'auth-header',
+            'dry_run' => true,
+        ])->assertOk()
+            ->assertStructuredContent(fn ($json) => $json
+                ->where('dry_run', true)
+                ->where('restored', [])
+                ->etc()
+            );
+
+        $this->assertStringContainsString('Edited header', File::get(resource_path('views/components/auth-header.blade.php')));
+
+        EvolveServer::tool(RestoreArtifact::class, [
+            'kind' => 'component',
+            'id' => 'auth-header',
+            'dry_run' => false,
+        ])->assertHasErrors(['confirm_id']);
+
+        EvolveServer::tool(RestoreArtifact::class, [
+            'kind' => 'component',
+            'id' => 'auth-header',
+            'confirm_id' => 'auth-header',
+            'dry_run' => false,
+        ])->assertOk();
+
+        $this->assertSame('original header', File::get(resource_path('views/components/auth-header.blade.php')));
+    }
+
+    public function test_mcp_restore_artifact_rejects_non_starter_kit_artifacts(): void
+    {
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'component',
+            'name' => 'Hero',
+            'path' => 'resources/views/components/hero.blade.php',
+            'php' => $this->componentPhp(),
+            'blade' => '<div>Hero</div>',
+            'dry_run' => false,
+        ])->assertOk();
+
+        EvolveServer::tool(RestoreArtifact::class, [
+            'kind' => 'component',
+            'id' => 'hero',
+            'dry_run' => true,
+        ])->assertHasErrors(['starter-kit']);
     }
 
     public function test_mcp_page_artifacts_accept_tree_metadata(): void

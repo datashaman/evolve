@@ -196,7 +196,7 @@ class EvolveLibraryPathsTest extends TestCase
         }
     }
 
-    public function test_artifacts_cannot_overwrite_starter_views_used_by_the_workbench_shell(): void
+    public function test_starter_kit_writes_succeed_after_snapshotting_originals(): void
     {
         File::ensureDirectoryExists(resource_path('views/layouts/app'));
         File::ensureDirectoryExists(resource_path('views/pages/auth'));
@@ -207,42 +207,111 @@ class EvolveLibraryPathsTest extends TestCase
 
         $library = new EvolveLibrary;
 
-        $this->assertWorkbenchWriteIsBlocked(fn () => $library->write([
+        $library->write([
             'layouts' => [
                 [
                     'name' => 'Sidebar',
                     'path' => 'resources/views/layouts/app/sidebar.blade.php',
-                    'blade' => '<div>Changed</div>',
+                    'blade' => '<div>Edited sidebar</div>',
                 ],
             ],
-        ]));
-
-        $this->assertWorkbenchWriteIsBlocked(fn () => $library->write([
             'pages' => [
                 [
                     'name' => 'Login',
                     'path' => 'resources/views/pages/auth/login.blade.php',
                     'php' => $this->componentPhp(),
-                    'blade' => '<div>Changed</div>',
+                    'blade' => '<div>Edited login</div>',
                 ],
             ],
-        ]));
-
-        $this->assertWorkbenchWriteIsBlocked(fn () => $library->write([
             'components' => [
                 [
                     'name' => 'App logo',
                     'path' => 'resources/views/components/app-logo.blade.php',
                     'php' => $this->componentPhp(),
-                    'blade' => '<div>Changed</div>',
+                    'blade' => '<div>Edited logo</div>',
+                ],
+            ],
+        ]);
+
+        $this->assertStringContainsString('Edited sidebar', File::get(resource_path('views/layouts/app/sidebar.blade.php')));
+        $this->assertStringContainsString('Edited login', File::get(resource_path('views/pages/auth/login.blade.php')));
+        $this->assertStringContainsString('Edited logo', File::get(resource_path('views/components/app-logo.blade.php')));
+
+        $this->assertSame('starter sidebar', File::get(resource_path('evolve/originals/layouts/app/sidebar.blade.php')));
+        $this->assertSame('starter login', File::get(resource_path('evolve/originals/pages/auth/login.blade.php')));
+        $this->assertSame('starter logo', File::get(resource_path('evolve/originals/components/app-logo.blade.php')));
+    }
+
+    public function test_app_css_is_still_workbench_internal_and_locked(): void
+    {
+        File::ensureDirectoryExists(resource_path('css'));
+        File::put(resource_path('css/app.css'), '/* workbench css */');
+
+        $library = new EvolveLibrary;
+
+        $this->assertWorkbenchWriteIsBlocked(fn () => $library->write([
+            'styles' => [
+                [
+                    'name' => 'App',
+                    'path' => 'resources/css/app.css',
+                    'style' => 'body { color: red; }',
                 ],
             ],
         ]));
 
-        $this->assertSame('starter sidebar', File::get(resource_path('views/layouts/app/sidebar.blade.php')));
-        $this->assertSame('starter login', File::get(resource_path('views/pages/auth/login.blade.php')));
-        $this->assertSame('starter logo', File::get(resource_path('views/components/app-logo.blade.php')));
+        $this->assertSame('/* workbench css */', File::get(resource_path('css/app.css')));
         $this->assertFalse(File::exists(resource_path('evolve/manifest.json')));
+    }
+
+    public function test_starter_kit_artifacts_can_be_restored_to_originals(): void
+    {
+        File::ensureDirectoryExists(resource_path('views/components'));
+        File::put(resource_path('views/components/auth-header.blade.php'), 'original header');
+
+        $library = new EvolveLibrary;
+
+        $library->write([
+            'components' => [
+                [
+                    'name' => 'Auth header',
+                    'path' => 'resources/views/components/auth-header.blade.php',
+                    'php' => $this->componentPhp(),
+                    'blade' => '<div>Edited header</div>',
+                ],
+            ],
+        ]);
+
+        $this->assertStringContainsString('Edited header', File::get(resource_path('views/components/auth-header.blade.php')));
+        $this->assertTrue($library->hasStarterKitOriginal('component', 'auth-header'));
+
+        $restored = $library->restoreArtifactOriginal('component', 'auth-header');
+
+        $this->assertSame('original header', File::get(resource_path('views/components/auth-header.blade.php')));
+        $this->assertNotEmpty($restored);
+    }
+
+    public function test_restore_rejects_artifacts_with_no_snapshot(): void
+    {
+        $library = new EvolveLibrary;
+
+        try {
+            $library->restoreArtifactOriginal('component', 'auth-header');
+            $this->fail('Restore should fail when no snapshot exists.');
+        } catch (ValidationException $exception) {
+            $this->assertStringContainsString('No starter-kit original', $exception->getMessage());
+        }
+    }
+
+    public function test_restore_rejects_non_starter_kit_artifacts(): void
+    {
+        $library = new EvolveLibrary;
+
+        try {
+            $library->restoreArtifactOriginal('component', 'hero');
+            $this->fail('Restore should fail for non-starter-kit artifacts.');
+        } catch (ValidationException $exception) {
+            $this->assertStringContainsString('not a starter-kit artifact', $exception->getMessage());
+        }
     }
 
     public function test_single_artifact_updates_preserve_other_artifacts(): void

@@ -203,6 +203,8 @@ class EvolveLibrary
                     'id' => $id,
                     'kind' => 'style',
                     'name' => $entry['name'] ?? Str::headline(basename($id)),
+                    'is_starter_kit' => $this->isStarterKitArtifact('style', $id),
+                    'has_original' => $this->hasStarterKitOriginal('style', $id),
                     'slug' => '',
                     'php' => '',
                     'blade' => '',
@@ -269,6 +271,8 @@ class EvolveLibrary
                     'id' => $id,
                     'kind' => $kind,
                     'name' => $entry['name'] ?? Str::headline(basename($id)),
+                    'is_starter_kit' => $this->isStarterKitArtifact($kind, $id),
+                    'has_original' => $this->hasStarterKitOriginal($kind, $id),
                     ...($kind === 'form' ? (function () use ($entry) {
                         $route = $this->safeRoute($entry['route'] ?? $entry['slug'] ?? '');
                         $hasRoute = filled($entry['route'] ?? $entry['slug'] ?? '');
@@ -639,21 +643,157 @@ class EvolveLibrary
 
     protected function assertArtifactCanBeChanged(string $kind, string $id): void
     {
-        if (! $this->isProtectedArtifact($kind, $id)) {
-            return;
+        if ($this->isWorkbenchInternalArtifact($kind, $id)) {
+            throw ValidationException::withMessages([
+                'path' => "The workbench cannot modify protected {$kind} artifact [{$id}]; it is required by the workbench itself.",
+            ]);
         }
 
-        throw ValidationException::withMessages([
-            'path' => "The workbench cannot modify protected {$kind} artifact [{$id}].",
-        ]);
+        if ($this->isStarterKitArtifact($kind, $id)) {
+            $this->snapshotStarterKitOriginal($kind, $id);
+        }
     }
 
-    protected function isProtectedArtifact(string $kind, string $id): bool
+    public function isWorkbenchInternalArtifact(string $kind, string $id): bool
+    {
+        return $kind === 'style' && $this->safeId($id) === 'app';
+    }
+
+    public function isStarterKitArtifact(string $kind, string $id): bool
+    {
+        return $this->starterKitMatches($kind, $this->safeId($id));
+    }
+
+    public function hasStarterKitOriginal(string $kind, string $id): bool
     {
         $id = $this->safeId($id);
+
+        if (! $this->isStarterKitArtifact($kind, $id)) {
+            return false;
+        }
+
+        foreach ($this->originalSourcePaths($kind, $id) as $original) {
+            if (File::exists($original)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function restoreArtifactOriginal(string $kind, string $id): array
+    {
+        $id = $this->safeId($id);
+
+        if (! $this->isStarterKitArtifact($kind, $id)) {
+            throw ValidationException::withMessages([
+                'id' => "{$kind} artifact [{$id}] is not a starter-kit artifact and has no original to restore.",
+            ]);
+        }
+
+        if (! $this->hasStarterKitOriginal($kind, $id)) {
+            throw ValidationException::withMessages([
+                'id' => "No starter-kit original on file for {$kind} artifact [{$id}].",
+            ]);
+        }
+
+        $restored = [];
+        foreach ($this->originalSourcePaths($kind, $id) as $original) {
+            if (! File::exists($original)) {
+                continue;
+            }
+
+            $target = $this->originalTargetPath($kind, $id, $original);
+            File::ensureDirectoryExists(dirname($target));
+            File::copy($original, $target);
+            $restored[] = $target;
+        }
+
+        return $restored;
+    }
+
+    protected function snapshotStarterKitOriginal(string $kind, string $id): void
+    {
+        $id = $this->safeId($id);
+
+        foreach ($this->originalTargetSources($kind, $id) as $source) {
+            $snapshot = $this->originalSourcePathFor($kind, $id, $source);
+
+            if (File::exists($snapshot) || ! File::exists($source)) {
+                continue;
+            }
+
+            File::ensureDirectoryExists(dirname($snapshot));
+            File::copy($source, $snapshot);
+        }
+    }
+
+    protected function originalsRoot(): string
+    {
+        return resource_path('evolve/originals');
+    }
+
+    protected function originalsDir(string $kind): string
+    {
+        $dir = match ($kind) {
+            'style' => 'styles',
+            'component' => 'components',
+            'form' => 'forms',
+            'layout' => 'layouts',
+            'page' => 'pages',
+            'snippet' => 'snippets',
+            default => $kind,
+        };
+
+        return $this->originalsRoot().'/'.$dir;
+    }
+
+    protected function originalSourcePathFor(string $kind, string $id, string $livePath): string
+    {
+        $extension = pathinfo($livePath, PATHINFO_EXTENSION);
+        $base = $extension === 'php' && str_ends_with($livePath, '.blade.php') ? 'blade.php' : $extension;
+        $isLayoutStyle = $kind === 'layout' && str_ends_with($livePath, '.css');
+        $subdir = $isLayoutStyle ? '/styles' : '';
+
+        return $this->originalsDir($kind).$subdir.'/'.$id.'.'.$base;
+    }
+
+    protected function originalSourcePaths(string $kind, string $id): array
+    {
+        $paths = [$this->originalSourcePathFor($kind, $id, $this->filePath($kind, $id))];
+
+        if ($kind === 'layout') {
+            $paths[] = $this->originalSourcePathFor($kind, $id, $this->layoutStylePath($id));
+        }
+
+        return $paths;
+    }
+
+    protected function originalTargetSources(string $kind, string $id): array
+    {
+        $sources = [$this->filePath($kind, $id)];
+
+        if ($kind === 'layout') {
+            $sources[] = $this->layoutStylePath($id);
+        }
+
+        return $sources;
+    }
+
+    protected function originalTargetPath(string $kind, string $id, string $snapshot): string
+    {
+        if ($kind === 'layout' && str_contains($snapshot, '/styles/')) {
+            return $this->layoutStylePath($id);
+        }
+
+        return $this->filePath($kind, $id);
+    }
+
+    protected function starterKitMatches(string $kind, string $id): bool
+    {
         $protected = match ($kind) {
             'style' => [
-                'exact' => ['app'],
+                'exact' => [],
                 'prefixes' => [],
             ],
             'component' => [

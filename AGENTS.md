@@ -100,6 +100,17 @@ Impersonation requires the requester to already be authenticated to the workbenc
 
 The middleware also accepts an `X-Preview-As` header. After the initial preview render, the response (when HTML) gets a small script injected that adds `X-Preview-As: {target_id}` to any subsequent fetch the iframe makes to `/livewire/*`. That keeps Livewire interactions (button clicks, form submits) running as the impersonated user too, not as the workbench user.
 
+## Starter-kit artifacts
+
+The Livewire starter kit ships several artifacts into the same directories the workbench manages — settings pages (`pages/settings/*`), auth layouts (`layouts/auth*`, `layouts/app*`), and named components (`auth-header`, `app-logo`, `desktop-user-menu`, `passkey-*`, etc.). They are marked `is_starter_kit: true` in the library response and rendered in the workbench with a "kit" badge.
+
+Behavior:
+
+- **Editable.** Writing through the workbench, the API, or the MCP `UpsertArtifact` tool succeeds normally.
+- **Snapshot on first write.** Before the first overwrite, `EvolveLibrary` copies the on-disk file to `resources/evolve/originals/{kind}/{id}.blade.php` (or `.css` for styles, with layouts also snapshotting their layout-scoped CSS). Subsequent edits never re-snapshot, so the original stays pristine.
+- **Restorable.** The artifact then carries `has_original: true`. The workbench shows a "Restore original" button in the toolbar; the API exposes `POST /api/library/{kind}/{id}/restore`; the MCP `RestoreArtifact` tool restores via dry-run-then-confirm_id, matching `DeleteArtifact` semantics.
+- **Workbench-internal exception.** `resources/css/app.css` is reclassified as workbench-internal (`isWorkbenchInternalArtifact`) and stays hard-locked — overwriting it would break the workbench shell itself, which loads the same bundle.
+
 ## Linting
 
 `php artisan evolve:lint` audits the manifest for:

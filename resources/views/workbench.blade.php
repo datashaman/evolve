@@ -93,6 +93,7 @@
     .metadata-field label { color: #a1a1aa; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
     .metadata-field input, .metadata-field textarea { width: 100%; padding: 7px 9px; border: 1px solid #3f3f46; border-radius: 6px; background: #27272a; color: #fafafa; font: 13px ui-monospace, "SF Mono", Menlo, monospace; resize: vertical; }
     .meta-hint { color: #71717a; font-weight: 500; text-transform: none; letter-spacing: 0; font-size: 10px; margin-left: 6px; }
+    .starter-kit-badge { display: inline-block; padding: 1px 6px; margin-left: 6px; border-radius: 999px; background: #4338ca; color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
     .sidebar li[data-depth="1"] { padding-left: 24px; }
     .sidebar li[data-depth="2"] { padding-left: 36px; }
     .sidebar li[data-depth="3"] { padding-left: 48px; }
@@ -162,6 +163,7 @@
         </select>
       </label>
     @endif
+    <flux:button id="btn-restore" size="sm" variant="filled" hidden>Restore original</flux:button>
     <flux:button id="btn-delete" size="sm" variant="filled" data-danger>Delete</flux:button>
     <flux:button id="btn-open" size="sm" variant="filled">Open</flux:button>
   </header>
@@ -258,6 +260,7 @@
     const contentModelName = document.getElementById('content-model-name');
     const contentModelPath = document.getElementById('content-model-path');
     const deleteButton = document.getElementById('btn-delete');
+    const restoreButton = document.getElementById('btn-restore');
     const fields = {
       name: document.getElementById('meta-name'),
       slug: document.getElementById('meta-slug'),
@@ -460,6 +463,13 @@
         if (kind === 'page') li.dataset.depth = Math.min(Number(item.depth ?? 0), 4);
         li.innerHTML = `<span class="label"></span><span class="meta"></span>`;
         li.querySelector('.label').textContent = item.name || item.id;
+        if (item.is_starter_kit) {
+          const badge = document.createElement('span');
+          badge.className = 'starter-kit-badge';
+          badge.textContent = 'kit';
+          badge.title = 'Starter-kit artifact. Edits snapshot the original on first write; use Restore to revert.';
+          li.querySelector('.label').append(' ', badge);
+        }
         li.querySelector('.meta').textContent = metaFormatter(item);
         if (['style', 'page'].includes(kind)) enableSortableItem(kind, li);
         li.onclick = () => {
@@ -784,6 +794,7 @@
       fields.usage.value = c?.usage ?? '';
       const isContent = c?.kind === 'content';
       deleteButton.hidden = !c || isContent;
+      restoreButton.hidden = !c || isContent || !c?.has_original;
       stage.classList.toggle('content-mode', isContent);
       sourceSection('metadata').hidden = isContent;
       const pathField = document.querySelector('[data-meta="path"]');
@@ -1010,6 +1021,30 @@
     document.getElementById('btn-reload').onclick = () => load();
     document.getElementById('btn-open').onclick = () => { const c = selected(); if (c) window.open(withPreviewParams(previewUrl(c)), '_blank'); };
     deleteButton.onclick = () => deleteSelectedArtifact();
+    restoreButton.onclick = () => restoreSelectedArtifact();
+
+    function restoreSelectedArtifact() {
+      const c = selected();
+      if (!c || !c.has_original) return;
+      if (!confirm(`Restore ${c.kind} "${c.name || c.id}" to its starter-kit original?\n\nThis overwrites the current file contents.`)) return;
+
+      restoreButton.disabled = true;
+      fetch(`${API}/${c.kind}/${artifactRouteId(c)}/restore`, {
+        method: 'POST',
+        headers: { 'x-csrf-token': csrf, accept: 'application/json' },
+      }).then(r => {
+        if (!r.ok) return r.json().then(body => { throw new Error(body?.message || 'Restore failed'); });
+        return r.json();
+      }).then(payload => {
+        applyLibraryData(payload.library);
+        renderFrame();
+      }).catch(error => {
+        alert(error.message);
+      }).finally(() => {
+        restoreButton.disabled = false;
+        syncInputs();
+      });
+    }
 
     function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
     function highlightHtml(source) {

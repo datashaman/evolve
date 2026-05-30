@@ -10,6 +10,7 @@ use App\Mcp\Tools\ListContentModels;
 use App\Mcp\Tools\ListContentRows;
 use App\Mcp\Tools\ReadArtifact;
 use App\Mcp\Tools\ReorderStyles;
+use App\Mcp\Tools\RestoreArtifact;
 use App\Mcp\Tools\UpsertArtifact;
 use App\Mcp\Tools\UpsertContentRow;
 use Laravel\Mcp\Server;
@@ -27,6 +28,7 @@ class EvolveServer extends Server
         ReadArtifact::class,
         UpsertArtifact::class,
         DeleteArtifact::class,
+        RestoreArtifact::class,
         ReorderStyles::class,
         ListContentModels::class,
         ListContentRows::class,

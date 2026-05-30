@@ -17,6 +17,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->where('id', '[A-Za-z0-9_\\-\\/]+');
     Route::delete('api/library/{kind}/{id}', [EvolveLibraryController::class, 'deleteArtifact'])
         ->where('id', '[A-Za-z0-9_\\-\\/]+');
+    Route::post('api/library/{kind}/{id}/restore', [EvolveLibraryController::class, 'restoreArtifact'])
+        ->where('id', '[A-Za-z0-9_\\-\\/]+');
     Route::get('api/content', [EvolveContentController::class, 'index']);
     Route::post('api/content/models', [EvolveContentController::class, 'storeModel']);
     Route::put('api/content', [EvolveContentController::class, 'update']);

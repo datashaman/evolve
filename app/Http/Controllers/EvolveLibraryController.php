@@ -39,6 +39,19 @@ class EvolveLibraryController extends Controller
         return response()->json($library->all());
     }
 
+    public function restoreArtifact(EvolveLibrary $library, string $kind, string $id): JsonResponse
+    {
+        $this->ensureValidKind($kind);
+
+        $restored = $library->restoreArtifactOriginal($kind, $id);
+
+        return response()->json([
+            'ok' => true,
+            'restored' => $restored,
+            'library' => $library->all(),
+        ]);
+    }
+
     public function orderStyles(Request $request, EvolveLibrary $library): JsonResponse
     {
         $ids = $request->input('ids', []);
