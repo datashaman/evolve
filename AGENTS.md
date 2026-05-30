@@ -100,6 +100,17 @@ Impersonation requires the requester to already be authenticated to the workbenc
 
 The middleware also accepts an `X-Preview-As` header. After the initial preview render, the response (when HTML) gets a small script injected that adds `X-Preview-As: {target_id}` to any subsequent fetch the iframe makes to `/livewire/*`. That keeps Livewire interactions (button clicks, form submits) running as the impersonated user too, not as the workbench user.
 
+## View artifacts
+
+The `view` kind covers plain Blade files under `resources/views/` that aren't already covered by the typed kinds (pages, forms, layouts, snippets, components). It's how the workbench reaches `dashboard.blade.php`, `welcome.blade.php`, anything under `partials/`, and other top-level Blade templates the starter kit ships.
+
+Behavior:
+
+- **Discovery.** `EvolveLibrary::readViews()` scans `resources/views/` and excludes the typed kind directories (`components`, `forms`, `layouts`, `pages`, `snippets`), `evolve/`, and `workbench.blade.php` itself. Any other `.blade.php` files surface as view artifacts.
+- **Shape.** Views carry `blade`, `path`, `usage` (defaults to `@include('id.with.dots')`), and metadata only. No PHP block, no styles, no route, no Livewire namespace.
+- **Editing.** New views can be created at any path under `resources/views/`. The workbench, the controller, and the MCP `UpsertArtifact` tool all accept `kind: 'view'`.
+- **Starter-kit + restore.** Views matching `dashboard`, `welcome`, `partials/*`, or `flux/*` are flagged starter-kit and follow the snapshot-and-restore flow (see below). `workbench` and `evolve/*` are workbench-internal and hard-locked.
+
 ## Starter-kit artifacts
 
 The Livewire starter kit ships several artifacts into the same directories the workbench manages — settings pages (`pages/settings/*`), auth layouts (`layouts/auth*`, `layouts/app*`), and named components (`auth-header`, `app-logo`, `desktop-user-menu`, `passkey-*`, etc.). They are marked `is_starter_kit: true` in the library response and rendered in the workbench with a "kit" badge.

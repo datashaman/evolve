@@ -70,6 +70,6 @@ class EvolveLibraryController extends Controller
 
     private function ensureValidKind(string $kind): void
     {
-        abort_unless(in_array($kind, ['style', 'component', 'form', 'layout', 'page', 'snippet'], true), 404);
+        abort_unless(in_array($kind, ['style', 'component', 'form', 'layout', 'page', 'snippet', 'view'], true), 404);
     }
 }

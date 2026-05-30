@@ -17,6 +17,7 @@ trait WorksWithEvolveArtifacts
             'layout' => 'layouts',
             'page' => 'pages',
             'snippet' => 'snippets',
+            'view' => 'views',
             default => throw ValidationException::withMessages(['kind' => "Unsupported artifact kind [{$kind}]."]),
         };
     }
@@ -73,6 +74,7 @@ trait WorksWithEvolveArtifacts
     {
         $path = preg_replace('#\.(blade\.php|css)$#', '', str_replace('\\', '/', trim($path)));
         $path = preg_replace('#^(resources/views/(components|forms|layouts|pages|snippets)/|resources/css/layouts/|resources/css/)#', '', $path);
+        $path = preg_replace('#^resources/views/#', '', $path);
         $path = strtolower(trim((string) $path, '/'));
 
         return collect(explode('/', preg_replace('#/+#', '/', $path)))
@@ -89,6 +91,7 @@ trait WorksWithEvolveArtifacts
             'layout' => "resources/views/layouts/{$id}.blade.php",
             'page' => "resources/views/pages/{$id}.blade.php",
             'snippet' => "resources/views/snippets/{$id}.blade.php",
+            'view' => "resources/views/{$id}.blade.php",
             default => "resources/views/components/{$id}.blade.php",
         };
     }
@@ -102,6 +105,7 @@ trait WorksWithEvolveArtifacts
             'layout' => "layouts::{$component}",
             'page' => "pages::{$component}",
             'snippet' => "snippets::{$component}",
+            'view' => $component,
             default => $component,
         };
     }
@@ -116,6 +120,7 @@ trait WorksWithEvolveArtifacts
             'layout' => "<x-layouts::{$component}></x-layouts::{$component}>",
             'page' => "<livewire:pages::{$component} />",
             'snippet' => "<x-snippets::{$component} />",
+            'view' => "@include('{$component}')",
             default => '',
         };
     }

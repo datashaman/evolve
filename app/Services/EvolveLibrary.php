@@ -22,6 +22,7 @@ class EvolveLibrary
             'layouts' => $this->readGroup('layout', $manifest['layouts'] ?? []),
             'pages' => $this->readGroup('page', $manifest['pages'] ?? []),
             'snippets' => $this->readGroup('snippet', $manifest['snippets'] ?? []),
+            'views' => $this->readViews($manifest['views'] ?? []),
         ];
     }
 
@@ -36,6 +37,7 @@ class EvolveLibrary
             'layouts' => $this->writeGroup('layout', $payload['layouts'] ?? [], $previous['layouts'] ?? []),
             'pages' => $this->writeGroup('page', $payload['pages'] ?? [], $previous['pages'] ?? []),
             'snippets' => $this->writeGroup('snippet', $payload['snippets'] ?? [], $previous['snippets'] ?? []),
+            'views' => $this->writeViews($payload['views'] ?? null, $previous['views'] ?? []),
         ];
 
         $this->writeFile($this->manifestPath(), json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
@@ -137,6 +139,7 @@ class EvolveLibrary
             'layout' => 'layouts',
             'page' => 'pages',
             'snippet' => 'snippets',
+            'view' => 'views',
             default => '',
         };
 
@@ -144,6 +147,10 @@ class EvolveLibrary
             if (($artifact['id'] ?? '') === $id) {
                 return (string) ($artifact['usage'] ?? '');
             }
+        }
+
+        if ($kind === 'view') {
+            return "@include('".str_replace('/', '.', $this->safeId($id))."')";
         }
 
         return '';
@@ -158,6 +165,7 @@ class EvolveLibrary
             'layout' => 'layouts',
             'page' => 'pages',
             'snippet' => 'snippets',
+            'view' => 'views',
             default => throw new \InvalidArgumentException("Unsupported artifact kind [{$kind}]."),
         };
     }
@@ -252,6 +260,153 @@ class EvolveLibrary
         }
 
         return $entries;
+    }
+
+    protected function readViews(array $entries): array
+    {
+        $manifestById = collect($entries)
+            ->filter(fn ($entry): bool => is_array($entry) && filled($entry['id'] ?? ''))
+            ->keyBy(fn (array $entry): string => $this->safeId($entry['id']))
+            ->all();
+
+        $discovered = $this->discoverViewIds();
+        $ids = collect($discovered)->merge(array_keys($manifestById))->unique()->values();
+
+        return $ids
+            ->map(function (string $id) use ($manifestById): ?array {
+                if ($id === '') {
+                    return null;
+                }
+
+                $entry = $manifestById[$id] ?? [];
+                $path = $this->filePath('view', $id);
+                $relative = $this->relativePath('view', $id);
+
+                return [
+                    'id' => $id,
+                    'kind' => 'view',
+                    'name' => $entry['name'] ?? Str::headline(basename($id)),
+                    'is_starter_kit' => $this->isStarterKitArtifact('view', $id),
+                    'has_original' => $this->hasStarterKitOriginal('view', $id),
+                    'metadata' => is_array($entry['metadata'] ?? null) ? $entry['metadata'] : [],
+                    'usage' => $entry['usage'] ?? "@include('".str_replace('/', '.', $id)."')",
+                    'path' => $relative,
+                    'source_path' => $relative,
+                    'component' => $this->componentReference('view', $id),
+                    'php' => '',
+                    'blade' => File::exists($path) ? File::get($path) : '',
+                    'style' => '',
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    protected function writeViews(?array $artifacts, array $previousEntries): array
+    {
+        if ($artifacts === null) {
+            return $previousEntries;
+        }
+
+        $entries = [];
+        $keep = [];
+
+        foreach ($artifacts as $artifact) {
+            $rawPath = (string) ($artifact['path'] ?? $artifact['source_path'] ?? '');
+            $id = $rawPath !== ''
+                ? $this->viewIdFromPath($rawPath)
+                : $this->safeId((string) ($artifact['id'] ?? ''));
+
+            if ($id === '') {
+                continue;
+            }
+
+            $this->assertArtifactCanBeChanged('view', $id);
+
+            $keep[] = $id;
+            $this->writeFile($this->filePath('view', $id), trim((string) ($artifact['blade'] ?? '<div></div>'))."\n");
+
+            $entry = [
+                'id' => $id,
+                'name' => (string) ($artifact['name'] ?? Str::headline(basename($id))),
+                'path' => $this->relativePath('view', $id),
+            ];
+
+            if (is_array($artifact['metadata'] ?? null) && $artifact['metadata'] !== []) {
+                $entry['metadata'] = $artifact['metadata'];
+            }
+
+            if (filled($artifact['usage'] ?? '')) {
+                $entry['usage'] = (string) $artifact['usage'];
+            }
+
+            $entries[] = $entry;
+        }
+
+        $this->deleteMissingViews($keep, $previousEntries);
+
+        return $entries;
+    }
+
+    protected function deleteMissingViews(array $keep, array $previousEntries): void
+    {
+        foreach ($previousEntries as $entry) {
+            $id = $this->safeId($entry['id'] ?? '');
+
+            if ($id === '' || in_array($id, $keep, true)) {
+                continue;
+            }
+
+            $this->assertArtifactCanBeChanged('view', $id);
+            $this->deleteFile($this->filePath('view', $id));
+        }
+    }
+
+    protected function discoverViewIds(): array
+    {
+        $root = resource_path('views');
+
+        if (! File::isDirectory($root)) {
+            return [];
+        }
+
+        $excludedDirs = ['components', 'forms', 'layouts', 'pages', 'snippets', 'evolve'];
+        $excludedFiles = ['workbench'];
+
+        return collect(File::allFiles($root))
+            ->filter(fn ($file): bool => str_ends_with($file->getFilename(), '.blade.php'))
+            ->map(function ($file) use ($root): string {
+                $relative = ltrim(str_replace('\\', '/', substr($file->getPathname(), strlen($root))), '/');
+
+                return preg_replace('/\.blade\.php$/', '', $relative);
+            })
+            ->reject(function (string $id) use ($excludedDirs, $excludedFiles): bool {
+                if (in_array($id, $excludedFiles, true)) {
+                    return true;
+                }
+
+                foreach ($excludedDirs as $dir) {
+                    if (str_starts_with($id, $dir.'/')) {
+                        return true;
+                    }
+                }
+
+                return false;
+            })
+            ->map(fn (string $id): string => $this->safeId($id))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    protected function viewIdFromPath(string $path): string
+    {
+        $path = preg_replace('/\.blade\.php$/', '', str_replace('\\', '/', trim($path)));
+        $path = preg_replace('#^resources/views/#', '', $path);
+
+        return $this->safeId(trim((string) $path, '/'));
     }
 
     protected function readGroup(string $kind, array $entries): array
@@ -615,6 +770,7 @@ class EvolveLibrary
             'layout' => resource_path('views/layouts'),
             'page' => resource_path('views/pages'),
             'snippet' => resource_path('views/snippets'),
+            'view' => resource_path('views'),
             default => resource_path('views/components'),
         };
     }
@@ -626,6 +782,7 @@ class EvolveLibrary
             'layout' => 'resources/views/layouts/'.$id.'.blade.php',
             'page' => 'resources/views/pages/'.$id.'.blade.php',
             'snippet' => 'resources/views/snippets/'.$id.'.blade.php',
+            'view' => 'resources/views/'.$id.'.blade.php',
             default => 'resources/views/components/'.$id.'.blade.php',
         };
     }
@@ -637,6 +794,7 @@ class EvolveLibrary
             'layout' => 'layouts::'.$this->componentName($id),
             'page' => 'pages::'.$this->componentName($id),
             'snippet' => 'snippets::'.$this->componentName($id),
+            'view' => $this->componentName($id),
             default => $this->componentName($id),
         };
     }
@@ -656,7 +814,17 @@ class EvolveLibrary
 
     public function isWorkbenchInternalArtifact(string $kind, string $id): bool
     {
-        return $kind === 'style' && $this->safeId($id) === 'app';
+        $id = $this->safeId($id);
+
+        if ($kind === 'style' && $id === 'app') {
+            return true;
+        }
+
+        if ($kind === 'view') {
+            return $id === 'workbench' || str_starts_with($id, 'evolve/');
+        }
+
+        return false;
     }
 
     public function isStarterKitArtifact(string $kind, string $id): bool
@@ -742,6 +910,7 @@ class EvolveLibrary
             'layout' => 'layouts',
             'page' => 'pages',
             'snippet' => 'snippets',
+            'view' => 'views',
             default => $kind,
         };
 
@@ -816,6 +985,10 @@ class EvolveLibrary
             'page' => [
                 'exact' => ['auth', 'settings'],
                 'prefixes' => ['auth/', 'settings/'],
+            ],
+            'view' => [
+                'exact' => ['dashboard', 'welcome'],
+                'prefixes' => ['partials/', 'flux/'],
             ],
             default => [
                 'exact' => [],
