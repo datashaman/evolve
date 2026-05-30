@@ -87,16 +87,28 @@ class EvolveLibrary
         $this->write($payload);
     }
 
-    public function pageRoutes(): array
+    public function artifactRoutes(): array
     {
-        return collect($this->manifest()['pages'] ?? [])
-            ->map(fn (array $page) => [
-                'slug' => $this->safeSlug($page['slug'] ?? ''),
+        return collect([
+            ...collect($this->manifest()['pages'] ?? [])->map(fn (array $page) => [
+                'route' => $this->safeRoute($page['route'] ?? $page['slug'] ?? '/'.($page['id'] ?? '')),
                 'component' => 'pages::'.$this->componentName($page['id'] ?? ''),
-            ])
-            ->filter(fn (array $page) => $page['component'] !== 'pages::')
+            ]),
+            ...collect($this->manifest()['forms'] ?? [])
+                ->filter(fn (array $form) => filled($form['route'] ?? ''))
+                ->map(fn (array $form) => [
+                    'route' => $this->safeRoute($form['route'] ?? ''),
+                    'component' => 'forms::'.$this->componentName($form['id'] ?? ''),
+                ]),
+        ])
+            ->filter(fn (array $route) => $route['component'] !== 'pages::' && $route['component'] !== 'forms::')
             ->values()
             ->all();
+    }
+
+    public function pageRoutes(): array
+    {
+        return $this->artifactRoutes();
     }
 
     public function usage(string $kind, string $id): string
@@ -229,7 +241,8 @@ class EvolveLibrary
                     'id' => $id,
                     'kind' => $kind,
                     'name' => $entry['name'] ?? Str::headline(basename($id)),
-                    'slug' => $entry['slug'] ?? '',
+                    ...($kind === 'form' ? ['route' => $this->safeRoute($entry['route'] ?? $entry['slug'] ?? '')] : []),
+                    ...($kind === 'page' ? ['route' => $this->safeRoute($entry['route'] ?? $entry['slug'] ?? '')] : []),
                     'usage' => $entry['usage'] ?? '',
                     'path' => $entry['path'] ?? $this->relativePath($kind, $id),
                     'source_path' => $this->relativePath($kind, $id),
@@ -250,9 +263,11 @@ class EvolveLibrary
         $keep = [];
 
         foreach ($artifacts as $artifact) {
-            $id = in_array($kind, ['form', 'page'], true)
-                ? ($this->idFromSlug($artifact['slug'] ?? '') ?: $this->safeId($artifact['id'] ?? ''))
-                : $this->idFromPath($artifact['path'] ?? $artifact['id'] ?? '');
+            $id = match ($kind) {
+                'form' => $this->idFromPath($artifact['path'] ?? $artifact['slug'] ?? '') ?: $this->safeId($artifact['id'] ?? ''),
+                'page' => $this->idFromPath($artifact['path'] ?? $artifact['slug'] ?? '') ?: $this->safeId($artifact['id'] ?? ''),
+                default => $this->idFromPath($artifact['path'] ?? $artifact['id'] ?? ''),
+            };
             if ($id === '') {
                 continue;
             }
@@ -280,12 +295,14 @@ class EvolveLibrary
             }
 
             if ($kind === 'page') {
-                $entry['slug'] = $this->safeSlug($artifact['slug'] ?? '');
+                $entry['path'] = $this->relativePath($kind, $id);
+                $entry['route'] = $this->safeRoute($artifact['route'] ?? $artifact['slug'] ?? '/'.$id);
                 $entry['usage'] = (string) ($artifact['usage'] ?? '');
             }
 
             if ($kind === 'form') {
-                $entry['slug'] = $this->safeSlug($artifact['slug'] ?? $id);
+                $entry['path'] = $this->relativePath($kind, $id);
+                $entry['route'] = $this->safeRoute($artifact['route'] ?? $artifact['slug'] ?? '');
             }
 
             if (in_array($kind, ['component', 'form', 'layout'], true)) {
@@ -462,7 +479,7 @@ class EvolveLibrary
     protected function idFromPath(string $path): string
     {
         $path = preg_replace('#\.(blade\.php|css)$#', '', str_replace('\\', '/', trim($path)));
-        $path = preg_replace('#^(resources/views/(components|layouts)/|resources/css/layouts/|resources/css/)#', '', $path);
+        $path = preg_replace('#^(resources/views/(components|forms|layouts|pages)/|resources/css/layouts/|resources/css/)#', '', $path);
 
         return $this->safeId($path);
     }
@@ -478,12 +495,29 @@ class EvolveLibrary
 
     protected function safeSlug(string $slug): string
     {
-        $slug = strtolower(str_replace('\\', '/', trim($slug)));
-        if ($slug === '' || $slug === '/') {
+        return $this->safePath($slug);
+    }
+
+    protected function safePath(string $path): string
+    {
+        $path = strtolower(str_replace('\\', '/', trim($path)));
+        if ($path === '' || $path === '/') {
             return '/';
         }
 
-        return '/'.trim(preg_replace('#/+#', '/', preg_replace('#[^a-z0-9/-]#', '-', $slug)), '/-');
+        return '/'.trim(preg_replace('#/+#', '/', preg_replace('#[^a-z0-9/-]#', '-', $path)), '/-');
+    }
+
+    protected function safeRoute(string $route): string
+    {
+        $route = strtolower(str_replace('\\', '/', trim($route)));
+        if ($route === '' || $route === '/') {
+            return '/';
+        }
+
+        $route = preg_replace('#[^a-z0-9/_{}?-]#', '-', $route);
+
+        return '/'.trim(preg_replace('#/+#', '/', $route), '/-');
     }
 
     protected function defaultPhp(): string

@@ -66,10 +66,10 @@
     }
     .field-label::before { content: "▾"; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: #18181b; color: #a5b4fc; font-size: 16px; }
     .source-section.collapsed .field-label::before { content: "▸"; }
-    .metadata-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 10px 12px 12px; }
-    .metadata-field { display: grid; gap: 5px; min-width: 0; }
+    .metadata-grid { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 7px 12px; align-items: center; padding: 10px 12px 12px; }
+    .metadata-field { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; align-items: center; min-width: 0; }
     .metadata-field[hidden] { display: none; }
-    .metadata-field [data-flux-label] { color: #a1a1aa; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .metadata-field label { color: #a1a1aa; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
     .metadata-field input { width: 100%; padding: 7px 9px; border: 1px solid #3f3f46; border-radius: 6px; background: #27272a; color: #fafafa; font: 13px ui-monospace, "SF Mono", Menlo, monospace; }
     .content-index { flex: 1; min-height: 0; overflow: auto; padding: 12px; background: #1e1e1e; }
     .content-index[hidden] { display: none; }
@@ -149,8 +149,9 @@
           <section class="source-section" data-block="metadata">
             <button class="field-label" type="button" data-toggle-source="metadata">Metadata</button>
             <div class="metadata-grid">
-              <div class="metadata-field"><flux:input id="meta-name" label="Name" size="sm" /></div>
-              <div class="metadata-field" data-meta="path"><flux:input id="meta-slug" label="Path" size="sm" /></div>
+              <div class="metadata-field"><label for="meta-name">Name</label><input id="meta-name"></div>
+              <div class="metadata-field" data-meta="path"><label for="meta-slug">Path</label><input id="meta-slug"></div>
+              <div class="metadata-field" data-meta="route"><label for="meta-route">Route</label><input id="meta-route"></div>
             </div>
           </section>
           <div class="content-index" id="content-index" hidden>
@@ -220,6 +221,7 @@
     const fields = {
       name: document.getElementById('meta-name'),
       slug: document.getElementById('meta-slug'),
+      route: document.getElementById('meta-route'),
       php: document.getElementById('php-source'),
       blade: document.getElementById('blade-source'),
       style: document.getElementById('style-source'),
@@ -365,7 +367,7 @@
       const kindItems = byKind(artifact.kind);
       const index = kindItems.findIndex(item => artifactKey(item) === artifactKey(artifact));
       const fallback = kindItems[index + 1] ?? kindItems[index - 1] ?? library.find(item => item.kind !== 'content') ?? byKind('content')[0];
-      const target = artifact.path || artifact.slug || artifact.id;
+      const target = artifact.source_path || artifact.path || artifact.slug || artifact.id;
 
       if (!confirm(`Delete ${artifact.kind} "${artifact.name || artifact.id}"?\n\nThis removes ${target}.`)) return;
 
@@ -441,7 +443,8 @@
 
     function navigationMetaFormatter(kind, items) {
       if (kind === 'content') return item => item.meta;
-      if (['form', 'page'].includes(kind)) return item => item.slug;
+      if (kind === 'page') return item => item.route || item.path;
+      if (kind === 'form') return item => item.route || item.path;
       if (kind === 'component') return item => `<livewire:${item.component} />`;
       if (kind === 'layout') return item => item.component;
 
@@ -598,7 +601,8 @@
       const c = selected();
       document.getElementById('kind').textContent = c?.kind ?? '-';
       fields.name.value = c?.name ?? '';
-      fields.slug.value = ['form', 'page'].includes(c?.kind) ? c?.slug ?? '' : c?.path ?? '';
+      fields.slug.value = c?.path ?? '';
+      fields.route.value = ['form', 'page'].includes(c?.kind) ? c?.route || routeFromPath(c?.path) : '';
       fields.php.value = c?.php ?? '';
       fields.blade.value = c?.blade ?? '';
       fields.style.value = c?.style ?? '';
@@ -608,8 +612,10 @@
       stage.classList.toggle('content-mode', isContent);
       sourceSection('metadata').hidden = isContent;
       const pathField = document.querySelector('[data-meta="path"]');
+      const routeField = document.querySelector('[data-meta="route"]');
       pathField.hidden = ['content'].includes(c?.kind);
-      pathField.querySelector('[data-flux-label]').textContent = ['form', 'page'].includes(c?.kind) ? 'Slug' : 'Path';
+      routeField.hidden = !['form', 'page'].includes(c?.kind);
+      pathField.querySelector('label').textContent = 'Path';
       contentIndex.hidden = !isContent;
       sourceSection('php').hidden = isContent || ['layout', 'style'].includes(c?.kind);
       sourceSection('blade').hidden = isContent || c?.kind === 'style';
@@ -631,8 +637,18 @@
     function previewUrl(c) {
       if (c.kind === 'content') return '/';
       if (c.kind === 'style') return '/';
-      if (c.kind === 'page') return c.slug || '/';
+      if (['form', 'page'].includes(c.kind)) return previewRoute(c.route || routeFromPath(c.path));
       return `/workbench/preview/${c.kind}/${c.id}`;
+    }
+
+    function previewRoute(route) {
+      return String(route || '/').replace(/\{([^}/?]+)\??\}/g, (_match, key) => key);
+    }
+
+    function routeFromPath(path) {
+      const id = idFromPath(path || '');
+
+      return id ? `/${id}` : '/';
     }
 
     function updateSelected(source = null) {
@@ -645,9 +661,11 @@
       const previousId = c.id;
       const locationChanged = source === fields.slug;
       c.name = fields.name.value;
-      c.slug = ['form', 'page'].includes(c.kind) ? fields.slug.value || '/' : '';
+      c.slug = '';
+      if (['form', 'page'].includes(c.kind)) c.path = fields.slug.value || c.path;
+      if (['form', 'page'].includes(c.kind)) c.route = fields.route.value || '';
       if (['form', 'page'].includes(c.kind)) {
-        c.id = idFromSlug(c.slug) || c.id;
+        c.id = idFromPath(c.path) || c.id;
         const namespace = c.kind === 'form' ? 'forms' : 'pages';
         c.usage = `<livewire:${namespace}::${c.id.replaceAll('/', '.')} />`;
         fields.usage.value = c.usage;
@@ -678,7 +696,7 @@
       return String(path ?? '').trim().toLowerCase()
         .replace(/\\/g, '/')
         .replace(/\.(blade\.php|css)$/g, '')
-        .replace(/^(resources\/views\/(components|layouts)\/|resources\/css\/layouts\/|resources\/css\/)/, '')
+        .replace(/^(resources\/views\/(components|forms|layouts|pages)\/|resources\/css\/layouts\/|resources\/css\/)/, '')
         .replace(/[^a-z0-9/-]/g, '-')
         .replace(/\/+/g, '/')
         .replace(/^-+|-+$/g, '')
@@ -689,9 +707,10 @@
       const component = id.replaceAll('/', '.');
       const item = {
         id, kind, name: kind === 'style' ? 'New style' : kind === 'page' ? 'New page' : kind === 'layout' ? 'New layout' : kind === 'form' ? 'New form' : 'New component',
-        slug: ['form', 'page'].includes(kind) ? `/${id}` : '',
-        path: kind === 'style' ? `resources/css/${id}.css` : kind === 'layout' ? `resources/views/layouts/${id}.blade.php` : kind === 'component' ? `resources/views/components/${id}.blade.php` : '',
-        php: kind === 'form' ? "use Livewire\\Attributes\\Validate;\nuse Livewire\\Component;\n\nnew class extends Component {\n    #[Validate('required|string|max:255')]\n    public string $name = '';\n\n    public function save(): void\n    {\n        $this->validate();\n\n        $this->reset('name');\n    }\n};" : ['layout', 'style'].includes(kind) ? '' : "use Livewire\\Component;\n\nnew class extends Component {\n    //\n};",
+        slug: '',
+        route: ['form', 'page'].includes(kind) ? `/${id}` : '',
+        path: kind === 'form' ? `resources/views/forms/${id}.blade.php` : kind === 'page' ? `resources/views/pages/${id}.blade.php` : kind === 'style' ? `resources/css/${id}.css` : kind === 'layout' ? `resources/views/layouts/${id}.blade.php` : kind === 'component' ? `resources/views/components/${id}.blade.php` : '',
+        php: kind === 'form' ? "use Livewire\\Attributes\\Layout;\nuse Livewire\\Attributes\\Validate;\nuse Livewire\\Component;\n\nnew #[Layout('layouts::base')] class extends Component {\n    #[Validate('required|string|max:255')]\n    public string $name = '';\n\n    public function save(): void\n    {\n        $this->validate();\n\n        $this->reset('name');\n    }\n};" : ['layout', 'style'].includes(kind) ? '' : "use Livewire\\Component;\n\nnew class extends Component {\n    //\n};",
         blade: kind === 'style' ? '' : kind === 'form' ? '<form wire:submit="save">\n  <label>\n    <span>Name</span>\n    <input type="text" wire:model="name">\n  </label>\n\n  @error(\'name\') <p>@{{ $message }}</p> @enderror\n\n  <button type="submit">Submit</button>\n</form>' : kind === 'component' ? '<div>New component</div>' : '@{{ $slot }}',
         style: kind === 'style' ? "/* Global styles */\n" : kind === 'form' ? "& {\n  display: grid;\n  gap: 18px;\n  max-width: 460px;\n  padding: 32px;\n  border: 1px solid #d4d4d8;\n  border-radius: 8px;\n  background: #ffffff;\n}\n\nlabel {\n  display: grid;\n  gap: 10px;\n  color: #27272a;\n  font-weight: 700;\n}\n\ninput {\n  width: 100%;\n  padding: 13px 14px;\n  border: 1px solid #a1a1aa;\n  border-radius: 6px;\n}\n\nbutton {\n  justify-self: start;\n  padding: 12px 18px;\n  border-radius: 6px;\n  background: #4338ca;\n  color: #ffffff;\n  font-weight: 800;\n}\n\np {\n  margin: -6px 0 0;\n  color: #b91c1c;\n}" : '',
         usage: kind === 'component' ? `<livewire:${component} />` : kind === 'form' ? `<livewire:forms::${component} />` : kind === 'layout' ? `<x-layouts::${component}></x-layouts::${component}>` : kind === 'page' ? `<livewire:pages::${component} />` : '',

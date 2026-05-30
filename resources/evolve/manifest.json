@@ -41,7 +41,8 @@
         {
             "id": "newsletter",
             "name": "Newsletter",
-            "slug": "/newsletter",
+            "path": "resources/views/forms/newsletter.blade.php",
+            "route": "/newsletter",
             "usage": "<livewire:forms::newsletter />"
         }
     ],
@@ -63,19 +64,27 @@
             "name": "About",
             "path": "resources/views/layouts/about.blade.php",
             "usage": "<x-layouts::about>\n  <x-slot:hero>\n    <h1>An editorial shell for trust-building pages.</h1>\n  </x-slot:hero>\n\n  <x-slot:aside>\n    Preview side-panel content.\n  </x-slot:aside>\n\n  <livewire:feature-card icon=\"01\" title=\"Narrative first\" />\n</x-layouts::about>"
+        },
+        {
+            "id": "bare",
+            "name": "Bare",
+            "path": "resources/views/layouts/bare.blade.php",
+            "usage": "<x-layouts::bare>\n  <main style=\"min-height: 100vh; display: grid; place-items: center; padding: 48px;\">\n    <livewire:forms::newsletter />\n  </main>\n</x-layouts::bare>"
         }
     ],
     "pages": [
         {
             "id": "home",
             "name": "Home",
-            "slug": "/",
+            "path": "resources/views/pages/home.blade.php",
+            "route": "/",
             "usage": "<livewire:pages::home />"
         },
         {
             "id": "about",
             "name": "About",
-            "slug": "/about",
+            "path": "resources/views/pages/about.blade.php",
+            "route": "/about",
             "usage": "<livewire:pages::about />"
         }
     ]

@@ -41,7 +41,8 @@ class EvolveLibraryFormsTest extends TestCase
                 [
                     'id' => 'new-12345678',
                     'name' => 'Contact form',
-                    'slug' => '/contact',
+                    'path' => 'resources/views/forms/contact.blade.php',
+                    'route' => '/contact',
                     'php' => <<<'PHP'
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -80,9 +81,58 @@ BLADE,
 
         $this->assertSame('form', $form['kind']);
         $this->assertSame('contact', $form['id']);
-        $this->assertSame('/contact', $form['slug']);
+        $this->assertArrayNotHasKey('slug', $form);
         $this->assertSame('resources/views/forms/contact.blade.php', $form['path']);
+        $this->assertSame('/contact', $form['route']);
+        $this->assertSame('resources/views/forms/contact.blade.php', $form['source_path']);
         $this->assertSame('forms::contact', $form['component']);
         $this->assertSame('<livewire:forms::contact />', $form['usage']);
+    }
+
+    public function test_forms_can_define_standalone_routes(): void
+    {
+        $library = new EvolveLibrary;
+
+        $library->write([
+            'forms' => [
+                [
+                    'id' => 'new-12345678',
+                    'name' => 'Resource request',
+                    'path' => 'resources/views/forms/resources/request.blade.php',
+                    'route' => '/resources/{resource}/request',
+                    'php' => $this->componentPhp(),
+                    'blade' => '<form>Request</form>',
+                    'usage' => '<livewire:forms::resources.request />',
+                ],
+            ],
+        ]);
+
+        $form = $library->all()['forms'][0];
+
+        $this->assertTrue(File::exists(resource_path('views/forms/resources/request.blade.php')));
+        $this->assertStringContainsString("#[Layout('layouts::base')]", File::get(resource_path('views/forms/resources/request.blade.php')));
+        $this->assertSame('resources/request', $form['id']);
+        $this->assertArrayNotHasKey('slug', $form);
+        $this->assertSame('resources/views/forms/resources/request.blade.php', $form['path']);
+        $this->assertSame('/resources/{resource}/request', $form['route']);
+        $this->assertSame('forms::resources.request', $form['component']);
+        $this->assertSame([
+            [
+                'route' => '/resources/{resource}/request',
+                'component' => 'forms::resources.request',
+            ],
+        ], $library->artifactRoutes());
+    }
+
+    private function componentPhp(): string
+    {
+        return <<<'PHP'
+use Livewire\Attributes\Layout;
+use Livewire\Component;
+
+new #[Layout('layouts::base')] class extends Component {
+    //
+};
+PHP;
     }
 }
