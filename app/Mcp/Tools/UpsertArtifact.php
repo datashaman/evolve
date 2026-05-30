@@ -55,7 +55,7 @@ class UpsertArtifact extends Tool
             'kind' => $schema->string()->enum(['style', 'component', 'form', 'layout', 'page'])->required(),
             'id' => $schema->string()->description('Existing id when updating. Optional for new artifacts if path is supplied.')->nullable(),
             'name' => $schema->string()->nullable(),
-            'path' => $schema->string()->description('Target source path, such as resources/views/forms/newsletter.blade.php.')->nullable(),
+            'path' => $schema->string()->description('Target source path, such as resources/views/forms/contact.blade.php.')->nullable(),
             'route' => $schema->string()->description('Route for pages and hosted forms.')->nullable(),
             'php' => $schema->string()->nullable(),
             'blade' => $schema->string()->nullable(),

@@ -40,7 +40,7 @@ class UpsertContentRow extends Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'model' => $schema->string()->description('Content model/table id, for example services.')->required(),
+            'model' => $schema->string()->description('Content model/table id, for example articles.')->required(),
             'id' => $schema->string()->description('Existing row id for updates.')->nullable(),
             'icon' => $schema->string()->nullable(),
             'title' => $schema->string()->required(),

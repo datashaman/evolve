@@ -27,7 +27,6 @@ class EvolveContentRepository
                 'meta' => $data[$model['id']]->count().' rows',
             ])->values(),
             'data' => $data,
-            'services' => $data['services'] ?? [],
         ];
     }
 
@@ -35,9 +34,6 @@ class EvolveContentRepository
     {
         $models = $this->models();
         $data = collect($payload['data'] ?? []);
-        if (array_key_exists('services', $payload)) {
-            $data['services'] = $payload['services'];
-        }
 
         $rows = $models->mapWithKeys(function (array $model) use ($data): array {
             return [$model['id'] => $this->replaceRows($model['id'], collect($data[$model['id']] ?? []))];
@@ -49,7 +45,6 @@ class EvolveContentRepository
                 'meta' => $rows[$model['id']]->count().' rows',
             ])->values(),
             'data' => $rows,
-            'services' => $rows['services'] ?? [],
         ];
     }
 

@@ -32,7 +32,7 @@ class ReadArtifact extends Tool
     {
         return [
             'kind' => $schema->string()->enum(['style', 'component', 'form', 'layout', 'page'])->required(),
-            'id' => $schema->string()->description('Artifact id, for example newsletter or sections/hero.')->required(),
+            'id' => $schema->string()->description('Artifact id, for example contact or sections/hero.')->required(),
         ];
     }
 }

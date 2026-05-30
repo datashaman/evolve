@@ -41,7 +41,7 @@ class DeleteContentRow extends Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'model' => $schema->string()->description('Content model/table id, for example services.')->required(),
+            'model' => $schema->string()->description('Content model/table id, for example articles.')->required(),
             'id' => $schema->string()->required(),
             'confirm_id' => $schema->string()->description('Required and must match id when dry_run is false.')->nullable(),
             'dry_run' => $schema->boolean()->description('Defaults to true. Set false to delete.')->nullable(),

@@ -28,7 +28,7 @@ class ListContentRows extends Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'model' => $schema->string()->description('Content model/table id, for example services.')->required(),
+            'model' => $schema->string()->description('Content model/table id, for example articles.')->required(),
         ];
     }
 }

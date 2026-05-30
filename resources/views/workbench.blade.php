@@ -156,11 +156,11 @@
           </section>
           <div class="content-index" id="content-index" hidden>
             <div class="content-page-header">
-              <h2 id="content-model-name">Service</h2>
-              <p id="content-model-path">app/Models/Service.php</p>
+              <h2 id="content-model-name">Content</h2>
+              <p id="content-model-path">Create a content model to begin.</p>
             </div>
             <div class="content-toolbar">
-              <flux:input id="content-search" type="search" placeholder="Search services" size="sm" />
+              <flux:input id="content-search" type="search" placeholder="Search content" size="sm" />
               <flux:button id="btn-add-content-row" type="button" size="sm" variant="filled">Add row</flux:button>
             </div>
             <table>
@@ -200,7 +200,7 @@
     let contentModels = [];
     let contentData = {};
     let contentRows = [];
-    let selectedContentId = 'services';
+    let selectedContentId = '';
     let selectedKey = '';
     let saveTimer = 0;
     let contentSaveTimer = 0;
@@ -243,7 +243,7 @@
     const byKind = kind => library.filter(c => c.kind === kind);
     const libraryArtifacts = data => [...(data.styles ?? []), ...(data.layouts ?? []), ...(data.pages ?? []), ...(data.components ?? []), ...(data.forms ?? [])];
     const artifactRouteId = artifact => String(artifact.previous_id || artifact.id).split('/').map(encodeURIComponent).join('/');
-    const selectedContentModel = () => contentModels.find(model => model.id === selectedContentId) ?? contentModels[0] ?? { id: 'services', name: 'Service', model: 'Service' };
+    const selectedContentModel = () => contentModels.find(model => model.id === selectedContentId) ?? contentModels[0] ?? null;
     const refreshContentModel = () => {
       contentModels = contentModels.map(model => ({ ...model, meta: `${(contentData[model.id] ?? []).length} rows` }));
       library = [...byKind('style'), ...byKind('layout'), ...byKind('page'), ...byKind('component'), ...byKind('form'), ...contentModels];
@@ -264,9 +264,9 @@
         fetch(API, { headers: { accept: 'application/json' } }).then(r => r.json()),
         fetch(CONTENT_API, { headers: { accept: 'application/json' } }).then(r => r.json()),
       ]);
-      contentModels = content.models ?? [{ kind: 'content', id: 'services', name: 'Service', model: 'Service', meta: `${(content.services ?? []).length} rows` }];
-      contentData = content.data ?? { services: content.services ?? [] };
-      selectedContentId = contentModels.find(model => model.id === selectedContentId)?.id ?? contentModels[0]?.id ?? 'services';
+      contentModels = content.models ?? [];
+      contentData = content.data ?? {};
+      selectedContentId = contentModels.find(model => model.id === selectedContentId)?.id ?? contentModels[0]?.id ?? '';
       contentRows = contentData[selectedContentId] ?? [];
       library = [...libraryArtifacts(data), ...contentModels];
       selectedKey ||= artifactKey(library[0]);
@@ -299,6 +299,7 @@
 
     function saveContent(refresh = false) {
       const currentModel = selectedContentModel();
+      if (!currentModel) return Promise.resolve();
       contentData[selectedContentId] = contentRows.map(row => ({ ...row, model: currentModel.model }));
       const shouldRebuildTable = contentRows.some(row => String(row.id ?? '').startsWith('new-')) || !contentIndex.contains(document.activeElement);
       const previousEditingKey = editingContentKey;
@@ -487,6 +488,13 @@
       if (!contentRowsEl) return;
       const filter = contentFilter.trim().toLowerCase();
       const model = selectedContentModel();
+      if (!model) {
+        contentModelName.textContent = 'Content';
+        contentModelPath.textContent = 'Create a content model to begin.';
+        contentSearch.placeholder = 'Search content';
+        contentRowsEl.innerHTML = '<tr><td colspan="7" class="cell-muted">No content models yet.</td></tr>';
+        return;
+      }
       contentModelName.textContent = model.name;
       contentModelPath.textContent = model.path ?? `app/Models/${model.name}.php`;
       contentSearch.placeholder = `Search ${model.name}`;
@@ -559,7 +567,7 @@
           renderContentIndex();
         });
         tr.querySelector('[data-action="delete"]')?.addEventListener('click', () => {
-          if (!confirm(`Delete "${row.title || 'this service'}"?`)) return;
+          if (!confirm(`Delete "${row.title || 'this row'}"?`)) return;
           contentRows = contentRows.filter(entry => entry !== row);
           contentData[selectedContentId] = contentRows;
           if (editingContentKey === key) editingContentKey = '';
@@ -720,20 +728,25 @@
     }
 
     function addContentRow() {
+      const model = selectedContentModel();
+      if (!model) {
+        addContentModel();
+        return;
+      }
       contentRows.push({
         id: `new-${crypto.randomUUID().slice(0, 8)}`,
         kind: 'content',
-        model: selectedContentModel().model,
-        name: `New ${selectedContentModel().name.toLowerCase()}`,
-        title: `New ${selectedContentModel().name.toLowerCase()}`,
+        model: model.model,
+        name: `New ${model.name.toLowerCase()}`,
+        title: `New ${model.name.toLowerCase()}`,
         icon: String(contentRows.length + 1).padStart(2, '0'),
-        summary: 'Describe the customer outcome this service creates.',
+        summary: 'Describe this content row.',
         position: contentRows.length + 1,
         is_published: true,
       });
       contentData[selectedContentId] = contentRows;
       editingContentKey = contentRows[contentRows.length - 1].id;
-      selectedKey = 'content:services';
+      selectedKey = `content:${selectedContentId}`;
       refreshContentModel();
       renderLists();
       syncInputs();

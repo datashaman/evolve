@@ -10,7 +10,7 @@ The goal is not to maintain a separate CMS renderer. The workbench edits framewo
 - Native Livewire single-file components for pages and components
 - Livewire SFC form components managed as first-class form artifacts
 - Blade layout files in the Laravel view tree
-- Orderable global style files, including `tokens.css`
+- Orderable global style files
 - Dynamic content models backed by normal Laravel models, migrations, and database tables
 - Runtime page routes generated from the Evolve library manifest
 

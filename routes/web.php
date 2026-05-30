@@ -29,7 +29,13 @@ Route::get('evolve.css', [EvolveLibraryController::class, 'stylesheet'])->name('
 
 require __DIR__.'/settings.php';
 
-foreach (app(EvolveLibrary::class)->artifactRoutes() as $artifactRoute) {
+$artifactRoutes = app(EvolveLibrary::class)->artifactRoutes();
+
+if (! collect($artifactRoutes)->contains(fn (array $artifactRoute): bool => $artifactRoute['route'] === '/')) {
+    Route::view('/', 'welcome')->name('home');
+}
+
+foreach ($artifactRoutes as $artifactRoute) {
     Route::livewire($artifactRoute['route'], $artifactRoute['component'])
         ->name($artifactRoute['route'] === '/' ? 'home' : str_replace('/', '.', trim(preg_replace('#\{([^}/?]+)\??\}#', '$1', $artifactRoute['route']), '/')));
 }
