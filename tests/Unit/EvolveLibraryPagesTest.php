@@ -320,6 +320,24 @@ PHP,
         $this->assertNotNull($developerPages->firstWhere('id', 'settings/layout'));
     }
 
+    public function test_starter_kit_auth_and_settings_pages_do_not_register_generated_routes(): void
+    {
+        File::ensureDirectoryExists(resource_path('views/pages/auth'));
+        File::ensureDirectoryExists(resource_path('views/pages/settings'));
+        File::put(resource_path('views/pages/auth/login.blade.php'), $this->componentSource('<div>Login</div>'));
+        File::put(resource_path('views/pages/settings/⚡profile.blade.php'), $this->componentSource('<div>Profile</div>'));
+
+        $library = new EvolveLibrary;
+        $library->write([
+            'pages' => $library->all()['pages'],
+        ]);
+
+        $routes = collect($library->artifactRoutes());
+
+        $this->assertNull($routes->firstWhere('component', 'pages::auth.login'));
+        $this->assertNull($routes->firstWhere('component', 'pages::settings.profile'));
+    }
+
     private function componentPhp(): string
     {
         return <<<'PHP'

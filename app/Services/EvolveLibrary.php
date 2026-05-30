@@ -103,16 +103,18 @@ class EvolveLibrary
     public function artifactRoutes(): array
     {
         return collect([
-            ...collect($this->normalizePageTree($this->manifest()['pages'] ?? []))->map(function (array $page) {
-                $route = $this->safeOptionalRoute($page['route'] ?? $page['slug'] ?? '');
+            ...collect($this->normalizePageTree($this->manifest()['pages'] ?? []))
+                ->reject(fn (array $page): bool => $this->pageRouteIsOwnedByStarterKit($this->safeId($page['id'] ?? '')))
+                ->map(function (array $page) {
+                    $route = $this->safeOptionalRoute($page['route'] ?? $page['slug'] ?? '');
 
-                return [
-                    'route' => $route,
-                    'route_name' => $route !== '' ? $this->resolveRouteName($page['route_name'] ?? null, $route) : '',
-                    'middleware' => $this->safeMiddleware($page['middleware'] ?? []),
-                    'component' => 'pages::'.$this->componentName($page['id'] ?? ''),
-                ];
-            }),
+                    return [
+                        'route' => $route,
+                        'route_name' => $route !== '' ? $this->resolveRouteName($page['route_name'] ?? null, $route) : '',
+                        'middleware' => $this->safeMiddleware($page['middleware'] ?? []),
+                        'component' => 'pages::'.$this->componentName($page['id'] ?? ''),
+                    ];
+                }),
             ...collect($this->manifest()['forms'] ?? [])
                 ->filter(fn (array $form) => filled($form['route'] ?? ''))
                 ->map(function (array $form) {
@@ -143,6 +145,12 @@ class EvolveLibrary
             ->filter(fn (array $route) => $route['route'] !== '' && ! in_array($route['component'], ['pages::', 'forms::', 'views::'], true))
             ->values()
             ->all();
+    }
+
+    protected function pageRouteIsOwnedByStarterKit(string $id): bool
+    {
+        return $this->isStarterKitArtifact('page', $id)
+            && (str_starts_with($id, 'auth/') || str_starts_with($id, 'settings/'));
     }
 
     public function pageRoutes(): array
