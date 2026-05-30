@@ -57,7 +57,7 @@ class extends Component {
   </section>
 </main>
 
-<style global>
+<style>
 body {
   min-height: 100vh;
   background:
