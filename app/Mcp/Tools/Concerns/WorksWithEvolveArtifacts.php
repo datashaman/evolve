@@ -16,6 +16,7 @@ trait WorksWithEvolveArtifacts
             'form' => 'forms',
             'layout' => 'layouts',
             'page' => 'pages',
+            'snippet' => 'snippets',
             default => throw ValidationException::withMessages(['kind' => "Unsupported artifact kind [{$kind}]."]),
         };
     }
@@ -66,7 +67,7 @@ trait WorksWithEvolveArtifacts
     protected function idFromPath(string $path): string
     {
         $path = preg_replace('#\.(blade\.php|css)$#', '', str_replace('\\', '/', trim($path)));
-        $path = preg_replace('#^(resources/views/(components|forms|layouts|pages)/|resources/css/layouts/|resources/css/)#', '', $path);
+        $path = preg_replace('#^(resources/views/(components|forms|layouts|pages|snippets)/|resources/css/layouts/|resources/css/)#', '', $path);
         $path = strtolower(trim((string) $path, '/'));
 
         return collect(explode('/', preg_replace('#/+#', '/', $path)))
@@ -82,6 +83,7 @@ trait WorksWithEvolveArtifacts
             'form' => "resources/views/forms/{$id}.blade.php",
             'layout' => "resources/views/layouts/{$id}.blade.php",
             'page' => "resources/views/pages/{$id}.blade.php",
+            'snippet' => "resources/views/snippets/{$id}.blade.php",
             default => "resources/views/components/{$id}.blade.php",
         };
     }
@@ -94,6 +96,7 @@ trait WorksWithEvolveArtifacts
             'form' => "forms::{$component}",
             'layout' => "layouts::{$component}",
             'page' => "pages::{$component}",
+            'snippet' => "snippets::{$component}",
             default => $component,
         };
     }
@@ -107,6 +110,7 @@ trait WorksWithEvolveArtifacts
             'form' => "<livewire:forms::{$component} />",
             'layout' => "<x-layouts::{$component}></x-layouts::{$component}>",
             'page' => "<livewire:pages::{$component} />",
+            'snippet' => "<x-snippets::{$component} />",
             default => '',
         };
     }

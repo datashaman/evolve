@@ -20,7 +20,7 @@ class DeleteArtifact extends Tool
     public function handle(Request $request, EvolveLibrary $library): ResponseFactory
     {
         $data = $request->validate([
-            'kind' => ['required', 'string', 'in:style,component,form,layout,page'],
+            'kind' => ['required', 'string', 'in:style,component,form,layout,page,snippet'],
             'id' => ['required', 'string'],
             'confirm_id' => ['nullable', 'string'],
             'dry_run' => ['sometimes', 'boolean'],
@@ -47,7 +47,7 @@ class DeleteArtifact extends Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'kind' => $schema->string()->enum(['style', 'component', 'form', 'layout', 'page'])->required(),
+            'kind' => $schema->string()->enum(['style', 'component', 'form', 'layout', 'page', 'snippet'])->required(),
             'id' => $schema->string()->required(),
             'confirm_id' => $schema->string()->description('Required and must match id when dry_run is false.')->nullable(),
             'dry_run' => $schema->boolean()->description('Defaults to true. Set false to delete.')->nullable(),

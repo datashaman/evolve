@@ -160,6 +160,7 @@
       <section><header><span>Styles</span><flux:button id="btn-new-style" size="xs" variant="filled">+</flux:button></header><ul id="list-styles"></ul><div class="empty" id="empty-styles" hidden>No styles yet.</div></section>
       <section><header><span>Layouts</span><flux:button id="btn-new-layout" size="xs" variant="filled">+</flux:button></header><ul id="list-layouts"></ul><div class="empty" id="empty-layouts" hidden>No layouts yet.</div></section>
       <section><header><span>Pages</span><flux:button id="btn-new-page" size="xs" variant="filled">+</flux:button></header><ul id="list-pages"></ul><div class="empty" id="empty-pages" hidden>No pages yet.</div></section>
+      <section><header><span>Snippets</span><flux:button id="btn-new-snippet" size="xs" variant="filled">+</flux:button></header><ul id="list-snippets"></ul><div class="empty" id="empty-snippets" hidden>No snippets yet.</div></section>
       <section><header><span>Components</span><flux:button id="btn-new-component" size="xs" variant="filled">+</flux:button></header><ul id="list-components"></ul><div class="empty" id="empty-components" hidden>No components yet.</div></section>
       <section><header><span>Forms</span><flux:button id="btn-new-form" size="xs" variant="filled">+</flux:button></header><ul id="list-forms"></ul><div class="empty" id="empty-forms" hidden>No forms yet.</div></section>
       <section><header><span>Content</span><flux:button id="btn-new-content" size="xs" variant="filled">+</flux:button></header><ul id="list-content"></ul><div class="empty" id="empty-content" hidden>No content yet.</div></section>
@@ -270,12 +271,12 @@
     const artifactKey = c => c ? `${c.kind}:${c.id}` : '';
     const selected = () => library.find(c => artifactKey(c) === selectedKey) ?? null;
     const byKind = kind => library.filter(c => c.kind === kind);
-    const libraryArtifacts = data => [...(data.styles ?? []), ...(data.layouts ?? []), ...(data.pages ?? []), ...(data.components ?? []), ...(data.forms ?? [])];
+    const libraryArtifacts = data => [...(data.styles ?? []), ...(data.layouts ?? []), ...(data.pages ?? []), ...(data.snippets ?? []), ...(data.components ?? []), ...(data.forms ?? [])];
     const artifactRouteId = artifact => String(artifact.previous_id || artifact.id).split('/').map(encodeURIComponent).join('/');
     const selectedContentModel = () => contentModels.find(model => model.id === selectedContentId) ?? contentModels[0] ?? null;
     const refreshContentModel = () => {
       contentModels = contentModels.map(model => ({ ...model, meta: `${(contentData[model.id] ?? []).length} rows` }));
-      library = [...byKind('style'), ...byKind('layout'), ...byKind('page'), ...byKind('component'), ...byKind('form'), ...contentModels];
+      library = [...byKind('style'), ...byKind('layout'), ...byKind('page'), ...byKind('snippet'), ...byKind('component'), ...byKind('form'), ...contentModels];
     };
     const applyLibraryData = (data, fallbackKey = '') => {
       library = [...libraryArtifacts(data), ...contentModels];
@@ -426,6 +427,7 @@
       renderList('style', 'list-styles', 'empty-styles');
       renderList('layout', 'list-layouts', 'empty-layouts');
       renderList('page', 'list-pages', 'empty-pages');
+      renderList('snippet', 'list-snippets', 'empty-snippets');
       renderList('component', 'list-components', 'empty-components');
       renderList('form', 'list-forms', 'empty-forms');
       renderList('content', 'list-content', 'empty-content');
@@ -519,6 +521,7 @@
       if (kind === 'content') return item => item.meta;
       if (kind === 'page') return item => item.route || item.path;
       if (['component', 'form'].includes(kind)) return item => `<livewire:${item.component} />`;
+      if (kind === 'snippet') return item => `<x-${item.component} />`;
       if (kind === 'layout') return item => item.component;
 
       const paths = items.map(item => item.source_path || item.path || item.id).filter(Boolean);
@@ -663,7 +666,7 @@
       const to = styles.findIndex(item => artifactKey(item) === targetKey);
       if (to < 0) return;
       styles.splice(placement === 'after' ? to + 1 : to, 0, moved);
-      library = [...styles, ...byKind('layout'), ...byKind('page'), ...byKind('component'), ...byKind('form'), ...byKind('content')];
+      library = [...styles, ...byKind('layout'), ...byKind('page'), ...byKind('snippet'), ...byKind('component'), ...byKind('form'), ...byKind('content')];
       renderLists();
       fetch(`${API}/styles/order`, {
         method: 'PUT',
@@ -706,13 +709,14 @@
           .forEach((page, index) => page.order = index + 1);
       }
 
-      library = [...byKind('style'), ...byKind('layout'), ...pages, ...byKind('component'), ...byKind('form'), ...byKind('content')];
+      library = [...byKind('style'), ...byKind('layout'), ...pages, ...byKind('snippet'), ...byKind('component'), ...byKind('form'), ...byKind('content')];
       renderLists();
 
       saveLibrary({
         styles: byKind('style'),
         layouts: byKind('layout'),
         pages,
+        snippets: byKind('snippet'),
         components: byKind('component'),
         forms: byKind('form'),
       }, 'Page order save failed');
@@ -779,9 +783,9 @@
         .map(page => `<option value="${escapeHtml(page.id)}">${escapeHtml(page.name || page.id)}</option>`)
         .join('');
       contentIndex.hidden = !isContent;
-      sourceSection('php').hidden = isContent || ['layout', 'style'].includes(c?.kind);
+      sourceSection('php').hidden = isContent || ['layout', 'style', 'snippet'].includes(c?.kind);
       sourceSection('blade').hidden = isContent || c?.kind === 'style';
-      sourceSection('style').hidden = isContent;
+      sourceSection('style').hidden = isContent || c?.kind === 'snippet';
       sourceSection('usage').hidden = isContent || c?.kind === 'style';
       updateHighlights();
       renderContentIndex();
@@ -837,16 +841,17 @@
         c.id = idFromPath(c.path) || c.id;
         if (locationChanged && c.kind === 'component') c.usage = `<livewire:${c.id.replaceAll('/', '.')} />`;
         if (locationChanged && c.kind === 'layout') c.usage = `<x-layouts::${c.id.replaceAll('/', '.')}></x-layouts::${c.id.replaceAll('/', '.')}>`;
-        if (locationChanged && ['component', 'layout'].includes(c.kind)) fields.usage.value = c.usage;
+        if (locationChanged && c.kind === 'snippet') c.usage = `<x-snippets::${c.id.replaceAll('/', '.')} />`;
+        if (locationChanged && ['component', 'layout', 'snippet'].includes(c.kind)) fields.usage.value = c.usage;
         selectedKey = artifactKey(c);
       }
       if (c.kind === 'page') {
         c.parent_id = idFromPath(fields.parent.value) === c.id ? '' : idFromPath(fields.parent.value);
         c.order = Number(fields.order.value || 0);
       }
-      c.php = ['layout', 'style'].includes(c.kind) ? '' : fields.php.value;
+      c.php = ['layout', 'style', 'snippet'].includes(c.kind) ? '' : fields.php.value;
       c.blade = c.kind === 'style' ? '' : fields.blade.value;
-      c.style = fields.style.value;
+      c.style = c.kind === 'snippet' ? '' : fields.style.value;
       c.usage = c.kind === 'style' ? '' : ['form', 'page'].includes(c.kind) ? c.usage : fields.usage.value;
       if (previousId !== c.id) c.previous_id = c.previous_id || previousId;
       updateHighlights();
@@ -862,7 +867,7 @@
       return String(path ?? '').trim().toLowerCase()
         .replace(/\\/g, '/')
         .replace(/\.(blade\.php|css)$/g, '')
-        .replace(/^(resources\/views\/(components|forms|layouts|pages)\/|resources\/css\/layouts\/|resources\/css\/)/, '')
+        .replace(/^(resources\/views\/(components|forms|layouts|pages|snippets)\/|resources\/css\/layouts\/|resources\/css\/)/, '')
         .replace(/[^a-z0-9/-]/g, '-')
         .replace(/\/+/g, '/')
         .replace(/^-+|-+$/g, '')
@@ -872,16 +877,16 @@
       const id = `new-${crypto.randomUUID().slice(0, 8)}`;
       const component = id.replaceAll('/', '.');
       const item = {
-        id, kind, name: kind === 'style' ? 'New style' : kind === 'page' ? 'New page' : kind === 'layout' ? 'New layout' : kind === 'form' ? 'New form' : 'New component',
+        id, kind, name: kind === 'style' ? 'New style' : kind === 'page' ? 'New page' : kind === 'layout' ? 'New layout' : kind === 'form' ? 'New form' : kind === 'snippet' ? 'New snippet' : 'New component',
         slug: '',
         route: ['form', 'page'].includes(kind) ? `/${id}` : '',
         parent_id: '',
         order: kind === 'page' ? byKind('page').length + 1 : 0,
-        path: kind === 'form' ? `resources/views/forms/${id}.blade.php` : kind === 'page' ? `resources/views/pages/${id}.blade.php` : kind === 'style' ? `resources/css/${id}.css` : kind === 'layout' ? `resources/views/layouts/${id}.blade.php` : kind === 'component' ? `resources/views/components/${id}.blade.php` : '',
-        php: kind === 'form' ? "use Livewire\\Attributes\\Layout;\nuse Livewire\\Attributes\\Validate;\nuse Livewire\\Component;\n\nnew #[Layout('layouts::base')] class extends Component {\n    #[Validate('required|string|max:255')]\n    public string $name = '';\n\n    public function save(): void\n    {\n        $this->validate();\n\n        $this->reset('name');\n    }\n};" : ['layout', 'style'].includes(kind) ? '' : "use Livewire\\Component;\n\nnew class extends Component {\n    //\n};",
-        blade: kind === 'style' ? '' : kind === 'form' ? '<form wire:submit="save">\n  <label>\n    <span>Name</span>\n    <input type="text" wire:model="name">\n  </label>\n\n  @error(\'name\') <p>@{{ $message }}</p> @enderror\n\n  <button type="submit">Submit</button>\n</form>' : kind === 'component' ? '<div>New component</div>' : '@{{ $slot }}',
+        path: kind === 'form' ? `resources/views/forms/${id}.blade.php` : kind === 'page' ? `resources/views/pages/${id}.blade.php` : kind === 'style' ? `resources/css/${id}.css` : kind === 'layout' ? `resources/views/layouts/${id}.blade.php` : kind === 'snippet' ? `resources/views/snippets/${id}.blade.php` : kind === 'component' ? `resources/views/components/${id}.blade.php` : '',
+        php: kind === 'form' ? "use Livewire\\Attributes\\Layout;\nuse Livewire\\Attributes\\Validate;\nuse Livewire\\Component;\n\nnew #[Layout('layouts::base')] class extends Component {\n    #[Validate('required|string|max:255')]\n    public string $name = '';\n\n    public function save(): void\n    {\n        $this->validate();\n\n        $this->reset('name');\n    }\n};" : ['layout', 'style', 'snippet'].includes(kind) ? '' : "use Livewire\\Component;\n\nnew class extends Component {\n    //\n};",
+        blade: kind === 'style' ? '' : kind === 'form' ? '<form wire:submit="save">\n  <label>\n    <span>Name</span>\n    <input type="text" wire:model="name">\n  </label>\n\n  @error(\'name\') <p>@{{ $message }}</p> @enderror\n\n  <button type="submit">Submit</button>\n</form>' : kind === 'component' ? '<div>New component</div>' : kind === 'snippet' ? '<div>New snippet</div>' : '@{{ $slot }}',
         style: kind === 'style' ? "/* Global styles */\n" : kind === 'form' ? "& {\n  display: grid;\n  gap: 18px;\n  max-width: 460px;\n  padding: 32px;\n  border: 1px solid #d4d4d8;\n  border-radius: 8px;\n  background: #ffffff;\n}\n\nlabel {\n  display: grid;\n  gap: 10px;\n  color: #27272a;\n  font-weight: 700;\n}\n\ninput {\n  width: 100%;\n  padding: 13px 14px;\n  border: 1px solid #a1a1aa;\n  border-radius: 6px;\n}\n\nbutton {\n  justify-self: start;\n  padding: 12px 18px;\n  border-radius: 6px;\n  background: #4338ca;\n  color: #ffffff;\n  font-weight: 800;\n}\n\np {\n  margin: -6px 0 0;\n  color: #b91c1c;\n}" : '',
-        usage: kind === 'component' ? `<livewire:${component} />` : kind === 'form' ? `<livewire:forms::${component} />` : kind === 'layout' ? `<x-layouts::${component}></x-layouts::${component}>` : kind === 'page' ? `<livewire:pages::${component} />` : '',
+        usage: kind === 'component' ? `<livewire:${component} />` : kind === 'form' ? `<livewire:forms::${component} />` : kind === 'layout' ? `<x-layouts::${component}></x-layouts::${component}>` : kind === 'page' ? `<livewire:pages::${component} />` : kind === 'snippet' ? `<x-snippets::${component} />` : '',
       };
       library.push(item);
       selectedKey = artifactKey(item);
@@ -932,7 +937,7 @@
         selectedContentId = created?.id ?? selectedContentId;
         contentRows = contentData[selectedContentId] ?? [];
         selectedKey = `content:${selectedContentId}`;
-        library = [...byKind('style'), ...byKind('layout'), ...byKind('page'), ...byKind('component'), ...byKind('form'), ...contentModels];
+        library = [...byKind('style'), ...byKind('layout'), ...byKind('page'), ...byKind('snippet'), ...byKind('component'), ...byKind('form'), ...contentModels];
         renderLists(); syncInputs();
       }).catch(error => alert(error.message));
     }
@@ -942,6 +947,7 @@
     document.getElementById('btn-new-form').onclick = () => newArtifact('form');
     document.getElementById('btn-new-layout').onclick = () => newArtifact('layout');
     document.getElementById('btn-new-page').onclick = () => newArtifact('page');
+    document.getElementById('btn-new-snippet').onclick = () => newArtifact('snippet');
     document.getElementById('btn-new-content').onclick = () => addContentModel();
     document.getElementById('btn-add-content-row').onclick = () => addContentRow();
     contentSearch.addEventListener('input', () => { contentFilter = contentSearch.value; renderContentIndex(); });

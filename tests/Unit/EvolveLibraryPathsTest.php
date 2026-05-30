@@ -121,6 +121,32 @@ class EvolveLibraryPathsTest extends TestCase
         $this->assertSame('resources/css/themes/site.css', $style['source_path']);
     }
 
+    public function test_snippets_are_written_to_paths_derived_from_path_metadata(): void
+    {
+        $library = new EvolveLibrary;
+
+        $library->write([
+            'snippets' => [
+                [
+                    'id' => 'old-badge',
+                    'name' => 'Badge',
+                    'path' => 'resources/views/snippets/marketing/badge.blade.php',
+                    'blade' => '<span>Badge</span>',
+                    'usage' => '<x-snippets::marketing.badge />',
+                ],
+            ],
+        ]);
+
+        $snippet = $library->all()['snippets'][0];
+
+        $this->assertTrue(File::exists(resource_path('views/snippets/marketing/badge.blade.php')));
+        $this->assertSame('marketing/badge', $snippet['id']);
+        $this->assertSame('resources/views/snippets/marketing/badge.blade.php', $snippet['path']);
+        $this->assertSame('resources/views/snippets/marketing/badge.blade.php', $snippet['source_path']);
+        $this->assertSame('snippets::marketing.badge', $snippet['component']);
+        $this->assertSame('<span>Badge</span>', $snippet['blade']);
+    }
+
     public function test_artifacts_cannot_overwrite_workbench_assets(): void
     {
         File::ensureDirectoryExists(resource_path('css'));

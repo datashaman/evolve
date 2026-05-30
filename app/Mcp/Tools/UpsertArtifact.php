@@ -19,7 +19,7 @@ class UpsertArtifact extends Tool
     public function handle(Request $request, EvolveLibrary $library): ResponseFactory
     {
         $data = $request->validate([
-            'kind' => ['required', 'string', 'in:style,component,form,layout,page'],
+            'kind' => ['required', 'string', 'in:style,component,form,layout,page,snippet'],
             'id' => ['nullable', 'string'],
             'name' => ['nullable', 'string'],
             'path' => ['nullable', 'string'],
@@ -54,7 +54,7 @@ class UpsertArtifact extends Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'kind' => $schema->string()->enum(['style', 'component', 'form', 'layout', 'page'])->required(),
+            'kind' => $schema->string()->enum(['style', 'component', 'form', 'layout', 'page', 'snippet'])->required(),
             'id' => $schema->string()->description('Existing id when updating. Optional for new artifacts if path is supplied.')->nullable(),
             'name' => $schema->string()->nullable(),
             'path' => $schema->string()->description('Target source path, such as resources/views/forms/contact.blade.php.')->nullable(),

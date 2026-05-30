@@ -21,7 +21,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('api/content/models', [EvolveContentController::class, 'storeModel']);
     Route::put('api/content', [EvolveContentController::class, 'update']);
     Route::get('workbench/preview/{kind}/{id}', [EvolvePreviewController::class, 'show'])
-        ->where('kind', 'component|form|layout|page')
+        ->where('kind', 'component|form|layout|page|snippet')
         ->where('id', '[A-Za-z0-9_\\-\\/]+');
 });
 

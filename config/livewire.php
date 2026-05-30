@@ -9,6 +9,7 @@ return [
         'forms' => resource_path('views/forms'),
         'layouts' => resource_path('views/layouts'),
         'pages' => resource_path('views/pages'),
+        'snippets' => resource_path('views/snippets'),
     ],
 
     'component_layout' => 'layouts::app',

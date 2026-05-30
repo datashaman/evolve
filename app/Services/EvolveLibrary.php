@@ -21,6 +21,7 @@ class EvolveLibrary
             'forms' => $this->readGroup('form', $manifest['forms'] ?? []),
             'layouts' => $this->readGroup('layout', $manifest['layouts'] ?? []),
             'pages' => $this->readGroup('page', $manifest['pages'] ?? []),
+            'snippets' => $this->readGroup('snippet', $manifest['snippets'] ?? []),
         ];
     }
 
@@ -34,6 +35,7 @@ class EvolveLibrary
             'forms' => $this->writeGroup('form', $payload['forms'] ?? [], $previous['forms'] ?? []),
             'layouts' => $this->writeGroup('layout', $payload['layouts'] ?? [], $previous['layouts'] ?? []),
             'pages' => $this->writeGroup('page', $payload['pages'] ?? [], $previous['pages'] ?? []),
+            'snippets' => $this->writeGroup('snippet', $payload['snippets'] ?? [], $previous['snippets'] ?? []),
         ];
 
         $this->writeFile($this->manifestPath(), json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
@@ -122,6 +124,7 @@ class EvolveLibrary
             'form' => 'forms',
             'layout' => 'layouts',
             'page' => 'pages',
+            'snippet' => 'snippets',
             default => '',
         };
 
@@ -142,6 +145,7 @@ class EvolveLibrary
             'form' => 'forms',
             'layout' => 'layouts',
             'page' => 'pages',
+            'snippet' => 'snippets',
             default => throw new \InvalidArgumentException("Unsupported artifact kind [{$kind}]."),
         };
     }
@@ -264,8 +268,8 @@ class EvolveLibrary
                     'path' => $entry['path'] ?? $this->relativePath($kind, $id),
                     'source_path' => $this->relativePath($kind, $id),
                     'component' => $this->componentReference($kind, $id),
-                    ...($kind === 'layout'
-                        ? ['php' => '', 'blade' => $this->parseLayout($this->filePath($kind, $id)), 'style' => $this->layoutStyle($id)]
+                    ...(in_array($kind, ['layout', 'snippet'], true)
+                        ? ['php' => '', 'blade' => $this->parseLayout($this->filePath($kind, $id)), 'style' => $kind === 'layout' ? $this->layoutStyle($id) : '']
                         : $this->parseSfc($this->filePath($kind, $id))),
                 ];
             })
@@ -292,9 +296,11 @@ class EvolveLibrary
             $this->assertArtifactCanBeChanged($kind, $id);
 
             $keep[] = $id;
-            if ($kind === 'layout') {
+            if (in_array($kind, ['layout', 'snippet'], true)) {
                 $this->writeFile($this->filePath($kind, $id), trim((string) ($artifact['blade'] ?? '{{ $slot }}'))."\n");
-                $this->writeFile($this->layoutStylePath($id), trim((string) ($artifact['style'] ?? ''))."\n");
+                if ($kind === 'layout') {
+                    $this->writeFile($this->layoutStylePath($id), trim((string) ($artifact['style'] ?? ''))."\n");
+                }
             } else {
                 $this->writeFile($this->filePath($kind, $id), $this->serializeSfc(
                     (string) ($artifact['php'] ?? $this->defaultPhp()),
@@ -309,7 +315,7 @@ class EvolveLibrary
                 'name' => (string) ($artifact['name'] ?? Str::headline(basename($id))),
             ];
 
-            if (in_array($kind, ['component', 'layout'], true)) {
+            if (in_array($kind, ['component', 'layout', 'snippet'], true)) {
                 $entry['path'] = $this->relativePath($kind, $id);
             }
 
@@ -326,7 +332,7 @@ class EvolveLibrary
                 $entry['route'] = $this->safeRoute($artifact['route'] ?? $artifact['slug'] ?? '');
             }
 
-            if (in_array($kind, ['component', 'form', 'layout'], true)) {
+            if (in_array($kind, ['component', 'form', 'layout', 'snippet'], true)) {
                 $entry['usage'] = (string) ($artifact['usage'] ?? '');
             }
 
@@ -473,7 +479,7 @@ class EvolveLibrary
 
     protected function emptyManifest(): array
     {
-        return ['styles' => [], 'components' => [], 'forms' => [], 'layouts' => [], 'pages' => []];
+        return ['styles' => [], 'components' => [], 'forms' => [], 'layouts' => [], 'pages' => [], 'snippets' => []];
     }
 
     protected function writeFile(string $path, string $content): void
@@ -563,6 +569,7 @@ class EvolveLibrary
             'form' => resource_path('views/forms'),
             'layout' => resource_path('views/layouts'),
             'page' => resource_path('views/pages'),
+            'snippet' => resource_path('views/snippets'),
             default => resource_path('views/components'),
         };
     }
@@ -573,6 +580,7 @@ class EvolveLibrary
             'form' => 'resources/views/forms/'.$id.'.blade.php',
             'layout' => 'resources/views/layouts/'.$id.'.blade.php',
             'page' => 'resources/views/pages/'.$id.'.blade.php',
+            'snippet' => 'resources/views/snippets/'.$id.'.blade.php',
             default => 'resources/views/components/'.$id.'.blade.php',
         };
     }
@@ -583,6 +591,7 @@ class EvolveLibrary
             'form' => 'forms::'.$this->componentName($id),
             'layout' => 'layouts::'.$this->componentName($id),
             'page' => 'pages::'.$this->componentName($id),
+            'snippet' => 'snippets::'.$this->componentName($id),
             default => $this->componentName($id),
         };
     }
@@ -650,7 +659,7 @@ class EvolveLibrary
     protected function idFromPath(string $path): string
     {
         $path = preg_replace('#\.(blade\.php|css)$#', '', str_replace('\\', '/', trim($path)));
-        $path = preg_replace('#^(resources/views/(components|forms|layouts|pages)/|resources/css/layouts/|resources/css/)#', '', $path);
+        $path = preg_replace('#^(resources/views/(components|forms|layouts|pages|snippets)/|resources/css/layouts/|resources/css/)#', '', $path);
 
         return $this->safeId($path);
     }

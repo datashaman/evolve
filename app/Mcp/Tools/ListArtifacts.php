@@ -30,7 +30,7 @@ class ListArtifacts extends Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'kind' => $schema->string()->enum(['style', 'component', 'form', 'layout', 'page'])->description('Optional artifact kind filter.')->nullable(),
+            'kind' => $schema->string()->enum(['style', 'component', 'form', 'layout', 'page', 'snippet'])->description('Optional artifact kind filter.')->nullable(),
         ];
     }
 
@@ -42,6 +42,7 @@ class ListArtifacts extends Tool
             'form' => 'forms',
             'layout' => 'layouts',
             'page' => 'pages',
+            'snippet' => 'snippets',
             default => 'artifacts',
         };
     }

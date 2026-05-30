@@ -1,6 +1,6 @@
 # Evolve
 
-Evolve is a Laravel and Livewire-native workbench for building sites from the same artifacts the application runs in production: layouts, styles, components, forms, pages, and content models.
+Evolve is a Laravel and Livewire-native workbench for building sites from the same artifacts the application runs in production: layouts, snippets, styles, components, forms, pages, and content models.
 
 The goal is not to maintain a separate CMS renderer. The workbench edits framework files and previews the real Laravel/Livewire runtime.
 
@@ -10,6 +10,7 @@ The goal is not to maintain a separate CMS renderer. The workbench edits framewo
 - Native Livewire single-file components for pages and components
 - Livewire SFC form components managed as first-class form artifacts
 - Blade layout files in the Laravel view tree
+- Blade snippets in the Laravel view tree
 - Orderable global style files
 - Page tree metadata for parent/child page organization
 - Dynamic content models backed by normal Laravel models, migrations, and database tables

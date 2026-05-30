@@ -19,7 +19,7 @@ class ReadArtifact extends Tool
     public function handle(Request $request, EvolveLibrary $library): ResponseFactory
     {
         $data = $request->validate([
-            'kind' => ['required', 'string', 'in:style,component,form,layout,page'],
+            'kind' => ['required', 'string', 'in:style,component,form,layout,page,snippet'],
             'id' => ['required', 'string'],
         ]);
 
@@ -31,7 +31,7 @@ class ReadArtifact extends Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'kind' => $schema->string()->enum(['style', 'component', 'form', 'layout', 'page'])->required(),
+            'kind' => $schema->string()->enum(['style', 'component', 'form', 'layout', 'page', 'snippet'])->required(),
             'id' => $schema->string()->description('Artifact id, for example contact or sections/hero.')->required(),
         ];
     }

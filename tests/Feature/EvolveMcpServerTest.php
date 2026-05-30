@@ -209,6 +209,31 @@ class EvolveMcpServerTest extends TestCase
             );
     }
 
+    public function test_mcp_artifact_tools_manage_snippets(): void
+    {
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'snippet',
+            'name' => 'Badge',
+            'path' => 'resources/views/snippets/marketing/badge.blade.php',
+            'blade' => '<span>Badge</span>',
+            'dry_run' => false,
+        ])->assertOk();
+
+        EvolveServer::tool(ListArtifacts::class, ['kind' => 'snippet'])
+            ->assertOk()
+            ->assertStructuredContent(fn ($json) => $json
+                ->where('artifacts.snippets.0.id', 'marketing/badge')
+                ->where('artifacts.snippets.0.component', 'snippets::marketing.badge')
+                ->where('artifacts.snippets.0.usage', '<x-snippets::marketing.badge />')
+            );
+
+        EvolveServer::tool(ReadArtifact::class, ['kind' => 'snippet', 'id' => 'marketing/badge'])
+            ->assertOk()
+            ->assertSee('<span>Badge</span>');
+
+        $this->assertSame('<span>Badge</span>', trim(File::get(resource_path('views/snippets/marketing/badge.blade.php'))));
+    }
+
     public function test_content_tools_list_rows_and_upsert_granularly(): void
     {
         $fixture = $this->fixtureModelClass();
