@@ -131,12 +131,12 @@
 
   <div class="workspace">
     <nav class="sidebar">
-      <section><header><span>Layouts</span><flux:button id="btn-new-layout" size="xs" variant="filled">+</flux:button></header><ul id="list-layouts"></ul><div class="empty" id="empty-layouts" hidden>No layouts yet.</div></section>
       <section><header><span>Styles</span><flux:button id="btn-new-style" size="xs" variant="filled">+</flux:button></header><ul id="list-styles"></ul><div class="empty" id="empty-styles" hidden>No styles yet.</div></section>
+      <section><header><span>Layouts</span><flux:button id="btn-new-layout" size="xs" variant="filled">+</flux:button></header><ul id="list-layouts"></ul><div class="empty" id="empty-layouts" hidden>No layouts yet.</div></section>
       <section><header><span>Components</span><flux:button id="btn-new-component" size="xs" variant="filled">+</flux:button></header><ul id="list-components"></ul><div class="empty" id="empty-components" hidden>No components yet.</div></section>
+      <section><header><span>Pages</span><flux:button id="btn-new-page" size="xs" variant="filled">+</flux:button></header><ul id="list-pages"></ul><div class="empty" id="empty-pages" hidden>No pages yet.</div></section>
       <section><header><span>Forms</span><flux:button id="btn-new-form" size="xs" variant="filled">+</flux:button></header><ul id="list-forms"></ul><div class="empty" id="empty-forms" hidden>No forms yet.</div></section>
       <section><header><span>Content</span><flux:button id="btn-new-content" size="xs" variant="filled">+</flux:button></header><ul id="list-content"></ul><div class="empty" id="empty-content" hidden>No content yet.</div></section>
-      <section><header><span>Pages</span><flux:button id="btn-new-page" size="xs" variant="filled">+</flux:button></header><ul id="list-pages"></ul><div class="empty" id="empty-pages" hidden>No pages yet.</div></section>
     </nav>
     <div class="sidebar-resize" id="sidebar-resize"></div>
 
@@ -238,7 +238,7 @@
     const selectedContentModel = () => contentModels.find(model => model.id === selectedContentId) ?? contentModels[0] ?? { id: 'services', name: 'Service', model: 'Service' };
     const refreshContentModel = () => {
       contentModels = contentModels.map(model => ({ ...model, meta: `${(contentData[model.id] ?? []).length} rows` }));
-      library = [...byKind('layout'), ...byKind('style'), ...byKind('component'), ...byKind('form'), ...contentModels, ...byKind('page')];
+      library = [...byKind('style'), ...byKind('layout'), ...byKind('component'), ...byKind('page'), ...byKind('form'), ...contentModels];
     };
 
     async function load() {
@@ -250,7 +250,7 @@
       contentData = content.data ?? { services: content.services ?? [] };
       selectedContentId = contentModels.find(model => model.id === selectedContentId)?.id ?? contentModels[0]?.id ?? 'services';
       contentRows = contentData[selectedContentId] ?? [];
-      library = [...data.layouts, ...data.styles, ...data.components, ...(data.forms ?? []), ...contentModels, ...data.pages];
+      library = [...data.styles, ...data.layouts, ...data.components, ...data.pages, ...(data.forms ?? []), ...contentModels];
       selectedKey ||= artifactKey(library[0]);
       renderLists();
       syncInputs();
@@ -338,24 +338,25 @@
     }
 
     function renderLists() {
-      renderList('layout', 'list-layouts', 'empty-layouts');
       renderList('style', 'list-styles', 'empty-styles');
+      renderList('layout', 'list-layouts', 'empty-layouts');
       renderList('component', 'list-components', 'empty-components');
+      renderList('page', 'list-pages', 'empty-pages');
       renderList('form', 'list-forms', 'empty-forms');
       renderList('content', 'list-content', 'empty-content');
-      renderList('page', 'list-pages', 'empty-pages');
     }
 
     function renderList(kind, listId, emptyId) {
       const list = document.getElementById(listId);
       const items = byKind(kind);
+      const metaFormatter = navigationMetaFormatter(kind, items);
       list.innerHTML = '';
       items.forEach(item => {
         const li = document.createElement('li');
         li.className = artifactKey(item) === selectedKey ? 'active' : '';
         li.innerHTML = `<span class="label"></span><span class="meta"></span>`;
         li.querySelector('.label').textContent = item.name || item.id;
-        li.querySelector('.meta').textContent = ['form', 'page'].includes(kind) ? item.slug : kind === 'style' ? item.source_path || item.path : kind === 'content' ? item.meta : item.source_path || item.path || item.id;
+        li.querySelector('.meta').textContent = metaFormatter(item);
         if (kind === 'style') {
           li.draggable = true;
           li.dataset.key = artifactKey(item);
@@ -383,6 +384,46 @@
         list.append(li);
       });
       document.getElementById(emptyId).hidden = items.length > 0;
+    }
+
+    function navigationMetaFormatter(kind, items) {
+      if (kind === 'content') return item => item.meta;
+      if (['form', 'page'].includes(kind)) return item => item.slug;
+
+      const paths = items.map(item => item.source_path || item.path || item.id).filter(Boolean);
+      const prefix = commonPrefix(paths);
+      const suffix = commonSuffix(paths.map(path => path.slice(prefix.length)));
+
+      return item => {
+        const value = item.source_path || item.path || item.id;
+        if (!value) return '';
+        const abbreviated = value.slice(prefix.length, suffix ? -suffix.length : undefined);
+
+        return abbreviated || value;
+      };
+    }
+
+    function commonPrefix(values) {
+      if (!values.length) return '';
+      let prefix = values[0];
+      values.slice(1).forEach(value => {
+        while (prefix && !value.startsWith(prefix)) prefix = prefix.slice(0, -1);
+      });
+
+      const slash = prefix.lastIndexOf('/');
+      return slash >= 0 ? prefix.slice(0, slash + 1) : '';
+    }
+
+    function commonSuffix(values) {
+      if (!values.length) return '';
+      let suffix = values[0];
+      values.slice(1).forEach(value => {
+        while (suffix && !value.endsWith(suffix)) suffix = suffix.slice(1);
+      });
+
+      if (!suffix.includes('.')) return '';
+      const dot = suffix.indexOf('.');
+      return suffix.slice(dot);
     }
 
     function renderContentIndex() {
@@ -483,7 +524,7 @@
       if (from < 0 || to < 0) return;
       const [moved] = styles.splice(from, 1);
       styles.splice(to, 0, moved);
-      library = [...byKind('layout'), ...styles, ...byKind('component'), ...byKind('form'), ...byKind('content'), ...byKind('page')];
+      library = [...styles, ...byKind('layout'), ...byKind('component'), ...byKind('page'), ...byKind('form'), ...byKind('content')];
       renderLists();
       save(true);
     }
@@ -631,7 +672,7 @@
         selectedContentId = created?.id ?? selectedContentId;
         contentRows = contentData[selectedContentId] ?? [];
         selectedKey = `content:${selectedContentId}`;
-        library = [...byKind('layout'), ...byKind('style'), ...byKind('component'), ...byKind('form'), ...contentModels, ...byKind('page')];
+        library = [...byKind('style'), ...byKind('layout'), ...byKind('component'), ...byKind('page'), ...byKind('form'), ...contentModels];
         renderLists(); syncInputs();
       }).catch(error => alert(error.message));
     }
