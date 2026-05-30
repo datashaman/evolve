@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Services\EvolveLibrary;
-use Illuminate\Support\Facades\Blade;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\View;
 
 class EvolvePreviewController extends Controller

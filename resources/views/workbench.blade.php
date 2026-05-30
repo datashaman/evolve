@@ -235,10 +235,18 @@
     const artifactKey = c => c ? `${c.kind}:${c.id}` : '';
     const selected = () => library.find(c => artifactKey(c) === selectedKey) ?? null;
     const byKind = kind => library.filter(c => c.kind === kind);
+    const libraryArtifacts = data => [...(data.styles ?? []), ...(data.layouts ?? []), ...(data.pages ?? []), ...(data.components ?? []), ...(data.forms ?? [])];
+    const artifactRouteId = artifact => String(artifact.previous_id || artifact.id).split('/').map(encodeURIComponent).join('/');
     const selectedContentModel = () => contentModels.find(model => model.id === selectedContentId) ?? contentModels[0] ?? { id: 'services', name: 'Service', model: 'Service' };
     const refreshContentModel = () => {
       contentModels = contentModels.map(model => ({ ...model, meta: `${(contentData[model.id] ?? []).length} rows` }));
       library = [...byKind('style'), ...byKind('layout'), ...byKind('page'), ...byKind('component'), ...byKind('form'), ...contentModels];
+    };
+    const applyLibraryData = data => {
+      library = [...libraryArtifacts(data), ...contentModels];
+      selectedKey = library.find(item => artifactKey(item) === selectedKey) ? selectedKey : artifactKey(library[0]);
+      renderLists();
+      syncInputs();
     };
 
     async function load() {
@@ -250,7 +258,7 @@
       contentData = content.data ?? { services: content.services ?? [] };
       selectedContentId = contentModels.find(model => model.id === selectedContentId)?.id ?? contentModels[0]?.id ?? 'services';
       contentRows = contentData[selectedContentId] ?? [];
-      library = [...data.styles, ...data.layouts, ...data.pages, ...data.components, ...(data.forms ?? []), ...contentModels];
+      library = [...libraryArtifacts(data), ...contentModels];
       selectedKey ||= artifactKey(library[0]);
       renderLists();
       syncInputs();
@@ -258,18 +266,23 @@
     }
 
     function save(refresh = false) {
-      const payload = {
-        styles: byKind('style'),
-        components: byKind('component'),
-        forms: byKind('form'),
-        layouts: byKind('layout'),
-        pages: byKind('page'),
-      };
-      return fetch(API, {
+      const artifact = selected();
+      if (!artifact || artifact.kind === 'content') return Promise.resolve();
+
+      const desiredKey = artifactKey(artifact);
+      return fetch(`${API}/${artifact.kind}/${artifactRouteId(artifact)}`, {
         method: 'PUT',
         headers: { 'content-type': 'application/json', 'x-csrf-token': csrf },
-        body: JSON.stringify(payload),
-      }).then(() => { if (refresh) renderFrame(); });
+        body: JSON.stringify(artifact),
+      }).then(r => {
+        if (!r.ok) throw new Error('Library save failed');
+        return r.json();
+      }).then(data => {
+        delete artifact.previous_id;
+        selectedKey = desiredKey;
+        applyLibraryData(data);
+        if (refresh) renderFrame();
+      });
     }
 
     const contentRowKey = row => String(row.id ?? '');
@@ -528,7 +541,17 @@
       styles.splice(to, 0, moved);
       library = [...styles, ...byKind('layout'), ...byKind('page'), ...byKind('component'), ...byKind('form'), ...byKind('content')];
       renderLists();
-      save(true);
+      fetch(`${API}/styles/order`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': csrf },
+        body: JSON.stringify({ ids: styles.map(style => style.id) }),
+      }).then(r => {
+        if (!r.ok) throw new Error('Style order save failed');
+        return r.json();
+      }).then(data => {
+        applyLibraryData(data);
+        renderFrame();
+      });
     }
 
     function syncInputs() {
@@ -578,6 +601,7 @@
         return;
       }
 
+      const previousId = c.id;
       const locationChanged = source === fields.slug;
       c.name = fields.name.value;
       c.slug = ['form', 'page'].includes(c.kind) ? fields.slug.value || '/' : '';
@@ -599,6 +623,7 @@
       c.blade = c.kind === 'style' ? '' : fields.blade.value;
       c.style = fields.style.value;
       c.usage = c.kind === 'style' ? '' : ['form', 'page'].includes(c.kind) ? c.usage : fields.usage.value;
+      if (previousId !== c.id) c.previous_id = c.previous_id || previousId;
       updateHighlights();
       renderLists();
       scheduleSave(true);

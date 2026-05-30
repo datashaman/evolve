@@ -35,6 +35,58 @@ class EvolveLibrary
         $this->writeFile($this->manifestPath(), json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
     }
 
+    public function writeArtifact(string $kind, string $id, array $artifact): void
+    {
+        $group = $this->groupKey($kind);
+        $payload = $this->all();
+        $replaced = false;
+
+        $payload[$group] = collect($payload[$group] ?? [])
+            ->map(function (array $existing) use ($id, $artifact, &$replaced) {
+                if (($existing['id'] ?? '') !== $id) {
+                    return $existing;
+                }
+
+                $replaced = true;
+
+                return $artifact;
+            })
+            ->values()
+            ->all();
+
+        if (! $replaced) {
+            $payload[$group][] = $artifact;
+        }
+
+        $this->write($payload);
+    }
+
+    public function deleteArtifact(string $kind, string $id): void
+    {
+        $group = $this->groupKey($kind);
+        $payload = $this->all();
+
+        $payload[$group] = collect($payload[$group] ?? [])
+            ->reject(fn (array $artifact) => ($artifact['id'] ?? '') === $id)
+            ->values()
+            ->all();
+
+        $this->write($payload);
+    }
+
+    public function orderStyles(array $ids): void
+    {
+        $payload = $this->all();
+        $positions = array_flip(array_values($ids));
+
+        $payload['styles'] = collect($payload['styles'])
+            ->sortBy(fn (array $style, int $index) => $positions[$style['id'] ?? ''] ?? count($positions) + $index)
+            ->values()
+            ->all();
+
+        $this->write($payload);
+    }
+
     public function pageRoutes(): array
     {
         return collect($this->manifest()['pages'] ?? [])
@@ -64,6 +116,18 @@ class EvolveLibrary
         }
 
         return '';
+    }
+
+    protected function groupKey(string $kind): string
+    {
+        return match ($kind) {
+            'style' => 'styles',
+            'component' => 'components',
+            'form' => 'forms',
+            'layout' => 'layouts',
+            'page' => 'pages',
+            default => throw new \InvalidArgumentException("Unsupported artifact kind [{$kind}]."),
+        };
     }
 
     public function stylesheet(): string

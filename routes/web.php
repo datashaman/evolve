@@ -12,6 +12,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('api/library', [EvolveLibraryController::class, 'index']);
     Route::put('api/library', [EvolveLibraryController::class, 'update']);
+    Route::put('api/library/styles/order', [EvolveLibraryController::class, 'orderStyles']);
+    Route::put('api/library/{kind}/{id}', [EvolveLibraryController::class, 'updateArtifact'])
+        ->where('id', '[A-Za-z0-9_\\-\\/]+');
+    Route::delete('api/library/{kind}/{id}', [EvolveLibraryController::class, 'deleteArtifact'])
+        ->where('id', '[A-Za-z0-9_\\-\\/]+');
     Route::get('api/content', [EvolveContentController::class, 'index']);
     Route::post('api/content/models', [EvolveContentController::class, 'storeModel']);
     Route::put('api/content', [EvolveContentController::class, 'update']);

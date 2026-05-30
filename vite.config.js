@@ -13,7 +13,16 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/passkeys.js',
             ],
-            refresh: true,
+            refresh: [
+                'app/**/*.php',
+                'routes/**/*.php',
+                'resources/views/dashboard.blade.php',
+                'resources/views/workbench.blade.php',
+                'resources/views/evolve/**/*.blade.php',
+                'resources/views/flux/**/*.blade.php',
+                'resources/views/partials/**/*.blade.php',
+                'resources/views/welcome.blade.php',
+            ],
             fonts: [
                 bunny('Instrument Sans', {
                     weights: [400, 500, 600],

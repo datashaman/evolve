@@ -6,6 +6,7 @@ use App\Models\Service;
 use App\Models\User;
 use App\Services\EvolveContentModelScaffolder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 class DynamicContentTest extends TestCase
@@ -140,5 +141,29 @@ class DynamicContentTest extends TestCase
         $this->postJson('/api/content/models', [
             'name' => 'Case Study',
         ])->assertOk();
+    }
+
+    public function test_workbench_content_api_does_not_touch_library_manifest(): void
+    {
+        $this->actingAs(User::factory()->create([
+            'email_verified_at' => now(),
+        ]));
+
+        $manifestPath = resource_path('evolve/manifest.json');
+        $before = File::get($manifestPath);
+
+        $this->putJson('/api/content', [
+            'services' => [
+                [
+                    'icon' => '01',
+                    'title' => 'Database only',
+                    'summary' => 'This should not rewrite artifact metadata.',
+                    'position' => 1,
+                    'is_published' => true,
+                ],
+            ],
+        ])->assertOk();
+
+        $this->assertSame($before, File::get($manifestPath));
     }
 }

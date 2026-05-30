@@ -9,6 +9,11 @@
             "id": "site",
             "name": "Site",
             "path": "resources/css/site.css"
+        },
+        {
+            "id": "test",
+            "name": "Test",
+            "path": "resources/css/test.css"
         }
     ],
     "components": [
