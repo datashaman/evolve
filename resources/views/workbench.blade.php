@@ -444,8 +444,7 @@
     function navigationMetaFormatter(kind, items) {
       if (kind === 'content') return item => item.meta;
       if (kind === 'page') return item => item.route || item.path;
-      if (kind === 'form') return item => item.route || item.path;
-      if (kind === 'component') return item => `<livewire:${item.component} />`;
+      if (['component', 'form'].includes(kind)) return item => `<livewire:${item.component} />`;
       if (kind === 'layout') return item => item.component;
 
       const paths = items.map(item => item.source_path || item.path || item.id).filter(Boolean);
