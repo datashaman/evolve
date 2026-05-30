@@ -69,10 +69,32 @@ class EvolveLibraryViewsTest extends TestCase
 
         $this->assertTrue($dashboard['is_starter_kit']);
         $this->assertSame("@include('dashboard')", $dashboard['usage']);
+        $this->assertSame('/dashboard', $dashboard['route']);
+        $this->assertSame('dashboard', $dashboard['route_name']);
+        $this->assertSame(['auth', 'verified'], $dashboard['middleware']);
         $this->assertSame('<h1>Dashboard</h1>', $dashboard['blade']);
 
         $this->assertTrue($head['is_starter_kit']);
+        $this->assertSame('', $head['route']);
         $this->assertSame("@include('partials.head')", $head['usage']);
+    }
+
+    public function test_route_backed_views_expose_public_routes_for_preview(): void
+    {
+        File::put(resource_path('views/dashboard.blade.php'), '<h1>Dashboard</h1>');
+        File::put(resource_path('views/welcome.blade.php'), '<h1>Welcome</h1>');
+
+        $views = collect((new EvolveLibrary)->all()['views']);
+
+        $dashboard = $views->firstWhere('id', 'dashboard');
+        $welcome = $views->firstWhere('id', 'welcome');
+
+        $this->assertSame('/dashboard', $dashboard['route']);
+        $this->assertSame('dashboard', $dashboard['route_name']);
+        $this->assertSame(['auth', 'verified'], $dashboard['middleware']);
+        $this->assertSame('/', $welcome['route']);
+        $this->assertSame('home', $welcome['route_name']);
+        $this->assertSame([], $welcome['middleware']);
     }
 
     public function test_view_writes_snapshot_starter_kit_originals_and_can_be_restored(): void

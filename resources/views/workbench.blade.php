@@ -895,7 +895,7 @@
     function previewUrl(c) {
       if (c.kind === 'content') return '/';
       if (c.kind === 'style') return '/';
-      if (['form', 'page'].includes(c.kind) && c.route) return previewRoute(c.route);
+      if (['form', 'page', 'view'].includes(c.kind) && c.route) return previewRoute(c.route);
       return `/workbench/preview/${c.kind}/${encodeURIComponent(c.id)}`;
     }
 

@@ -107,7 +107,7 @@ The `view` kind covers plain Blade files under `resources/views/` that aren't al
 Behavior:
 
 - **Discovery.** `EvolveLibrary::readViews()` scans `resources/views/` and excludes the typed kind directories (`components`, `forms`, `layouts`, `pages`, `snippets`), `evolve/`, and `workbench.blade.php` itself. Any other `.blade.php` files surface as view artifacts.
-- **Shape.** Views carry `blade`, `path`, `usage` (defaults to `@include('id.with.dots')`), and metadata only. No PHP block, no styles, no route, no Livewire namespace.
+- **Shape.** Views carry `blade`, `path`, `usage` (defaults to `@include('id.with.dots')`), and metadata. No PHP block, no styles, no Livewire namespace. Route-backed starter-kit views such as `welcome` and `dashboard` also carry their real route metadata so preview identity runs through the same middleware as the public page.
 - **Editing.** New views can be created at any path under `resources/views/`. The workbench, the controller, and the MCP `UpsertArtifact` tool all accept `kind: 'view'`.
 - **Starter-kit + restore.** Views matching `dashboard`, `welcome`, `partials/*`, or `flux/*` are flagged starter-kit and follow the snapshot-and-restore flow (see below). `workbench` and `evolve/*` are workbench-internal and hard-locked.
 

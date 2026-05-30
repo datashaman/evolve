@@ -375,6 +375,7 @@ class EvolveLibrary
                     'is_hidden' => $viewRole === 'kit_internal',
                     'metadata' => is_array($entry['metadata'] ?? null) ? $entry['metadata'] : [],
                     'usage' => $entry['usage'] ?? "@include('".str_replace('/', '.', $id)."')",
+                    ...$this->starterKitRouteMetadata('view', $id),
                     'path' => $relative,
                     'source_path' => $relative,
                     'component' => $this->componentReference('view', $id),
@@ -442,6 +443,14 @@ class EvolveLibrary
 
     protected function starterKitRouteMetadata(string $kind, string $id): array
     {
+        if ($kind === 'view') {
+            return match ($id) {
+                'dashboard' => ['route' => '/dashboard', 'route_name' => 'dashboard', 'middleware' => ['auth', 'verified']],
+                'welcome' => ['route' => '/', 'route_name' => 'home', 'middleware' => []],
+                default => ['route' => '', 'route_name' => '', 'middleware' => []],
+            };
+        }
+
         if ($kind !== 'page') {
             return [];
         }
