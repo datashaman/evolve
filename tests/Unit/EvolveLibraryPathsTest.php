@@ -242,6 +242,22 @@ class EvolveLibraryPathsTest extends TestCase
         $this->assertSame('starter logo', File::get(resource_path('evolve/originals/components/app-logo.blade.php')));
     }
 
+    public function test_plain_blade_artifacts_do_not_gain_empty_php_blocks(): void
+    {
+        File::ensureDirectoryExists(resource_path('views/components'));
+        File::put(resource_path('views/components/app-logo.blade.php'), '<div>Logo</div>');
+
+        $library = new EvolveLibrary;
+        $artifact = collect($library->all()['components'])->firstWhere('id', 'app-logo');
+        $artifact['blade'] = '<div>Edited logo</div>';
+
+        $library->write([
+            'components' => [$artifact],
+        ]);
+
+        $this->assertSame("<div>Edited logo</div>\n", File::get(resource_path('views/components/app-logo.blade.php')));
+    }
+
     public function test_app_css_is_still_workbench_internal_and_locked(): void
     {
         File::ensureDirectoryExists(resource_path('css'));

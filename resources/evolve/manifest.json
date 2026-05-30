@@ -1,8 +1,390 @@
 {
     "styles": [],
-    "components": [],
+    "components": [
+        {
+            "id": "app-logo-icon",
+            "name": "App Logo Icon",
+            "path": "resources/views/components/app-logo-icon.blade.php",
+            "usage": ""
+        },
+        {
+            "id": "app-logo",
+            "name": "App Logo",
+            "path": "resources/views/components/app-logo.blade.php",
+            "usage": ""
+        },
+        {
+            "id": "auth-header",
+            "name": "Auth Header",
+            "path": "resources/views/components/auth-header.blade.php",
+            "usage": ""
+        },
+        {
+            "id": "auth-session-status",
+            "name": "Auth Session Status",
+            "path": "resources/views/components/auth-session-status.blade.php",
+            "usage": ""
+        },
+        {
+            "id": "desktop-user-menu",
+            "name": "Desktop User Menu",
+            "path": "resources/views/components/desktop-user-menu.blade.php",
+            "usage": ""
+        },
+        {
+            "id": "passkey-registration",
+            "name": "Passkey Registration",
+            "path": "resources/views/components/passkey-registration.blade.php",
+            "usage": ""
+        },
+        {
+            "id": "passkey-verify",
+            "name": "Passkey Verify",
+            "path": "resources/views/components/passkey-verify.blade.php",
+            "usage": ""
+        },
+        {
+            "id": "placeholder-pattern",
+            "name": "Placeholder Pattern",
+            "path": "resources/views/components/placeholder-pattern.blade.php",
+            "usage": ""
+        }
+    ],
     "forms": [],
-    "layouts": [],
-    "pages": [],
-    "snippets": []
+    "layouts": [
+        {
+            "id": "app",
+            "name": "App",
+            "path": "resources/views/layouts/app.blade.php",
+            "usage": ""
+        },
+        {
+            "id": "app/header",
+            "name": "Header",
+            "path": "resources/views/layouts/app/header.blade.php",
+            "usage": ""
+        },
+        {
+            "id": "app/sidebar",
+            "name": "Sidebar",
+            "path": "resources/views/layouts/app/sidebar.blade.php",
+            "usage": ""
+        },
+        {
+            "id": "auth",
+            "name": "Auth",
+            "path": "resources/views/layouts/auth.blade.php",
+            "usage": ""
+        },
+        {
+            "id": "auth/card",
+            "name": "Card",
+            "path": "resources/views/layouts/auth/card.blade.php",
+            "usage": ""
+        },
+        {
+            "id": "auth/simple",
+            "name": "Simple",
+            "path": "resources/views/layouts/auth/simple.blade.php",
+            "usage": ""
+        },
+        {
+            "id": "auth/split",
+            "name": "Split",
+            "path": "resources/views/layouts/auth/split.blade.php",
+            "usage": ""
+        }
+    ],
+    "pages": [
+        {
+            "id": "auth/confirm-password",
+            "name": "Confirm Password",
+            "path": "resources/views/pages/auth/confirm-password.blade.php",
+            "route": "/confirm-password",
+            "route_name": "password.confirm",
+            "middleware": [
+                "auth"
+            ],
+            "parent_id": "",
+            "order": 1,
+            "usage": "",
+            "depth": 0
+        },
+        {
+            "id": "auth/forgot-password",
+            "name": "Forgot Password",
+            "path": "resources/views/pages/auth/forgot-password.blade.php",
+            "route": "/forgot-password",
+            "route_name": "password.request",
+            "middleware": [
+                "guest"
+            ],
+            "parent_id": "",
+            "order": 2,
+            "usage": "",
+            "depth": 0
+        },
+        {
+            "id": "auth/login",
+            "name": "Login",
+            "path": "resources/views/pages/auth/login.blade.php",
+            "route": "/login",
+            "route_name": "login",
+            "middleware": [
+                "guest"
+            ],
+            "parent_id": "",
+            "order": 3,
+            "usage": "",
+            "depth": 0
+        },
+        {
+            "id": "auth/register",
+            "name": "Register",
+            "path": "resources/views/pages/auth/register.blade.php",
+            "route": "/register",
+            "route_name": "register",
+            "middleware": [
+                "guest"
+            ],
+            "parent_id": "",
+            "order": 4,
+            "usage": "",
+            "depth": 0
+        },
+        {
+            "id": "auth/reset-password",
+            "name": "Reset Password",
+            "path": "resources/views/pages/auth/reset-password.blade.php",
+            "route": "/reset-password/{token}",
+            "route_name": "password.reset",
+            "middleware": [
+                "guest"
+            ],
+            "parent_id": "",
+            "order": 5,
+            "usage": "",
+            "depth": 0
+        },
+        {
+            "id": "auth/two-factor-challenge",
+            "name": "Two Factor Challenge",
+            "path": "resources/views/pages/auth/two-factor-challenge.blade.php",
+            "route": "/two-factor-challenge",
+            "route_name": "two-factor.login",
+            "middleware": [
+                "guest"
+            ],
+            "parent_id": "",
+            "order": 6,
+            "usage": "",
+            "depth": 0
+        },
+        {
+            "id": "auth/verify-email",
+            "name": "Verify Email",
+            "path": "resources/views/pages/auth/verify-email.blade.php",
+            "route": "/email/verify",
+            "route_name": "verification.notice",
+            "middleware": [
+                "auth"
+            ],
+            "parent_id": "",
+            "order": 7,
+            "usage": "",
+            "depth": 0
+        },
+        {
+            "id": "settings/layout",
+            "name": "Layout",
+            "path": "resources/views/pages/settings/layout.blade.php",
+            "route": "",
+            "route_name": "",
+            "middleware": [],
+            "parent_id": "",
+            "order": 8,
+            "usage": "",
+            "depth": 0
+        },
+        {
+            "id": "settings/two-factor/recovery-codes",
+            "name": "Recovery Codes",
+            "path": "resources/views/pages/settings/two-factor/\u26a1recovery-codes.blade.php",
+            "route": "",
+            "route_name": "",
+            "middleware": [],
+            "parent_id": "",
+            "order": 9,
+            "usage": "",
+            "depth": 0
+        },
+        {
+            "id": "settings/appearance",
+            "name": "Appearance",
+            "path": "resources/views/pages/settings/\u26a1appearance.blade.php",
+            "route": "/settings/appearance",
+            "route_name": "appearance.edit",
+            "middleware": [
+                "auth",
+                "verified"
+            ],
+            "parent_id": "",
+            "order": 10,
+            "usage": "",
+            "depth": 0
+        },
+        {
+            "id": "settings/delete-user-form",
+            "name": "Delete User Form",
+            "path": "resources/views/pages/settings/\u26a1delete-user-form.blade.php",
+            "route": "",
+            "route_name": "",
+            "middleware": [],
+            "parent_id": "",
+            "order": 11,
+            "usage": "",
+            "depth": 0
+        },
+        {
+            "id": "settings/delete-user-modal",
+            "name": "Delete User Modal",
+            "path": "resources/views/pages/settings/\u26a1delete-user-modal.blade.php",
+            "route": "",
+            "route_name": "",
+            "middleware": [],
+            "parent_id": "",
+            "order": 12,
+            "usage": "",
+            "depth": 0
+        },
+        {
+            "id": "settings/profile",
+            "name": "Profile",
+            "path": "resources/views/pages/settings/\u26a1profile.blade.php",
+            "route": "/settings/profile",
+            "route_name": "profile.edit",
+            "middleware": [
+                "auth"
+            ],
+            "parent_id": "",
+            "order": 13,
+            "usage": "",
+            "depth": 0
+        },
+        {
+            "id": "settings/security",
+            "name": "Security",
+            "path": "resources/views/pages/settings/\u26a1security.blade.php",
+            "route": "/settings/security",
+            "route_name": "security.edit",
+            "middleware": [
+                "auth",
+                "verified",
+                "password.confirm"
+            ],
+            "parent_id": "",
+            "order": 14,
+            "usage": "",
+            "depth": 0
+        },
+        {
+            "id": "settings/two-factor-setup-modal",
+            "name": "Two Factor Setup Modal",
+            "path": "resources/views/pages/settings/\u26a1two-factor-setup-modal.blade.php",
+            "route": "",
+            "route_name": "",
+            "middleware": [],
+            "parent_id": "",
+            "order": 15,
+            "usage": "",
+            "depth": 0
+        }
+    ],
+    "snippets": [],
+    "views": [
+        {
+            "id": "dashboard",
+            "name": "Dashboard",
+            "path": "resources/views/dashboard.blade.php",
+            "usage": "@include('dashboard')",
+            "route": "/dashboard",
+            "route_name": "dashboard",
+            "middleware": [
+                "auth",
+                "verified"
+            ]
+        },
+        {
+            "id": "flux/icon/book-open-text",
+            "name": "Book Open Text",
+            "path": "resources/views/flux/icon/book-open-text.blade.php",
+            "usage": "@include('flux.icon.book-open-text')",
+            "route": "",
+            "route_name": "",
+            "middleware": []
+        },
+        {
+            "id": "flux/icon/chevrons-up-down",
+            "name": "Chevrons Up Down",
+            "path": "resources/views/flux/icon/chevrons-up-down.blade.php",
+            "usage": "@include('flux.icon.chevrons-up-down')",
+            "route": "",
+            "route_name": "",
+            "middleware": []
+        },
+        {
+            "id": "flux/icon/folder-git-2",
+            "name": "Folder Git 2",
+            "path": "resources/views/flux/icon/folder-git-2.blade.php",
+            "usage": "@include('flux.icon.folder-git-2')",
+            "route": "",
+            "route_name": "",
+            "middleware": []
+        },
+        {
+            "id": "flux/icon/layout-grid",
+            "name": "Layout Grid",
+            "path": "resources/views/flux/icon/layout-grid.blade.php",
+            "usage": "@include('flux.icon.layout-grid')",
+            "route": "",
+            "route_name": "",
+            "middleware": []
+        },
+        {
+            "id": "flux/navlist/group",
+            "name": "Group",
+            "path": "resources/views/flux/navlist/group.blade.php",
+            "usage": "@include('flux.navlist.group')",
+            "route": "",
+            "route_name": "",
+            "middleware": []
+        },
+        {
+            "id": "partials/head",
+            "name": "Head",
+            "path": "resources/views/partials/head.blade.php",
+            "usage": "@include('partials.head')",
+            "route": "",
+            "route_name": "",
+            "middleware": []
+        },
+        {
+            "id": "partials/settings-heading",
+            "name": "Settings Heading",
+            "path": "resources/views/partials/settings-heading.blade.php",
+            "usage": "@include('partials.settings-heading')",
+            "route": "",
+            "route_name": "",
+            "middleware": []
+        },
+        {
+            "id": "welcome",
+            "name": "Welcome",
+            "path": "resources/views/welcome.blade.php",
+            "usage": "@include('welcome')",
+            "route": "/",
+            "route_name": "home",
+            "middleware": []
+        }
+    ]
 }

@@ -164,8 +164,7 @@ new #[Title('Security settings')] class extends Component {
 
         $this->twoFactorEnabled = false;
     }
-};
-?>
+}; ?>
 
 <section class="w-full">
     @include('partials.settings-heading')

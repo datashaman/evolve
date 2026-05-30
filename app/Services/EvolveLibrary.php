@@ -892,7 +892,10 @@ class EvolveLibrary
 
     protected function serializeSfc(string $php, string $blade, string $style, bool $globalStyle = false): string
     {
-        $source = "<?php\n\n".trim($php)."\n?>\n\n".trim($blade)."\n";
+        $php = trim($php);
+        $source = $php !== ''
+            ? "<?php\n\n{$php}\n?>\n\n".trim($blade)."\n"
+            : trim($blade)."\n";
         $style = trim($style);
 
         if ($style !== '') {

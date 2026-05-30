@@ -74,8 +74,7 @@ new #[Title('Profile settings')] class extends Component {
         return ! Auth::user() instanceof MustVerifyEmail
             || (Auth::user() instanceof MustVerifyEmail && Auth::user()->hasVerifiedEmail());
     }
-};
-?>
+}; ?>
 
 <section class="w-full">
     @include('partials.settings-heading')

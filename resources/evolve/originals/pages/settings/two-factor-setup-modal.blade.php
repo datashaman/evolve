@@ -150,8 +150,7 @@ new class extends Component {
             'buttonText' => __('Continue'),
         ];
     }
-};
-?>
+}; ?>
 
 <flux:modal
     name="two-factor-setup-modal"

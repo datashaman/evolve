@@ -2,8 +2,7 @@
 
 use Livewire\Component;
 
-new class extends Component {};
-?>
+new class extends Component {}; ?>
 
 <section class="mt-10 space-y-6">
     <div class="relative mb-5">
