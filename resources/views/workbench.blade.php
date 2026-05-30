@@ -167,7 +167,6 @@
       <label class="preview-as" for="preview-as">
         Preview as
         <select id="preview-as">
-          <option value="">Self</option>
           <option value="guest">Guest</option>
         </select>
       </label>
@@ -903,13 +902,13 @@
     const previewAsField = document.getElementById('preview-as');
 
     function previewAsValue() {
-      return previewAsField?.value || '';
+      return previewAsField?.value || 'guest';
     }
 
     function withPreviewParams(url, extras = {}) {
       const params = new URLSearchParams(extras);
       const previewAs = previewAsValue();
-      if (previewAs) params.set('preview_as', previewAs);
+      params.set('preview_as', previewAs);
       const query = params.toString();
       if (!query) return url;
       return `${url}${url.includes('?') ? '&' : '?'}${query}`;

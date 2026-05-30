@@ -33,6 +33,10 @@ class EvolvePreviewImpersonationTest extends TestCase
         Route::middleware(['web', 'guest'])->get('/test-preview-guest-only', function () {
             return response('guest-ok');
         });
+
+        Route::middleware(['web', 'auth'])->get('/test-preview-auth-only', function () {
+            return response('auth-ok');
+        });
     }
 
     public function test_request_without_preview_as_runs_as_session_user(): void
@@ -97,6 +101,44 @@ class EvolvePreviewImpersonationTest extends TestCase
             ->get('/test-preview-guest-only?preview_as=guest')
             ->assertOk()
             ->assertSee('guest-ok');
+    }
+
+    public function test_preview_as_guest_can_render_real_login_route(): void
+    {
+        config()->set('evolve.preview.allow_impersonation', true);
+
+        $workbenchUser = User::factory()->create();
+
+        $this->actingAs($workbenchUser)
+            ->get('/login?preview_as=guest')
+            ->assertOk();
+    }
+
+    public function test_preview_as_guest_survives_auth_redirects(): void
+    {
+        config()->set('evolve.preview.allow_impersonation', true);
+
+        $workbenchUser = User::factory()->create();
+
+        $this->actingAs($workbenchUser)
+            ->get('/test-preview-auth-only?preview_as=guest')
+            ->assertRedirect('/login?preview_as=guest');
+    }
+
+    public function test_preview_as_user_survives_redirects(): void
+    {
+        config()->set('evolve.preview.allow_impersonation', true);
+
+        $workbenchUser = User::factory()->create();
+        $target = User::factory()->create();
+
+        Route::middleware('web')->get('/test-preview-redirect', function () {
+            return redirect('/test-preview-html');
+        });
+
+        $this->actingAs($workbenchUser)
+            ->get('/test-preview-redirect?preview_as='.$target->id)
+            ->assertRedirect('/test-preview-html?preview_as='.$target->id);
     }
 
     public function test_preview_as_is_rejected_when_impersonation_is_disabled(): void

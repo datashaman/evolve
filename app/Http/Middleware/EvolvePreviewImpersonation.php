@@ -50,6 +50,7 @@ class EvolvePreviewImpersonation
 
         $response = $next($request);
 
+        $this->carryPreviewIdentityThroughRedirect($request, $response, (string) $target->getKey());
         $this->injectPreviewHook($response, (string) $target->getKey());
 
         return $response;
@@ -91,9 +92,36 @@ class EvolvePreviewImpersonation
             Auth::guard()->setUser($workbenchUser);
         }
 
+        $this->carryPreviewIdentityThroughRedirect($request, $response, 'guest');
         $this->injectPreviewHook($response, 'guest');
 
         return $response;
+    }
+
+    protected function carryPreviewIdentityThroughRedirect(Request $request, Response $response, string $targetId): void
+    {
+        if (! $response->isRedirection()) {
+            return;
+        }
+
+        $location = $response->headers->get('Location');
+        if (! is_string($location) || $location === '') {
+            return;
+        }
+
+        if (str_contains($location, 'preview_as=')) {
+            return;
+        }
+
+        $appUrl = $request->getSchemeAndHttpHost();
+        if (! str_starts_with($location, '/') && ! str_starts_with($location, $appUrl)) {
+            return;
+        }
+
+        $response->headers->set(
+            'Location',
+            $location.(str_contains($location, '?') ? '&' : '?').'preview_as='.rawurlencode($targetId),
+        );
     }
 
     protected function injectPreviewHook(Response $response, string $targetId): void

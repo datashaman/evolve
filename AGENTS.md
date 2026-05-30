@@ -92,7 +92,7 @@ Controls:
 
 - `config('evolve.preview.allow_impersonation')` — default `true`, override with `EVOLVE_PREVIEW_ALLOW_IMPERSONATION=false`.
 - `GET /api/preview/users` — returns the list shown in the toolbar picker; 403 when impersonation is disabled.
-- The picker reloads the iframe whenever the selection changes; the same `preview_as` param is carried through when the "Open" button opens the preview in a new tab. The built-in choices are Self, Guest, then the first 100 users.
+- The picker reloads the iframe whenever the selection changes; the same `preview_as` param is carried through when the "Open" button opens the preview in a new tab. The built-in choices are Guest, then the first 100 users; there is no Self option because the workbench editor session and preview identity are intentionally separate.
 - Per-target authorization is gated by the `evolve.preview.impersonate` Laravel Gate. The default registration (in `AppServiceProvider::configurePreviewImpersonationGate`) allows any authenticated workbench user to impersonate any user. Override the gate definition to introduce role-aware rules (e.g. block non-admins from impersonating admin users).
 - Every successful impersonation logs `evolve.preview.impersonation` at info level with `workbench_user_id`, `target_user_id`, `ip`, `path`, and whether the swap came from the `preview_as` query or the `X-Preview-As` header. Guest preview logs `target_user_id: null` and `target: guest`.
 
