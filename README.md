@@ -67,6 +67,28 @@ Forms are Livewire single-file components under `resources/views/forms`. Creatin
 
 Pages and forms use their slug as the canonical location: `/contact` maps to `resources/views/forms/contact.blade.php`, and `/about` maps to `resources/views/pages/about.blade.php`. Components, layouts, and styles use path metadata instead because they are not routed artifacts.
 
+## Content Helpers
+
+Evolve exposes small PHP helpers for Blade templates and Livewire SFC PHP:
+
+```blade
+@foreach (evolve_navigation() as $page)
+    <a href="{{ $page['route'] }}">{{ $page['name'] }}</a>
+@endforeach
+
+@foreach (evolve_child_pages() as $page)
+    <a href="{{ $page['route'] }}">{{ $page['name'] }}</a>
+@endforeach
+
+{{ evolve_snippet('labels/badge', ['label' => 'New']) }}
+```
+
+- `evolve_navigation($parentId = null, $maxDepth = null)` returns a nested page tree.
+- `evolve_child_pages($pageId = null)` returns direct children for a page, defaulting to the current route.
+- `evolve_sibling_pages($pageId = null)` returns pages with the same parent, defaulting to the current route.
+- `evolve_metadata($key = null, $default = null, $pageId = null)` returns current page metadata and core page fields.
+- `evolve_snippet($id, $data = [])` renders a Blade snippet from `resources/views/snippets`.
+
 ## Verification
 
 Run the test suite:

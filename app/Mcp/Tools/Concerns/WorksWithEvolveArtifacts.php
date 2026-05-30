@@ -56,6 +56,7 @@ trait WorksWithEvolveArtifacts
             'route' => in_array($kind, ['form', 'page'], true) ? (string) ($payload['route'] ?? '') : '',
             'parent_id' => $kind === 'page' ? $this->idFromPath((string) ($payload['parent_id'] ?? '')) : '',
             'order' => $kind === 'page' ? (int) ($payload['order'] ?? 0) : 0,
+            'metadata' => is_array($payload['metadata'] ?? null) ? $payload['metadata'] : [],
             'component' => $this->componentReference($kind, $id),
             'usage' => (string) ($payload['usage'] ?? $this->defaultUsage($kind, $id)),
             'php' => (string) ($payload['php'] ?? ''),

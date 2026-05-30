@@ -264,6 +264,7 @@ class EvolveLibrary
                         'order' => (int) ($entry['order'] ?? 0),
                         'depth' => (int) ($entry['depth'] ?? 0),
                     ] : []),
+                    'metadata' => is_array($entry['metadata'] ?? null) ? $entry['metadata'] : [],
                     'usage' => $entry['usage'] ?? '',
                     'path' => $entry['path'] ?? $this->relativePath($kind, $id),
                     'source_path' => $this->relativePath($kind, $id),
@@ -334,6 +335,10 @@ class EvolveLibrary
 
             if (in_array($kind, ['component', 'form', 'layout', 'snippet'], true)) {
                 $entry['usage'] = (string) ($artifact['usage'] ?? '');
+            }
+
+            if (is_array($artifact['metadata'] ?? null) && $artifact['metadata'] !== []) {
+                $entry['metadata'] = $artifact['metadata'];
             }
 
             $entries[] = $entry;
