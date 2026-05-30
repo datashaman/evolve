@@ -1,6 +1,6 @@
 # Evolve
 
-Evolve is a Laravel and Livewire-native workbench for building sites from the same artifacts the application runs in production: layouts, styles, components, pages, and content models.
+Evolve is a Laravel and Livewire-native workbench for building sites from the same artifacts the application runs in production: layouts, styles, components, forms, pages, and content models.
 
 The goal is not to maintain a separate CMS renderer. The workbench edits framework files and previews the real Laravel/Livewire runtime.
 
@@ -8,6 +8,7 @@ The goal is not to maintain a separate CMS renderer. The workbench edits framewo
 
 - Authenticated workbench at `/workbench`
 - Native Livewire single-file components for pages and components
+- Livewire SFC form components managed as first-class form artifacts
 - Blade layout files in the Laravel view tree
 - Orderable global style files, including `tokens.css`
 - Dynamic content models backed by normal Laravel models, migrations, and database tables
@@ -55,6 +56,10 @@ Content models are regular Laravel models that can be managed from the workbench
 - a matching database table
 
 The workbench then shows that model as a content section where its records can be edited.
+
+## Forms
+
+Forms are Livewire single-file components under `resources/views/forms`. Creating a form in the workbench generates a component with form markup, validation-ready PHP, and preview usage via the `forms::` Livewire namespace.
 
 ## Verification
 

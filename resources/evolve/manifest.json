@@ -31,6 +31,14 @@
             "usage": "<livewire:cta-panel title=\"Book a focused site sprint.\" action=\"Start the brief\" href=\"#contact\">\n  <livewire:slot name=\"body\">Use the seed as a realistic baseline for a studio, consultant, or productized service.</livewire:slot>\n</livewire:cta-panel>"
         }
     ],
+    "forms": [
+        {
+            "id": "newsletter",
+            "name": "Newsletter",
+            "slug": "/newsletter",
+            "usage": "<livewire:forms::newsletter />"
+        }
+    ],
     "layouts": [
         {
             "id": "base",

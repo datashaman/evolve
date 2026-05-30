@@ -6,6 +6,7 @@ return [
     ],
 
     'component_namespaces' => [
+        'forms' => resource_path('views/forms'),
         'layouts' => resource_path('views/layouts'),
         'pages' => resource_path('views/pages'),
     ],

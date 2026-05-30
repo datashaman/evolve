@@ -24,4 +24,15 @@ class DashboardTest extends TestCase
         $response = $this->get(route('dashboard'));
         $response->assertOk();
     }
+
+    public function test_verified_users_can_visit_the_workbench(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+        $this->actingAs($user);
+
+        $response = $this->get('/workbench');
+        $response->assertOk();
+    }
 }

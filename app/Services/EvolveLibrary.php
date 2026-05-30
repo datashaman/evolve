@@ -14,6 +14,7 @@ class EvolveLibrary
         return [
             'styles' => $this->readStyles($manifest['styles'] ?? []),
             'components' => $this->readGroup('component', $manifest['components'] ?? []),
+            'forms' => $this->readGroup('form', $manifest['forms'] ?? []),
             'layouts' => $this->readGroup('layout', $manifest['layouts'] ?? []),
             'pages' => $this->readGroup('page', $manifest['pages'] ?? []),
         ];
@@ -26,6 +27,7 @@ class EvolveLibrary
         $manifest = [
             'styles' => $this->writeStyles($payload['styles'] ?? [], $previous['styles'] ?? []),
             'components' => $this->writeGroup('component', $payload['components'] ?? [], $previous['components'] ?? []),
+            'forms' => $this->writeGroup('form', $payload['forms'] ?? [], $previous['forms'] ?? []),
             'layouts' => $this->writeGroup('layout', $payload['layouts'] ?? [], $previous['layouts'] ?? []),
             'pages' => $this->writeGroup('page', $payload['pages'] ?? [], $previous['pages'] ?? []),
         ];
@@ -49,6 +51,7 @@ class EvolveLibrary
     {
         $key = match ($kind) {
             'component' => 'components',
+            'form' => 'forms',
             'layout' => 'layouts',
             'page' => 'pages',
             default => '',
@@ -180,7 +183,9 @@ class EvolveLibrary
         $keep = [];
 
         foreach ($artifacts as $artifact) {
-            $id = $this->safeId($artifact['id'] ?? '');
+            $id = $kind === 'form'
+                ? $this->formIdFromSlug($artifact['slug'] ?? $artifact['id'] ?? '')
+                : $this->safeId($artifact['id'] ?? '');
             if ($id === '') {
                 continue;
             }
@@ -208,7 +213,11 @@ class EvolveLibrary
                 $entry['usage'] = (string) ($artifact['usage'] ?? '');
             }
 
-            if (in_array($kind, ['component', 'layout'], true)) {
+            if ($kind === 'form') {
+                $entry['slug'] = $this->safeSlug($artifact['slug'] ?? $id);
+            }
+
+            if (in_array($kind, ['component', 'form', 'layout'], true)) {
                 $entry['usage'] = (string) ($artifact['usage'] ?? '');
             }
 
@@ -274,7 +283,7 @@ class EvolveLibrary
 
     protected function emptyManifest(): array
     {
-        return ['styles' => [], 'components' => [], 'layouts' => [], 'pages' => []];
+        return ['styles' => [], 'components' => [], 'forms' => [], 'layouts' => [], 'pages' => []];
     }
 
     protected function writeFile(string $path, string $content): void
@@ -342,6 +351,7 @@ class EvolveLibrary
     protected function rootFor(string $kind): string
     {
         return match ($kind) {
+            'form' => resource_path('views/forms'),
             'layout' => resource_path('views/layouts'),
             'page' => resource_path('views/pages'),
             default => resource_path('views/components'),
@@ -351,6 +361,7 @@ class EvolveLibrary
     protected function relativePath(string $kind, string $id): string
     {
         return match ($kind) {
+            'form' => 'resources/views/forms/'.$id.'.blade.php',
             'layout' => 'resources/views/layouts/'.$id.'.blade.php',
             'page' => 'resources/views/pages/'.$id.'.blade.php',
             default => 'resources/views/components/'.$id.'.blade.php',
@@ -360,6 +371,7 @@ class EvolveLibrary
     protected function componentReference(string $kind, string $id): string
     {
         return match ($kind) {
+            'form' => 'forms::'.$this->componentName($id),
             'layout' => 'layouts::'.$this->componentName($id),
             'page' => 'pages::'.$this->componentName($id),
             default => $this->componentName($id),
@@ -369,6 +381,11 @@ class EvolveLibrary
     protected function componentName(string $id): string
     {
         return str_replace('/', '.', $this->safeId($id));
+    }
+
+    protected function formIdFromSlug(string $slug): string
+    {
+        return $this->safeId($this->safeSlug($slug));
     }
 
     protected function safeId(string $id): string
