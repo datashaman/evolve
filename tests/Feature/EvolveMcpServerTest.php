@@ -173,6 +173,42 @@ class EvolveMcpServerTest extends TestCase
         $this->assertSame('/* workbench css */', File::get(resource_path('css/app.css')));
     }
 
+    public function test_mcp_page_artifacts_accept_tree_metadata(): void
+    {
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'page',
+            'name' => 'Parent',
+            'path' => 'resources/views/pages/parent.blade.php',
+            'route' => '/parent',
+            'order' => 1,
+            'php' => $this->componentPhp(),
+            'blade' => '<div>Parent</div>',
+            'dry_run' => false,
+        ])->assertOk();
+
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'page',
+            'name' => 'Child',
+            'path' => 'resources/views/pages/parent/child.blade.php',
+            'route' => '/parent/child',
+            'parent_id' => 'parent',
+            'order' => 1,
+            'php' => $this->componentPhp(),
+            'blade' => '<div>Child</div>',
+            'dry_run' => false,
+        ])->assertOk();
+
+        EvolveServer::tool(ListArtifacts::class, ['kind' => 'page'])
+            ->assertOk()
+            ->assertStructuredContent(fn ($json) => $json
+                ->where('artifacts.pages.0.id', 'parent')
+                ->where('artifacts.pages.0.depth', 0)
+                ->where('artifacts.pages.1.id', 'parent/child')
+                ->where('artifacts.pages.1.parent_id', 'parent')
+                ->where('artifacts.pages.1.depth', 1)
+            );
+    }
+
     public function test_content_tools_list_rows_and_upsert_granularly(): void
     {
         $fixture = $this->fixtureModelClass();

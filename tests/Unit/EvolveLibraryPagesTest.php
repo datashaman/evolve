@@ -133,6 +133,92 @@ PHP,
         ], $library->pageRoutes());
     }
 
+    public function test_pages_keep_tree_metadata_and_are_sorted_by_parent_order(): void
+    {
+        $library = new EvolveLibrary;
+
+        $library->write([
+            'pages' => [
+                [
+                    'name' => 'Child B',
+                    'path' => 'resources/views/pages/parent/child-b.blade.php',
+                    'route' => '/parent/child-b',
+                    'parent_id' => 'parent',
+                    'order' => 2,
+                    'php' => $this->componentPhp(),
+                    'blade' => '<div>Child B</div>',
+                ],
+                [
+                    'name' => 'Parent',
+                    'path' => 'resources/views/pages/parent.blade.php',
+                    'route' => '/parent',
+                    'order' => 1,
+                    'php' => $this->componentPhp(),
+                    'blade' => '<div>Parent</div>',
+                ],
+                [
+                    'name' => 'Child A',
+                    'path' => 'resources/views/pages/parent/child-a.blade.php',
+                    'route' => '/parent/child-a',
+                    'parent_id' => 'parent',
+                    'order' => 1,
+                    'php' => $this->componentPhp(),
+                    'blade' => '<div>Child A</div>',
+                ],
+            ],
+        ]);
+
+        $pages = $library->all()['pages'];
+
+        $this->assertSame(['parent', 'parent/child-a', 'parent/child-b'], array_column($pages, 'id'));
+        $this->assertSame('', $pages[0]['parent_id']);
+        $this->assertSame('parent', $pages[1]['parent_id']);
+        $this->assertSame(0, $pages[0]['depth']);
+        $this->assertSame(1, $pages[1]['depth']);
+        $this->assertSame(1, $pages[1]['order']);
+        $this->assertSame(2, $pages[2]['order']);
+    }
+
+    public function test_invalid_or_cyclic_page_parents_are_cleared(): void
+    {
+        $library = new EvolveLibrary;
+
+        $library->write([
+            'pages' => [
+                [
+                    'name' => 'A',
+                    'path' => 'resources/views/pages/a.blade.php',
+                    'route' => '/a',
+                    'parent_id' => 'b',
+                    'php' => $this->componentPhp(),
+                    'blade' => '<div>A</div>',
+                ],
+                [
+                    'name' => 'B',
+                    'path' => 'resources/views/pages/b.blade.php',
+                    'route' => '/b',
+                    'parent_id' => 'a',
+                    'php' => $this->componentPhp(),
+                    'blade' => '<div>B</div>',
+                ],
+                [
+                    'name' => 'Orphan',
+                    'path' => 'resources/views/pages/orphan.blade.php',
+                    'route' => '/orphan',
+                    'parent_id' => 'missing',
+                    'php' => $this->componentPhp(),
+                    'blade' => '<div>Orphan</div>',
+                ],
+            ],
+        ]);
+
+        $parents = collect($library->all()['pages'])->pluck('parent_id', 'id')->all();
+
+        $this->assertSame('', $parents['a']);
+        $this->assertSame('', $parents['b']);
+        $this->assertSame('', $parents['orphan']);
+    }
+
     private function componentPhp(): string
     {
         return <<<'PHP'

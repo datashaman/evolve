@@ -94,7 +94,7 @@ class EvolveLibrary
     public function artifactRoutes(): array
     {
         return collect([
-            ...collect($this->manifest()['pages'] ?? [])->map(fn (array $page) => [
+            ...collect($this->normalizePageTree($this->manifest()['pages'] ?? []))->map(fn (array $page) => [
                 'route' => $this->safeRoute($page['route'] ?? $page['slug'] ?? '/'.($page['id'] ?? '')),
                 'component' => 'pages::'.$this->componentName($page['id'] ?? ''),
             ]),
@@ -238,6 +238,10 @@ class EvolveLibrary
 
     protected function readGroup(string $kind, array $entries): array
     {
+        if ($kind === 'page') {
+            $entries = $this->normalizePageTree($entries);
+        }
+
         return collect($entries)
             ->map(function (array $entry) use ($kind) {
                 $id = $this->safeId($entry['id'] ?? '');
@@ -250,7 +254,12 @@ class EvolveLibrary
                     'kind' => $kind,
                     'name' => $entry['name'] ?? Str::headline(basename($id)),
                     ...($kind === 'form' ? ['route' => $this->safeRoute($entry['route'] ?? $entry['slug'] ?? '')] : []),
-                    ...($kind === 'page' ? ['route' => $this->safeRoute($entry['route'] ?? $entry['slug'] ?? '')] : []),
+                    ...($kind === 'page' ? [
+                        'route' => $this->safeRoute($entry['route'] ?? $entry['slug'] ?? ''),
+                        'parent_id' => $this->safeId($entry['parent_id'] ?? ''),
+                        'order' => (int) ($entry['order'] ?? 0),
+                        'depth' => (int) ($entry['depth'] ?? 0),
+                    ] : []),
                     'usage' => $entry['usage'] ?? '',
                     'path' => $entry['path'] ?? $this->relativePath($kind, $id),
                     'source_path' => $this->relativePath($kind, $id),
@@ -307,6 +316,8 @@ class EvolveLibrary
             if ($kind === 'page') {
                 $entry['path'] = $this->relativePath($kind, $id);
                 $entry['route'] = $this->safeRoute($artifact['route'] ?? $artifact['slug'] ?? '/'.$id);
+                $entry['parent_id'] = $this->safeId($artifact['parent_id'] ?? '');
+                $entry['order'] = max(0, (int) ($artifact['order'] ?? count($entries) + 1));
                 $entry['usage'] = (string) ($artifact['usage'] ?? '');
             }
 
@@ -322,9 +333,90 @@ class EvolveLibrary
             $entries[] = $entry;
         }
 
+        if ($kind === 'page') {
+            $entries = $this->normalizePageTree($entries);
+        }
+
         $this->deleteMissing($kind, $keep, $previousEntries);
 
         return $entries;
+    }
+
+    protected function normalizePageTree(array $entries): array
+    {
+        $ids = collect($entries)
+            ->pluck('id')
+            ->map(fn (mixed $id): string => $this->safeId((string) $id))
+            ->filter()
+            ->values()
+            ->all();
+
+        $entries = collect($entries)
+            ->map(function (array $entry, int $index) use ($ids): array {
+                $id = $this->safeId($entry['id'] ?? '');
+                $parentId = $this->safeId($entry['parent_id'] ?? '');
+
+                if ($parentId === $id || ! in_array($parentId, $ids, true)) {
+                    $parentId = '';
+                }
+
+                return [
+                    ...$entry,
+                    'id' => $id,
+                    'parent_id' => $parentId,
+                    'order' => max(0, (int) ($entry['order'] ?? $index + 1)),
+                ];
+            })
+            ->filter(fn (array $entry): bool => $entry['id'] !== '')
+            ->values();
+
+        $byId = $entries->keyBy('id');
+        $entries = $entries->map(function (array $entry) use ($byId): array {
+            if ($entry['parent_id'] !== '' && $this->pageParentCreatesCycle($entry['id'], $entry['parent_id'], $byId->all())) {
+                $entry['parent_id'] = '';
+            }
+
+            return $entry;
+        });
+
+        $children = $entries
+            ->groupBy(fn (array $entry): string => $entry['parent_id'] ?: '__root__')
+            ->map(fn ($items) => $items
+                ->sortBy([
+                    ['order', 'asc'],
+                    ['name', 'asc'],
+                    ['id', 'asc'],
+                ])
+                ->values());
+
+        return $this->flattenPageChildren($children)->all();
+    }
+
+    protected function pageParentCreatesCycle(string $id, string $parentId, array $entriesById): bool
+    {
+        $seen = [$id => true];
+
+        while ($parentId !== '') {
+            if (isset($seen[$parentId])) {
+                return true;
+            }
+
+            $seen[$parentId] = true;
+            $parentId = $this->safeId($entriesById[$parentId]['parent_id'] ?? '');
+        }
+
+        return false;
+    }
+
+    protected function flattenPageChildren($children, string $parentId = '__root__', int $depth = 0)
+    {
+        return collect($children[$parentId] ?? [])
+            ->flatMap(function (array $entry) use ($children, $depth) {
+                $entry['depth'] = $depth;
+
+                return collect([$entry])->merge($this->flattenPageChildren($children, $entry['id'], $depth + 1));
+            })
+            ->values();
     }
 
     protected function parseSfc(string $path): array

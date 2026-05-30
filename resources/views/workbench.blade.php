@@ -33,11 +33,30 @@
     .sidebar header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; color: #a1a1aa; font-size: 12px; letter-spacing: .05em; text-transform: uppercase; }
     .sidebar header button { width: 24px; min-height: 24px; padding: 0; font-size: 16px; }
     .sidebar ul { list-style: none; margin: 0; padding: 0; }
-    .sidebar li { display: flex; gap: 8px; align-items: center; padding: 8px 12px; font-size: 13px; cursor: pointer; }
+    .sidebar li { position: relative; display: flex; gap: 8px; align-items: center; padding: 8px 12px; font-size: 13px; cursor: pointer; }
     .sidebar li:hover { background: #3f3f46; }
     .sidebar li.active { background: #4338ca; color: #fff; }
     .sidebar li[draggable="true"] { cursor: grab; }
     .sidebar li.dragging { opacity: .45; }
+    .sidebar li.drop-before,
+    .sidebar li.drop-after,
+    .sidebar li.drop-inside { background: #34345f; }
+    .sidebar li.drop-inside { box-shadow: inset 0 0 0 2px #a5b4fc; }
+    .sidebar li.drop-before::before,
+    .sidebar li.drop-after::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      height: 3px;
+      border-radius: 999px;
+      background: #a5b4fc;
+      box-shadow: 0 0 0 1px #18181b, 0 0 14px rgba(165, 180, 252, .65);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .sidebar li.drop-before::before { top: -2px; }
+    .sidebar li.drop-after::after { bottom: -2px; }
     .sidebar .label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sidebar .meta { flex: 0 0 auto; white-space: nowrap; color: #a1a1aa; font-size: 11px; }
     .sidebar li.active .meta { color: #c7d2fe; }
@@ -71,6 +90,10 @@
     .metadata-field[hidden] { display: none; }
     .metadata-field label { color: #a1a1aa; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
     .metadata-field input { width: 100%; padding: 7px 9px; border: 1px solid #3f3f46; border-radius: 6px; background: #27272a; color: #fafafa; font: 13px ui-monospace, "SF Mono", Menlo, monospace; }
+    .sidebar li[data-depth="1"] { padding-left: 24px; }
+    .sidebar li[data-depth="2"] { padding-left: 36px; }
+    .sidebar li[data-depth="3"] { padding-left: 48px; }
+    .sidebar li[data-depth="4"] { padding-left: 60px; }
     .content-index { flex: 1; min-height: 0; overflow: auto; padding: 12px; background: #1e1e1e; }
     .content-index[hidden] { display: none; }
     .content-page-header { display: grid; gap: 3px; padding: 2px 0 12px; }
@@ -152,6 +175,9 @@
               <div class="metadata-field"><label for="meta-name">Name</label><input id="meta-name"></div>
               <div class="metadata-field" data-meta="path"><label for="meta-slug">Path</label><input id="meta-slug"></div>
               <div class="metadata-field" data-meta="route"><label for="meta-route">Route</label><input id="meta-route"></div>
+              <div class="metadata-field" data-meta="parent"><label for="meta-parent">Parent</label><input id="meta-parent" list="page-parent-options"></div>
+              <div class="metadata-field" data-meta="order"><label for="meta-order">Order</label><input id="meta-order" type="number" min="0" step="1"></div>
+              <datalist id="page-parent-options"></datalist>
             </div>
           </section>
           <div class="content-index" id="content-index" hidden>
@@ -207,7 +233,7 @@
     let contentFilter = '';
     let editingContentKey = '';
     let contentStatus = {};
-    let draggedStyleKey = '';
+    let dragState = { kind: '', key: '', placement: 'after' };
     const frame = document.getElementById('frame');
     const workspace = document.querySelector('.workspace');
     const stage = document.querySelector('.stage');
@@ -222,6 +248,8 @@
       name: document.getElementById('meta-name'),
       slug: document.getElementById('meta-slug'),
       route: document.getElementById('meta-route'),
+      parent: document.getElementById('meta-parent'),
+      order: document.getElementById('meta-order'),
       php: document.getElementById('php-source'),
       blade: document.getElementById('blade-source'),
       style: document.getElementById('style-source'),
@@ -234,6 +262,7 @@
       usage: document.getElementById('usage-highlight'),
     };
     const sourceSections = [...document.querySelectorAll('.source-section')];
+    const pageParentOptions = document.getElementById('page-parent-options');
     const sourceResizeHandles = [...document.querySelectorAll('[data-resize-source]')];
     const collapseKey = 'evolve.sfc-collapse';
     const heightsKey = 'evolve.sfc-heights';
@@ -410,25 +439,12 @@
       items.forEach(item => {
         const li = document.createElement('li');
         li.className = artifactKey(item) === selectedKey ? 'active' : '';
+        li.dataset.key = artifactKey(item);
+        if (kind === 'page') li.dataset.depth = Math.min(Number(item.depth ?? 0), 4);
         li.innerHTML = `<span class="label"></span><span class="meta"></span>`;
         li.querySelector('.label').textContent = item.name || item.id;
         li.querySelector('.meta').textContent = metaFormatter(item);
-        if (kind === 'style') {
-          li.draggable = true;
-          li.dataset.key = artifactKey(item);
-          li.ondragstart = event => {
-            draggedStyleKey = li.dataset.key;
-            li.classList.add('dragging');
-            event.dataTransfer.effectAllowed = 'move';
-            event.dataTransfer.setData('text/plain', draggedStyleKey);
-          };
-          li.ondragend = () => li.classList.remove('dragging');
-          li.ondragover = event => event.preventDefault();
-          li.ondrop = event => {
-            event.preventDefault();
-            reorderStyle(draggedStyleKey || event.dataTransfer.getData('text/plain'), li.dataset.key);
-          };
-        }
+        if (['style', 'page'].includes(kind)) enableSortableItem(kind, li);
         li.onclick = () => {
           selectedKey = artifactKey(item);
           if (kind === 'content') {
@@ -440,6 +456,63 @@
         list.append(li);
       });
       document.getElementById(emptyId).hidden = items.length > 0;
+    }
+
+    function enableSortableItem(kind, li) {
+      li.draggable = true;
+      li.ondragstart = event => {
+        dragState = { kind, key: li.dataset.key, placement: 'after' };
+        li.classList.add('dragging');
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', li.dataset.key);
+      };
+      li.ondragend = () => {
+        li.classList.remove('dragging');
+        clearDropIndicators();
+        dragState = { kind: '', key: '', placement: 'after' };
+      };
+      li.ondragover = event => {
+        if (dragState.kind !== kind || dragState.key === li.dataset.key) return;
+        event.preventDefault();
+        dragState.placement = dropPlacement(event, li);
+        showDropIndicator(li, dragState.placement);
+      };
+      li.ondragleave = event => {
+        if (!li.contains(event.relatedTarget)) {
+          li.classList.remove('drop-before', 'drop-after', 'drop-inside');
+        }
+      };
+      li.ondrop = event => {
+        if (dragState.kind !== kind) return;
+        event.preventDefault();
+        const sourceKey = dragState.key || event.dataTransfer.getData('text/plain');
+        const targetKey = li.dataset.key;
+        const placement = dragState.placement || dropPlacement(event, li, kind);
+        clearDropIndicators();
+        if (kind === 'style') reorderStyle(sourceKey, targetKey, placement);
+        if (kind === 'page') reorderPage(sourceKey, targetKey, placement);
+      };
+    }
+
+    function dropPlacement(event, li, kind = dragState.kind) {
+      const rect = li.getBoundingClientRect();
+      if (kind === 'page') {
+        const y = event.clientY - rect.top;
+        if (y > rect.height * .28 && y < rect.height * .72) return 'inside';
+      }
+
+      return event.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+    }
+
+    function showDropIndicator(li, placement) {
+      clearDropIndicators();
+      li.classList.add(`drop-${placement}`);
+    }
+
+    function clearDropIndicators() {
+      document.querySelectorAll('.sidebar li.drop-before, .sidebar li.drop-after, .sidebar li.drop-inside').forEach(item => {
+        item.classList.remove('drop-before', 'drop-after', 'drop-inside');
+      });
     }
 
     function navigationMetaFormatter(kind, items) {
@@ -581,14 +654,15 @@
       });
     }
 
-    function reorderStyle(sourceKey, targetKey) {
+    function reorderStyle(sourceKey, targetKey, placement = 'before') {
       if (!sourceKey || !targetKey || sourceKey === targetKey) return;
       const styles = byKind('style');
       const from = styles.findIndex(item => artifactKey(item) === sourceKey);
-      const to = styles.findIndex(item => artifactKey(item) === targetKey);
-      if (from < 0 || to < 0) return;
+      if (from < 0) return;
       const [moved] = styles.splice(from, 1);
-      styles.splice(to, 0, moved);
+      const to = styles.findIndex(item => artifactKey(item) === targetKey);
+      if (to < 0) return;
+      styles.splice(placement === 'after' ? to + 1 : to, 0, moved);
       library = [...styles, ...byKind('layout'), ...byKind('page'), ...byKind('component'), ...byKind('form'), ...byKind('content')];
       renderLists();
       fetch(`${API}/styles/order`, {
@@ -604,12 +678,85 @@
       });
     }
 
+    function reorderPage(sourceKey, targetKey, placement = 'before') {
+      if (!sourceKey || !targetKey || sourceKey === targetKey) return;
+      const pages = byKind('page');
+      const source = pages.find(item => artifactKey(item) === sourceKey);
+      const target = pages.find(item => artifactKey(item) === targetKey);
+      if (!source || !target) return;
+      if (isPageDescendant(target, source, pages)) return;
+
+      const targetParent = placement === 'inside' ? target.id : target.parent_id || '';
+      const previousParent = source.parent_id || '';
+      const siblings = pages
+        .filter(page => (page.parent_id || '') === targetParent && page.id !== source.id)
+        .sort(sortPagesForReorder);
+      const targetIndex = placement === 'inside'
+        ? siblings.length
+        : siblings.findIndex(page => page.id === target.id);
+      if (targetIndex < 0) return;
+
+      source.parent_id = targetParent;
+      siblings.splice(placement === 'after' ? targetIndex + 1 : targetIndex, 0, source);
+      siblings.forEach((page, index) => page.order = index + 1);
+      if (previousParent !== targetParent) {
+        pages
+          .filter(page => (page.parent_id || '') === previousParent && page.id !== source.id)
+          .sort(sortPagesForReorder)
+          .forEach((page, index) => page.order = index + 1);
+      }
+
+      library = [...byKind('style'), ...byKind('layout'), ...pages, ...byKind('component'), ...byKind('form'), ...byKind('content')];
+      renderLists();
+
+      saveLibrary({
+        styles: byKind('style'),
+        layouts: byKind('layout'),
+        pages,
+        components: byKind('component'),
+        forms: byKind('form'),
+      }, 'Page order save failed');
+    }
+
+    function sortPagesForReorder(a, b) {
+      return (Number(a.order ?? 0) - Number(b.order ?? 0))
+        || String(a.name || a.id).localeCompare(String(b.name || b.id))
+        || String(a.id).localeCompare(String(b.id));
+    }
+
+    function isPageDescendant(candidate, ancestor, pages) {
+      const pageById = new Map(pages.map(page => [page.id, page]));
+      let parentId = candidate.parent_id || '';
+      while (parentId) {
+        if (parentId === ancestor.id) return true;
+        parentId = pageById.get(parentId)?.parent_id || '';
+      }
+
+      return false;
+    }
+
+    function saveLibrary(payload, errorMessage) {
+      fetch(API, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': csrf },
+        body: JSON.stringify(payload),
+      }).then(r => {
+        if (!r.ok) throw new Error(errorMessage);
+        return r.json();
+      }).then(data => {
+        applyLibraryData(data);
+        renderFrame();
+      }).catch(error => alert(error.message));
+    }
+
     function syncInputs() {
       const c = selected();
       document.getElementById('kind').textContent = c?.kind ?? '-';
       fields.name.value = c?.name ?? '';
       fields.slug.value = c?.path ?? '';
       fields.route.value = ['form', 'page'].includes(c?.kind) ? c?.route || routeFromPath(c?.path) : '';
+      fields.parent.value = c?.kind === 'page' ? c?.parent_id || '' : '';
+      fields.order.value = c?.kind === 'page' ? c?.order ?? 0 : '';
       fields.php.value = c?.php ?? '';
       fields.blade.value = c?.blade ?? '';
       fields.style.value = c?.style ?? '';
@@ -620,9 +767,17 @@
       sourceSection('metadata').hidden = isContent;
       const pathField = document.querySelector('[data-meta="path"]');
       const routeField = document.querySelector('[data-meta="route"]');
+      const parentField = document.querySelector('[data-meta="parent"]');
+      const orderField = document.querySelector('[data-meta="order"]');
       pathField.hidden = ['content'].includes(c?.kind);
       routeField.hidden = !['form', 'page'].includes(c?.kind);
+      parentField.hidden = c?.kind !== 'page';
+      orderField.hidden = c?.kind !== 'page';
       pathField.querySelector('label').textContent = 'Path';
+      pageParentOptions.innerHTML = byKind('page')
+        .filter(page => page.id !== c?.id)
+        .map(page => `<option value="${escapeHtml(page.id)}">${escapeHtml(page.name || page.id)}</option>`)
+        .join('');
       contentIndex.hidden = !isContent;
       sourceSection('php').hidden = isContent || ['layout', 'style'].includes(c?.kind);
       sourceSection('blade').hidden = isContent || c?.kind === 'style';
@@ -685,6 +840,10 @@
         if (locationChanged && ['component', 'layout'].includes(c.kind)) fields.usage.value = c.usage;
         selectedKey = artifactKey(c);
       }
+      if (c.kind === 'page') {
+        c.parent_id = idFromPath(fields.parent.value) === c.id ? '' : idFromPath(fields.parent.value);
+        c.order = Number(fields.order.value || 0);
+      }
       c.php = ['layout', 'style'].includes(c.kind) ? '' : fields.php.value;
       c.blade = c.kind === 'style' ? '' : fields.blade.value;
       c.style = fields.style.value;
@@ -716,6 +875,8 @@
         id, kind, name: kind === 'style' ? 'New style' : kind === 'page' ? 'New page' : kind === 'layout' ? 'New layout' : kind === 'form' ? 'New form' : 'New component',
         slug: '',
         route: ['form', 'page'].includes(kind) ? `/${id}` : '',
+        parent_id: '',
+        order: kind === 'page' ? byKind('page').length + 1 : 0,
         path: kind === 'form' ? `resources/views/forms/${id}.blade.php` : kind === 'page' ? `resources/views/pages/${id}.blade.php` : kind === 'style' ? `resources/css/${id}.css` : kind === 'layout' ? `resources/views/layouts/${id}.blade.php` : kind === 'component' ? `resources/views/components/${id}.blade.php` : '',
         php: kind === 'form' ? "use Livewire\\Attributes\\Layout;\nuse Livewire\\Attributes\\Validate;\nuse Livewire\\Component;\n\nnew #[Layout('layouts::base')] class extends Component {\n    #[Validate('required|string|max:255')]\n    public string $name = '';\n\n    public function save(): void\n    {\n        $this->validate();\n\n        $this->reset('name');\n    }\n};" : ['layout', 'style'].includes(kind) ? '' : "use Livewire\\Component;\n\nnew class extends Component {\n    //\n};",
         blade: kind === 'style' ? '' : kind === 'form' ? '<form wire:submit="save">\n  <label>\n    <span>Name</span>\n    <input type="text" wire:model="name">\n  </label>\n\n  @error(\'name\') <p>@{{ $message }}</p> @enderror\n\n  <button type="submit">Submit</button>\n</form>' : kind === 'component' ? '<div>New component</div>' : '@{{ $slot }}',
