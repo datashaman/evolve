@@ -61,6 +61,10 @@ The workbench then shows that model as a content section where its records can b
 
 Forms are Livewire single-file components under `resources/views/forms`. Creating a form in the workbench generates a component with form markup, validation-ready PHP, and preview usage via the `forms::` Livewire namespace.
 
+## Artifact Paths
+
+Pages and forms use their slug as the canonical location: `/contact` maps to `resources/views/forms/contact.blade.php`, and `/about` maps to `resources/views/pages/about.blade.php`. Components, layouts, and styles use path metadata instead because they are not routed artifacts.
+
 ## Verification
 
 Run the test suite:

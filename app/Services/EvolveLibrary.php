@@ -112,7 +112,8 @@ class EvolveLibrary
                     'blade' => '',
                     'style' => $this->globalStyle($id),
                     'usage' => '',
-                    'path' => $this->relativeStylePath($id),
+                    'path' => $entry['path'] ?? $this->relativeStylePath($id),
+                    'source_path' => $this->relativeStylePath($id),
                     'component' => '',
                 ];
             })
@@ -127,7 +128,7 @@ class EvolveLibrary
         $keep = [];
 
         foreach ($artifacts as $artifact) {
-            $id = $this->safeId($artifact['id'] ?? '');
+            $id = $this->idFromPath($artifact['path'] ?? $artifact['id'] ?? '');
             if ($id === '') {
                 continue;
             }
@@ -137,6 +138,7 @@ class EvolveLibrary
             $entries[] = [
                 'id' => $id,
                 'name' => (string) ($artifact['name'] ?? Str::headline(basename($id))),
+                'path' => $this->relativeStylePath($id),
             ];
         }
 
@@ -165,7 +167,8 @@ class EvolveLibrary
                     'name' => $entry['name'] ?? Str::headline(basename($id)),
                     'slug' => $entry['slug'] ?? '',
                     'usage' => $entry['usage'] ?? '',
-                    'path' => $this->relativePath($kind, $id),
+                    'path' => $entry['path'] ?? $this->relativePath($kind, $id),
+                    'source_path' => $this->relativePath($kind, $id),
                     'component' => $this->componentReference($kind, $id),
                     ...($kind === 'layout'
                         ? ['php' => '', 'blade' => $this->parseLayout($this->filePath($kind, $id)), 'style' => $this->layoutStyle($id)]
@@ -183,9 +186,9 @@ class EvolveLibrary
         $keep = [];
 
         foreach ($artifacts as $artifact) {
-            $id = $kind === 'form'
-                ? $this->formIdFromSlug($artifact['slug'] ?? $artifact['id'] ?? '')
-                : $this->safeId($artifact['id'] ?? '');
+            $id = in_array($kind, ['form', 'page'], true)
+                ? ($this->idFromSlug($artifact['slug'] ?? '') ?: $this->safeId($artifact['id'] ?? ''))
+                : $this->idFromPath($artifact['path'] ?? $artifact['id'] ?? '');
             if ($id === '') {
                 continue;
             }
@@ -207,6 +210,10 @@ class EvolveLibrary
                 'id' => $id,
                 'name' => (string) ($artifact['name'] ?? Str::headline(basename($id))),
             ];
+
+            if (in_array($kind, ['component', 'layout'], true)) {
+                $entry['path'] = $this->relativePath($kind, $id);
+            }
 
             if ($kind === 'page') {
                 $entry['slug'] = $this->safeSlug($artifact['slug'] ?? '');
@@ -383,9 +390,17 @@ class EvolveLibrary
         return str_replace('/', '.', $this->safeId($id));
     }
 
-    protected function formIdFromSlug(string $slug): string
+    protected function idFromSlug(string $slug): string
     {
         return $this->safeId($this->safeSlug($slug));
+    }
+
+    protected function idFromPath(string $path): string
+    {
+        $path = preg_replace('#\.(blade\.php|css)$#', '', str_replace('\\', '/', trim($path)));
+        $path = preg_replace('#^(resources/views/(components|layouts)/|resources/css/layouts/|resources/css/)#', '', $path);
+
+        return $this->safeId($path);
     }
 
     protected function safeId(string $id): string

@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Evolve Workbench</title>
+  @vite(['resources/css/app.css', 'resources/js/app.js'])
+  @fluxAppearance
   <style>
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; }
@@ -65,7 +67,7 @@
     .metadata-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 10px 12px 12px; }
     .metadata-field { display: grid; gap: 5px; min-width: 0; }
     .metadata-field[hidden] { display: none; }
-    .metadata-field span { color: #a1a1aa; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .metadata-field [data-flux-label] { color: #a1a1aa; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
     .metadata-field input { width: 100%; padding: 7px 9px; border: 1px solid #3f3f46; border-radius: 6px; background: #27272a; color: #fafafa; font: 13px ui-monospace, "SF Mono", Menlo, monospace; }
     .content-index { flex: 1; min-height: 0; overflow: auto; padding: 12px; background: #1e1e1e; }
     .content-index[hidden] { display: none; }
@@ -73,6 +75,7 @@
     .content-page-header h2 { margin: 0; color: #fafafa; font-size: 18px; line-height: 1.2; }
     .content-page-header p { margin: 0; color: #71717a; font: 12px ui-monospace, "SF Mono", Menlo, monospace; }
     .content-toolbar { display: flex; gap: 8px; align-items: center; padding: 0 0 10px; }
+    .content-toolbar [data-flux-input] { flex: 1; min-width: 160px; }
     .content-toolbar input { flex: 1; min-width: 160px; padding: 8px 10px; border: 1px solid #3f3f46; border-radius: 7px; background: #18181b; color: #fafafa; font: 13px system-ui, sans-serif; }
     .content-toolbar input:focus { outline: 2px solid #4f46e5; outline-offset: 0; }
     .content-toolbar button, .row-actions button { padding: 7px 10px; border: 1px solid #3f3f46; border-radius: 7px; background: #303036; color: #fafafa; cursor: pointer; font-weight: 700; }
@@ -121,19 +124,19 @@
   <header class="toolbar">
     <h1>Evolve Workbench</h1>
     <span class="kind" id="kind">component</span>
-    <button id="btn-reload">Reload</button>
+    <flux:button id="btn-reload" size="sm" variant="filled">Reload</flux:button>
     <span class="spacer"></span>
-    <button id="btn-open">Open</button>
+    <flux:button id="btn-open" size="sm" variant="filled">Open</flux:button>
   </header>
 
   <div class="workspace">
     <nav class="sidebar">
-      <section><header><span>Layouts</span><button id="btn-new-layout">+</button></header><ul id="list-layouts"></ul><div class="empty" id="empty-layouts" hidden>No layouts yet.</div></section>
-      <section><header><span>Styles</span><button id="btn-new-style">+</button></header><ul id="list-styles"></ul><div class="empty" id="empty-styles" hidden>No styles yet.</div></section>
-      <section><header><span>Components</span><button id="btn-new-component">+</button></header><ul id="list-components"></ul><div class="empty" id="empty-components" hidden>No components yet.</div></section>
-      <section><header><span>Forms</span><button id="btn-new-form">+</button></header><ul id="list-forms"></ul><div class="empty" id="empty-forms" hidden>No forms yet.</div></section>
-      <section><header><span>Content</span><button id="btn-new-content">+</button></header><ul id="list-content"></ul><div class="empty" id="empty-content" hidden>No content yet.</div></section>
-      <section><header><span>Pages</span><button id="btn-new-page">+</button></header><ul id="list-pages"></ul><div class="empty" id="empty-pages" hidden>No pages yet.</div></section>
+      <section><header><span>Layouts</span><flux:button id="btn-new-layout" size="xs" variant="filled">+</flux:button></header><ul id="list-layouts"></ul><div class="empty" id="empty-layouts" hidden>No layouts yet.</div></section>
+      <section><header><span>Styles</span><flux:button id="btn-new-style" size="xs" variant="filled">+</flux:button></header><ul id="list-styles"></ul><div class="empty" id="empty-styles" hidden>No styles yet.</div></section>
+      <section><header><span>Components</span><flux:button id="btn-new-component" size="xs" variant="filled">+</flux:button></header><ul id="list-components"></ul><div class="empty" id="empty-components" hidden>No components yet.</div></section>
+      <section><header><span>Forms</span><flux:button id="btn-new-form" size="xs" variant="filled">+</flux:button></header><ul id="list-forms"></ul><div class="empty" id="empty-forms" hidden>No forms yet.</div></section>
+      <section><header><span>Content</span><flux:button id="btn-new-content" size="xs" variant="filled">+</flux:button></header><ul id="list-content"></ul><div class="empty" id="empty-content" hidden>No content yet.</div></section>
+      <section><header><span>Pages</span><flux:button id="btn-new-page" size="xs" variant="filled">+</flux:button></header><ul id="list-pages"></ul><div class="empty" id="empty-pages" hidden>No pages yet.</div></section>
     </nav>
     <div class="sidebar-resize" id="sidebar-resize"></div>
 
@@ -143,8 +146,8 @@
           <section class="source-section" data-block="metadata">
             <button class="field-label" type="button" data-toggle-source="metadata">Metadata</button>
             <div class="metadata-grid">
-              <label class="metadata-field"><span>Name</span><input id="meta-name"></label>
-              <label class="metadata-field" data-meta="slug"><span>Slug</span><input id="meta-slug"></label>
+              <div class="metadata-field"><flux:input id="meta-name" label="Name" size="sm" /></div>
+              <div class="metadata-field" data-meta="path"><flux:input id="meta-slug" label="Path" size="sm" /></div>
             </div>
           </section>
           <div class="content-index" id="content-index" hidden>
@@ -153,8 +156,8 @@
               <p id="content-model-path">app/Models/Service.php</p>
             </div>
             <div class="content-toolbar">
-              <input id="content-search" type="search" placeholder="Search services">
-              <button id="btn-add-content-row" type="button">Add row</button>
+              <flux:input id="content-search" type="search" placeholder="Search services" size="sm" />
+              <flux:button id="btn-add-content-row" type="button" size="sm" variant="filled">Add row</flux:button>
             </div>
             <table>
               <thead>
@@ -352,7 +355,7 @@
         li.className = artifactKey(item) === selectedKey ? 'active' : '';
         li.innerHTML = `<span class="label"></span><span class="meta"></span>`;
         li.querySelector('.label').textContent = item.name || item.id;
-        li.querySelector('.meta').textContent = kind === 'page' ? item.slug : kind === 'style' ? `${item.id}.css` : kind === 'content' ? item.meta : item.id;
+        li.querySelector('.meta').textContent = ['form', 'page'].includes(kind) ? item.slug : kind === 'style' ? item.source_path || item.path : kind === 'content' ? item.meta : item.source_path || item.path || item.id;
         if (kind === 'style') {
           li.draggable = true;
           li.dataset.key = artifactKey(item);
@@ -489,7 +492,7 @@
       const c = selected();
       document.getElementById('kind').textContent = c?.kind ?? '-';
       fields.name.value = c?.name ?? '';
-      fields.slug.value = c?.slug ?? '';
+      fields.slug.value = ['form', 'page'].includes(c?.kind) ? c?.slug ?? '' : c?.path ?? '';
       fields.php.value = c?.php ?? '';
       fields.blade.value = c?.blade ?? '';
       fields.style.value = c?.style ?? '';
@@ -497,7 +500,9 @@
       const isContent = c?.kind === 'content';
       stage.classList.toggle('content-mode', isContent);
       sourceSection('metadata').hidden = isContent;
-      document.querySelector('[data-meta="slug"]').hidden = !['form', 'page'].includes(c?.kind);
+      const pathField = document.querySelector('[data-meta="path"]');
+      pathField.hidden = ['content'].includes(c?.kind);
+      pathField.querySelector('[data-flux-label]').textContent = ['form', 'page'].includes(c?.kind) ? 'Slug' : 'Path';
       contentIndex.hidden = !isContent;
       sourceSection('php').hidden = isContent || ['layout', 'style'].includes(c?.kind);
       sourceSection('blade').hidden = isContent || c?.kind === 'style';
@@ -523,32 +528,52 @@
       return `/workbench/preview/${c.kind}/${c.id}`;
     }
 
-    function updateSelected() {
+    function updateSelected(source = null) {
       const c = selected();
       if (!c) return;
       if (c.kind === 'content') {
         return;
       }
 
+      const locationChanged = source === fields.slug;
       c.name = fields.name.value;
-      c.slug = fields.slug.value || '/';
-      if (c.kind === 'form') {
+      c.slug = ['form', 'page'].includes(c.kind) ? fields.slug.value || '/' : '';
+      if (['form', 'page'].includes(c.kind)) {
         c.id = idFromSlug(c.slug) || c.id;
-        c.usage = `<livewire:forms::${c.id.replaceAll('/', '.')} />`;
+        const namespace = c.kind === 'form' ? 'forms' : 'pages';
+        c.usage = `<livewire:${namespace}::${c.id.replaceAll('/', '.')} />`;
+        fields.usage.value = c.usage;
+        selectedKey = artifactKey(c);
+      } else if (!['content'].includes(c.kind)) {
+        c.path = fields.slug.value || c.path;
+        c.id = idFromPath(c.path) || c.id;
+        if (locationChanged && c.kind === 'component') c.usage = `<livewire:${c.id.replaceAll('/', '.')} />`;
+        if (locationChanged && c.kind === 'layout') c.usage = `<x-layouts::${c.id.replaceAll('/', '.')}></x-layouts::${c.id.replaceAll('/', '.')}>`;
+        if (locationChanged && ['component', 'layout'].includes(c.kind)) fields.usage.value = c.usage;
         selectedKey = artifactKey(c);
       }
       c.php = ['layout', 'style'].includes(c.kind) ? '' : fields.php.value;
       c.blade = c.kind === 'style' ? '' : fields.blade.value;
       c.style = fields.style.value;
-      c.usage = c.kind === 'style' ? '' : c.kind === 'form' ? c.usage : fields.usage.value;
+      c.usage = c.kind === 'style' ? '' : ['form', 'page'].includes(c.kind) ? c.usage : fields.usage.value;
       updateHighlights();
       renderLists();
       scheduleSave(true);
     }
 
-    Object.values(fields).forEach(input => input.addEventListener('input', updateSelected));
+    Object.values(fields).forEach(input => input.addEventListener('input', () => updateSelected(input)));
     function idFromSlug(slug) {
       return String(slug ?? '').trim().toLowerCase().replace(/\\/g, '/').replace(/[^a-z0-9/-]/g, '-').replace(/\/+/g, '/').replace(/^-+|-+$/g, '').replace(/^\/|\/$/g, '');
+    }
+    function idFromPath(path) {
+      return String(path ?? '').trim().toLowerCase()
+        .replace(/\\/g, '/')
+        .replace(/\.(blade\.php|css)$/g, '')
+        .replace(/^(resources\/views\/(components|layouts)\/|resources\/css\/layouts\/|resources\/css\/)/, '')
+        .replace(/[^a-z0-9/-]/g, '-')
+        .replace(/\/+/g, '/')
+        .replace(/^-+|-+$/g, '')
+        .replace(/^\/|\/$/g, '');
     }
     function newArtifact(kind) {
       const id = `new-${crypto.randomUUID().slice(0, 8)}`;
@@ -556,6 +581,7 @@
       const item = {
         id, kind, name: kind === 'style' ? 'New style' : kind === 'page' ? 'New page' : kind === 'layout' ? 'New layout' : kind === 'form' ? 'New form' : 'New component',
         slug: ['form', 'page'].includes(kind) ? `/${id}` : '',
+        path: kind === 'style' ? `resources/css/${id}.css` : kind === 'layout' ? `resources/views/layouts/${id}.blade.php` : kind === 'component' ? `resources/views/components/${id}.blade.php` : '',
         php: kind === 'form' ? "use Livewire\\Attributes\\Validate;\nuse Livewire\\Component;\n\nnew class extends Component {\n    #[Validate('required|string|max:255')]\n    public string $name = '';\n\n    public function save(): void\n    {\n        $this->validate();\n\n        $this->reset('name');\n    }\n};" : ['layout', 'style'].includes(kind) ? '' : "use Livewire\\Component;\n\nnew class extends Component {\n    //\n};",
         blade: kind === 'style' ? '' : kind === 'form' ? '<form wire:submit="save">\n  <label>\n    <span>Name</span>\n    <input type="text" wire:model="name">\n  </label>\n\n  @error(\'name\') <p>@{{ $message }}</p> @enderror\n\n  <button type="submit">Submit</button>\n</form>' : kind === 'component' ? '<div>New component</div>' : '@{{ $slot }}',
         style: kind === 'style' ? "/* Global styles */\n" : kind === 'form' ? "& {\n  display: grid;\n  gap: 18px;\n  max-width: 460px;\n  padding: 32px;\n  border: 1px solid #d4d4d8;\n  border-radius: 8px;\n  background: #ffffff;\n}\n\nlabel {\n  display: grid;\n  gap: 10px;\n  color: #27272a;\n  font-weight: 700;\n}\n\ninput {\n  width: 100%;\n  padding: 13px 14px;\n  border: 1px solid #a1a1aa;\n  border-radius: 6px;\n}\n\nbutton {\n  justify-self: start;\n  padding: 12px 18px;\n  border-radius: 6px;\n  background: #4338ca;\n  color: #ffffff;\n  font-weight: 800;\n}\n\np {\n  margin: -6px 0 0;\n  color: #b91c1c;\n}" : '',
