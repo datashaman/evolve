@@ -16,16 +16,13 @@ class EvolvePreviewController extends Controller
         $usage = $library->usage($kind, $id);
         $content = $usage !== '' ? Blade::render($usage) : '<div class="empty-preview">No preview usage defined.</div>';
 
-        if ($kind === 'layout') {
+        if ($kind === 'layout' || ($kind === 'view' && ! $library->viewIsPartial($id))) {
             return response($content);
         }
-
-        $fullBleed = $kind === 'view' && ! $library->viewIsPartial($id);
 
         return view('evolve.preview', [
             'kind' => $kind,
             'content' => $content,
-            'full_bleed' => $fullBleed,
         ]);
     }
 

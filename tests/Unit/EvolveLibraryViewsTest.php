@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Http\Controllers\EvolvePreviewController;
 use App\Services\EvolveLibrary;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -132,7 +133,7 @@ class EvolveLibraryViewsTest extends TestCase
         $this->assertTrue($views->firstWhere('id', 'flux/icon/book-open-text')['is_partial']);
     }
 
-    public function test_non_partial_view_preview_uses_full_bleed_canvas(): void
+    public function test_non_partial_view_preview_renders_without_preview_shell(): void
     {
         File::ensureDirectoryExists(resource_path('views/evolve'));
         File::put(resource_path('views/evolve/preview.blade.php'), '<body></body>');
@@ -146,8 +147,8 @@ class EvolveLibraryViewsTest extends TestCase
 
         $response = app(EvolvePreviewController::class)->show(new EvolveLibrary, 'view', 'dashboard');
 
-        $this->assertInstanceOf(View::class, $response);
-        $this->assertTrue($response->getData()['full_bleed']);
+        $this->assertInstanceOf(Response::class, $response);
+        $this->assertSame('<h1>Dashboard</h1>', $response->getContent());
     }
 
     public function test_partial_view_preview_keeps_framed_canvas(): void
@@ -166,7 +167,7 @@ class EvolveLibraryViewsTest extends TestCase
         $response = app(EvolvePreviewController::class)->show(new EvolveLibrary, 'view', 'partials/head');
 
         $this->assertInstanceOf(View::class, $response);
-        $this->assertFalse($response->getData()['full_bleed']);
+        $this->assertArrayNotHasKey('full_bleed', $response->getData());
     }
 
     public function test_non_starter_kit_views_can_be_created_without_snapshot(): void
