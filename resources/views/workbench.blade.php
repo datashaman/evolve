@@ -200,8 +200,8 @@
               <div class="metadata-field"><label for="meta-name">Name</label><input id="meta-name"></div>
               <div class="metadata-field" data-meta="path"><label for="meta-slug">Path</label><input id="meta-slug"></div>
               <div class="metadata-field" data-meta="route"><label for="meta-route">Route</label><input id="meta-route"></div>
-              <div class="metadata-field" data-meta="route-name"><label for="meta-route-name">Route name</label><input id="meta-route-name" placeholder="auto"></div>
-              <div class="metadata-field" data-meta="middleware"><label for="meta-middleware">Middleware</label><textarea id="meta-middleware" rows="3" placeholder="auth&#10;verified"></textarea></div>
+              <div class="metadata-field" data-meta="route-name"><label for="meta-route-name">Route name</label><input id="meta-route-name"></div>
+              <div class="metadata-field" data-meta="middleware"><label for="meta-middleware">Middleware</label><textarea id="meta-middleware" rows="3"></textarea></div>
               <div class="metadata-field" data-meta="parent"><label for="meta-parent">Parent</label><input id="meta-parent" list="page-parent-options"></div>
               <div class="metadata-field" data-meta="order"><label for="meta-order">Order</label><input id="meta-order" type="number" min="0" step="1"></div>
               <datalist id="page-parent-options"></datalist>
