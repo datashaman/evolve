@@ -37,6 +37,10 @@ class EvolvePreviewImpersonationTest extends TestCase
         Route::middleware(['web', 'auth'])->get('/test-preview-auth-only', function () {
             return response('auth-ok');
         });
+
+        Route::middleware(['web', 'auth'])->get('/workbench/preview/test', function () {
+            return response('internal-preview-ok');
+        });
     }
 
     public function test_request_without_preview_as_runs_as_session_user(): void
@@ -111,6 +115,29 @@ class EvolvePreviewImpersonationTest extends TestCase
 
         $this->actingAs($workbenchUser)
             ->get('/login?preview_as=guest')
+            ->assertOk();
+    }
+
+    public function test_preview_as_guest_does_not_lock_internal_preview_route(): void
+    {
+        config()->set('evolve.preview.allow_impersonation', true);
+
+        $workbenchUser = User::factory()->create();
+
+        $this->actingAs($workbenchUser)
+            ->get('/workbench/preview/test?preview_as=guest')
+            ->assertOk()
+            ->assertSee('internal-preview-ok');
+    }
+
+    public function test_preview_as_guest_can_render_welcome_view_preview(): void
+    {
+        config()->set('evolve.preview.allow_impersonation', true);
+
+        $workbenchUser = User::factory()->create();
+
+        $this->actingAs($workbenchUser)
+            ->get('/workbench/preview/view/welcome?preview_as=guest')
             ->assertOk();
     }
 

@@ -20,6 +20,10 @@ class EvolvePreviewImpersonation
             return $next($request);
         }
 
+        if ($request->is('workbench/preview/*')) {
+            return $next($request);
+        }
+
         abort_unless((bool) config('evolve.preview.allow_impersonation'), 403, 'Preview impersonation is disabled.');
         abort_unless(Auth::check(), 403, 'Preview impersonation requires an authenticated workbench session.');
 
