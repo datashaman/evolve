@@ -98,6 +98,8 @@ The Evolve MCP server is in `app/Mcp/Servers/EvolveServer.php`. Artifact tools l
 
 Mutating MCP tools should default to dry-run behavior unless intentionally destructive and confirmed. Delete tools require `confirm_id`.
 
+It is often easy to edit artifact files directly, but resist that temptation. Prefer MCP tools or the workbench library API where possible so changes flow through the structured artifact process, update manifest metadata consistently, and exercise the same safety checks users rely on. Use direct file edits for artifacts only as a last resort, or when changing application code that is outside the artifact model.
+
 When changing artifact kinds, update:
 
 - `EvolveLibrary`
