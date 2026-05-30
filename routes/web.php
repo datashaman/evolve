@@ -23,6 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('workbench/preview/{kind}/{id}', [EvolvePreviewController::class, 'show'])
         ->where('kind', 'component|form|layout|page|snippet')
         ->where('id', '[A-Za-z0-9_\\-\\/]+');
+    Route::get('api/preview/users', [EvolvePreviewController::class, 'users']);
 });
 
 Route::get('evolve.css', [EvolveLibraryController::class, 'stylesheet'])->name('evolve.styles');

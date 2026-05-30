@@ -84,6 +84,18 @@ Path and route are intentionally separate. Do not infer that route changes imply
 
 Forms that define a `route` carry `route_name` and `middleware` on the same terms as pages.
 
+## Preview impersonation
+
+The workbench preview iframe loads the artifact's real route, so middleware on that route applies. To preview a page as a different identity, the workbench supports `?preview_as={user_id}` on any request in the `web` middleware group. The `EvolvePreviewImpersonation` middleware logs in as the chosen user for that single request (via `Auth::onceUsingId`) without touching the workbench session.
+
+Controls:
+
+- `config('evolve.preview.allow_impersonation')` — default `true`, override with `EVOLVE_PREVIEW_ALLOW_IMPERSONATION=false`.
+- `GET /api/preview/users` — returns the list shown in the toolbar picker; 403 when impersonation is disabled.
+- The picker reloads the iframe whenever the selection changes; the same `preview_as` param is carried through when the "Open" button opens the preview in a new tab.
+
+Impersonation requires the requester to already be authenticated to the workbench; an unauthenticated request with `preview_as` is rejected with 403.
+
 ## Content Helpers
 
 Agent-created templates should prefer the documented helper layer over custom manifest parsing:

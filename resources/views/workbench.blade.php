@@ -13,6 +13,8 @@
     body { display: flex; flex-direction: column; font-family: system-ui, sans-serif; background: #18181b; }
     .toolbar { display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: #18181b; color: #fafafa; }
     .toolbar h1 { font-size: 14px; font-weight: 650; margin: 0 12px 0 0; white-space: nowrap; }
+    .preview-as { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #fafafa; }
+    .preview-as select { background: #27272a; color: #fafafa; border: 1px solid #3f3f46; border-radius: 6px; padding: 4px 8px; font-size: 12px; }
     .kind { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #a1a1aa; padding: 2px 8px; border: 1px solid #3f3f46; border-radius: 999px; }
     button { font: inherit; }
     .toolbar button, .sidebar header button {
@@ -151,6 +153,14 @@
     <span class="kind" id="kind">component</span>
     <flux:button id="btn-reload" size="sm" variant="filled">Reload</flux:button>
     <span class="spacer"></span>
+    @if (config('evolve.preview.allow_impersonation'))
+      <label class="preview-as" for="preview-as">
+        Preview as
+        <select id="preview-as">
+          <option value="">Self</option>
+        </select>
+      </label>
+    @endif
     <flux:button id="btn-delete" size="sm" variant="filled" data-danger>Delete</flux:button>
     <flux:button id="btn-open" size="sm" variant="filled">Open</flux:button>
   </header>
@@ -807,7 +817,7 @@
       const c = selected();
       if (!c) return;
       if (c.kind === 'content') return;
-      frame.src = `${previewUrl(c)}?t=${Date.now()}`;
+      frame.src = withPreviewParams(previewUrl(c), { t: Date.now() });
     }
 
     function previewUrl(c) {
@@ -815,6 +825,37 @@
       if (c.kind === 'style') return '/';
       if (['form', 'page'].includes(c.kind)) return previewRoute(c.route || routeFromPath(c.path));
       return `/workbench/preview/${c.kind}/${c.id}`;
+    }
+
+    const previewAsField = document.getElementById('preview-as');
+
+    function previewAsValue() {
+      return previewAsField?.value || '';
+    }
+
+    function withPreviewParams(url, extras = {}) {
+      const params = new URLSearchParams(extras);
+      const previewAs = previewAsValue();
+      if (previewAs) params.set('preview_as', previewAs);
+      const query = params.toString();
+      if (!query) return url;
+      return `${url}${url.includes('?') ? '&' : '?'}${query}`;
+    }
+
+    if (previewAsField) {
+      fetch('/api/preview/users', { headers: { Accept: 'application/json' } })
+        .then(response => response.ok ? response.json() : Promise.reject(response))
+        .then(payload => {
+          const users = Array.isArray(payload?.users) ? payload.users : [];
+          for (const user of users) {
+            const option = document.createElement('option');
+            option.value = String(user.id);
+            option.textContent = `${user.name} <${user.email}>`;
+            previewAsField.appendChild(option);
+          }
+        })
+        .catch(() => { previewAsField.disabled = true; });
+      previewAsField.addEventListener('change', () => renderFrame());
     }
 
     function previewRoute(route) {
@@ -966,7 +1007,7 @@
     document.getElementById('btn-add-content-row').onclick = () => addContentRow();
     contentSearch.addEventListener('input', () => { contentFilter = contentSearch.value; renderContentIndex(); });
     document.getElementById('btn-reload').onclick = () => load();
-    document.getElementById('btn-open').onclick = () => { const c = selected(); if (c) window.open(previewUrl(c), '_blank'); };
+    document.getElementById('btn-open').onclick = () => { const c = selected(); if (c) window.open(withPreviewParams(previewUrl(c)), '_blank'); };
     deleteButton.onclick = () => deleteSelectedArtifact();
 
     function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
