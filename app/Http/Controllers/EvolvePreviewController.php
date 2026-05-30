@@ -20,9 +20,12 @@ class EvolvePreviewController extends Controller
             return response($content);
         }
 
+        $fullBleed = $kind === 'view' && ! $library->viewIsPartial($id);
+
         return view('evolve.preview', [
             'kind' => $kind,
             'content' => $content,
+            'full_bleed' => $fullBleed,
         ]);
     }
 

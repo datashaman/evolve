@@ -52,7 +52,7 @@
         }
     </style>
 </head>
-<body class="{{ ($kind ?? '') === 'layout' ? 'preview-full' : '' }}">
+<body class="{{ ($kind ?? '') === 'layout' || ($full_bleed ?? false) ? 'preview-full' : '' }}">
     {!! $content !!}
     @livewireScripts
 </body>

@@ -2,10 +2,12 @@
 
 namespace Tests\Unit;
 
+use App\Http\Controllers\EvolvePreviewController;
 use App\Services\EvolveLibrary;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 use Tests\TestCase;
 
 class EvolveLibraryViewsTest extends TestCase
@@ -112,6 +114,59 @@ class EvolveLibraryViewsTest extends TestCase
         }
 
         $this->assertSame('<div>workbench shell</div>', File::get(resource_path('views/workbench.blade.php')));
+    }
+
+    public function test_view_is_partial_flag_marks_partials_and_flux_dirs(): void
+    {
+        File::put(resource_path('views/dashboard.blade.php'), '<h1>Dashboard</h1>');
+        File::ensureDirectoryExists(resource_path('views/partials'));
+        File::put(resource_path('views/partials/head.blade.php'), '<title>App</title>');
+        File::ensureDirectoryExists(resource_path('views/flux/icon'));
+        File::put(resource_path('views/flux/icon/book-open-text.blade.php'), '<svg></svg>');
+
+        $library = new EvolveLibrary;
+        $views = collect($library->all()['views']);
+
+        $this->assertFalse($views->firstWhere('id', 'dashboard')['is_partial']);
+        $this->assertTrue($views->firstWhere('id', 'partials/head')['is_partial']);
+        $this->assertTrue($views->firstWhere('id', 'flux/icon/book-open-text')['is_partial']);
+    }
+
+    public function test_non_partial_view_preview_uses_full_bleed_canvas(): void
+    {
+        File::ensureDirectoryExists(resource_path('views/evolve'));
+        File::put(resource_path('views/evolve/preview.blade.php'), '<body></body>');
+        File::put(resource_path('views/dashboard.blade.php'), '<h1>Dashboard</h1>');
+        File::put(resource_path('evolve/manifest.json'), json_encode([
+            'views' => [[
+                'id' => 'dashboard',
+                'usage' => '<h1>Dashboard</h1>',
+            ]],
+        ], JSON_PRETTY_PRINT));
+
+        $response = app(EvolvePreviewController::class)->show(new EvolveLibrary, 'view', 'dashboard');
+
+        $this->assertInstanceOf(View::class, $response);
+        $this->assertTrue($response->getData()['full_bleed']);
+    }
+
+    public function test_partial_view_preview_keeps_framed_canvas(): void
+    {
+        File::ensureDirectoryExists(resource_path('views/evolve'));
+        File::put(resource_path('views/evolve/preview.blade.php'), '<body></body>');
+        File::ensureDirectoryExists(resource_path('views/partials'));
+        File::put(resource_path('views/partials/head.blade.php'), '<title>App</title>');
+        File::put(resource_path('evolve/manifest.json'), json_encode([
+            'views' => [[
+                'id' => 'partials/head',
+                'usage' => '<title>App</title>',
+            ]],
+        ], JSON_PRETTY_PRINT));
+
+        $response = app(EvolvePreviewController::class)->show(new EvolveLibrary, 'view', 'partials/head');
+
+        $this->assertInstanceOf(View::class, $response);
+        $this->assertFalse($response->getData()['full_bleed']);
     }
 
     public function test_non_starter_kit_views_can_be_created_without_snapshot(): void

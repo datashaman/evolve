@@ -288,6 +288,7 @@ class EvolveLibrary
                     'name' => $entry['name'] ?? Str::headline(basename($id)),
                     'is_starter_kit' => $this->isStarterKitArtifact('view', $id),
                     'has_original' => $this->hasStarterKitOriginal('view', $id),
+                    'is_partial' => $this->viewIsPartial($id),
                     'metadata' => is_array($entry['metadata'] ?? null) ? $entry['metadata'] : [],
                     'usage' => $entry['usage'] ?? "@include('".str_replace('/', '.', $id)."')",
                     'path' => $relative,
@@ -810,6 +811,13 @@ class EvolveLibrary
         if ($this->isStarterKitArtifact($kind, $id)) {
             $this->snapshotStarterKitOriginal($kind, $id);
         }
+    }
+
+    public function viewIsPartial(string $id): bool
+    {
+        $id = $this->safeId($id);
+
+        return str_starts_with($id, 'partials/') || str_starts_with($id, 'flux/');
     }
 
     public function isWorkbenchInternalArtifact(string $kind, string $id): bool
