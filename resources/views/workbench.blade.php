@@ -37,7 +37,7 @@
     .sidebar li[draggable="true"] { cursor: grab; }
     .sidebar li.dragging { opacity: .45; }
     .sidebar .label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .sidebar .meta { max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #a1a1aa; font-size: 11px; }
+    .sidebar .meta { flex: 0 0 auto; white-space: nowrap; color: #a1a1aa; font-size: 11px; }
     .sidebar li.active .meta { color: #c7d2fe; }
     .empty { padding: 4px 12px 10px; color: #71717a; font-size: 12px; }
     .stage { flex: 1; display: grid; grid-template-columns: minmax(360px, var(--editor-width, 44%)) 9px minmax(320px, 1fr); min-width: 0; min-height: 0; overflow: hidden; }
@@ -133,8 +133,8 @@
     <nav class="sidebar">
       <section><header><span>Styles</span><flux:button id="btn-new-style" size="xs" variant="filled">+</flux:button></header><ul id="list-styles"></ul><div class="empty" id="empty-styles" hidden>No styles yet.</div></section>
       <section><header><span>Layouts</span><flux:button id="btn-new-layout" size="xs" variant="filled">+</flux:button></header><ul id="list-layouts"></ul><div class="empty" id="empty-layouts" hidden>No layouts yet.</div></section>
-      <section><header><span>Components</span><flux:button id="btn-new-component" size="xs" variant="filled">+</flux:button></header><ul id="list-components"></ul><div class="empty" id="empty-components" hidden>No components yet.</div></section>
       <section><header><span>Pages</span><flux:button id="btn-new-page" size="xs" variant="filled">+</flux:button></header><ul id="list-pages"></ul><div class="empty" id="empty-pages" hidden>No pages yet.</div></section>
+      <section><header><span>Components</span><flux:button id="btn-new-component" size="xs" variant="filled">+</flux:button></header><ul id="list-components"></ul><div class="empty" id="empty-components" hidden>No components yet.</div></section>
       <section><header><span>Forms</span><flux:button id="btn-new-form" size="xs" variant="filled">+</flux:button></header><ul id="list-forms"></ul><div class="empty" id="empty-forms" hidden>No forms yet.</div></section>
       <section><header><span>Content</span><flux:button id="btn-new-content" size="xs" variant="filled">+</flux:button></header><ul id="list-content"></ul><div class="empty" id="empty-content" hidden>No content yet.</div></section>
     </nav>
@@ -238,7 +238,7 @@
     const selectedContentModel = () => contentModels.find(model => model.id === selectedContentId) ?? contentModels[0] ?? { id: 'services', name: 'Service', model: 'Service' };
     const refreshContentModel = () => {
       contentModels = contentModels.map(model => ({ ...model, meta: `${(contentData[model.id] ?? []).length} rows` }));
-      library = [...byKind('style'), ...byKind('layout'), ...byKind('component'), ...byKind('page'), ...byKind('form'), ...contentModels];
+      library = [...byKind('style'), ...byKind('layout'), ...byKind('page'), ...byKind('component'), ...byKind('form'), ...contentModels];
     };
 
     async function load() {
@@ -250,7 +250,7 @@
       contentData = content.data ?? { services: content.services ?? [] };
       selectedContentId = contentModels.find(model => model.id === selectedContentId)?.id ?? contentModels[0]?.id ?? 'services';
       contentRows = contentData[selectedContentId] ?? [];
-      library = [...data.styles, ...data.layouts, ...data.components, ...data.pages, ...(data.forms ?? []), ...contentModels];
+      library = [...data.styles, ...data.layouts, ...data.pages, ...data.components, ...(data.forms ?? []), ...contentModels];
       selectedKey ||= artifactKey(library[0]);
       renderLists();
       syncInputs();
@@ -340,8 +340,8 @@
     function renderLists() {
       renderList('style', 'list-styles', 'empty-styles');
       renderList('layout', 'list-layouts', 'empty-layouts');
-      renderList('component', 'list-components', 'empty-components');
       renderList('page', 'list-pages', 'empty-pages');
+      renderList('component', 'list-components', 'empty-components');
       renderList('form', 'list-forms', 'empty-forms');
       renderList('content', 'list-content', 'empty-content');
     }
@@ -389,6 +389,8 @@
     function navigationMetaFormatter(kind, items) {
       if (kind === 'content') return item => item.meta;
       if (['form', 'page'].includes(kind)) return item => item.slug;
+      if (kind === 'component') return item => `<livewire:${item.component} />`;
+      if (kind === 'layout') return item => item.component;
 
       const paths = items.map(item => item.source_path || item.path || item.id).filter(Boolean);
       const prefix = commonPrefix(paths);
@@ -524,7 +526,7 @@
       if (from < 0 || to < 0) return;
       const [moved] = styles.splice(from, 1);
       styles.splice(to, 0, moved);
-      library = [...styles, ...byKind('layout'), ...byKind('component'), ...byKind('page'), ...byKind('form'), ...byKind('content')];
+      library = [...styles, ...byKind('layout'), ...byKind('page'), ...byKind('component'), ...byKind('form'), ...byKind('content')];
       renderLists();
       save(true);
     }
@@ -672,7 +674,7 @@
         selectedContentId = created?.id ?? selectedContentId;
         contentRows = contentData[selectedContentId] ?? [];
         selectedKey = `content:${selectedContentId}`;
-        library = [...byKind('style'), ...byKind('layout'), ...byKind('component'), ...byKind('page'), ...byKind('form'), ...contentModels];
+        library = [...byKind('style'), ...byKind('layout'), ...byKind('page'), ...byKind('component'), ...byKind('form'), ...contentModels];
         renderLists(); syncInputs();
       }).catch(error => alert(error.message));
     }
