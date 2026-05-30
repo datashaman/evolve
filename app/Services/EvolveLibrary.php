@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class EvolveLibrary
 {
@@ -209,6 +210,8 @@ class EvolveLibrary
                 continue;
             }
 
+            $this->assertArtifactCanBeChanged('style', $id);
+
             $keep[] = $id;
             $this->writeFile($this->stylePath($id), rtrim((string) ($artifact['style'] ?? ''))."\n");
             $entries[] = [
@@ -221,6 +224,8 @@ class EvolveLibrary
         foreach ($previousEntries as $entry) {
             $id = $this->safeId($entry['id'] ?? '');
             if ($id !== '' && ! in_array($id, $keep, true)) {
+                $this->assertArtifactCanBeChanged('style', $id);
+
                 File::delete($this->stylePath($id));
             }
         }
@@ -271,6 +276,8 @@ class EvolveLibrary
             if ($id === '') {
                 continue;
             }
+
+            $this->assertArtifactCanBeChanged($kind, $id);
 
             $keep[] = $id;
             if ($kind === 'layout') {
@@ -389,6 +396,8 @@ class EvolveLibrary
             $id = $this->safeId($entry['id'] ?? '');
 
             if ($id !== '' && ! in_array($id, $keep, true)) {
+                $this->assertArtifactCanBeChanged($kind, $id);
+
                 File::delete($this->filePath($kind, $id));
                 if ($kind === 'layout') {
                     File::delete($this->layoutStylePath($id));
@@ -464,6 +473,56 @@ class EvolveLibrary
             'page' => 'pages::'.$this->componentName($id),
             default => $this->componentName($id),
         };
+    }
+
+    protected function assertArtifactCanBeChanged(string $kind, string $id): void
+    {
+        if (! $this->isProtectedArtifact($kind, $id)) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'path' => "The workbench cannot modify protected {$kind} artifact [{$id}].",
+        ]);
+    }
+
+    protected function isProtectedArtifact(string $kind, string $id): bool
+    {
+        $id = $this->safeId($id);
+        $protected = match ($kind) {
+            'style' => [
+                'exact' => ['app'],
+                'prefixes' => [],
+            ],
+            'component' => [
+                'exact' => [
+                    'app-logo',
+                    'app-logo-icon',
+                    'auth-header',
+                    'auth-session-status',
+                    'desktop-user-menu',
+                    'passkey-registration',
+                    'passkey-verify',
+                    'placeholder-pattern',
+                ],
+                'prefixes' => [],
+            ],
+            'layout' => [
+                'exact' => ['app', 'auth'],
+                'prefixes' => ['app/', 'auth/'],
+            ],
+            'page' => [
+                'exact' => ['auth', 'settings'],
+                'prefixes' => ['auth/', 'settings/'],
+            ],
+            default => [
+                'exact' => [],
+                'prefixes' => [],
+            ],
+        };
+
+        return in_array($id, $protected['exact'], true)
+            || collect($protected['prefixes'])->contains(fn (string $prefix): bool => str_starts_with($id, $prefix));
     }
 
     protected function componentName(string $id): string

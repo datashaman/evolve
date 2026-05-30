@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Services\EvolveLibrary;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class EvolveLibraryPathsTest extends TestCase
@@ -120,6 +121,76 @@ class EvolveLibraryPathsTest extends TestCase
         $this->assertSame('resources/css/themes/site.css', $style['source_path']);
     }
 
+    public function test_artifacts_cannot_overwrite_workbench_assets(): void
+    {
+        File::ensureDirectoryExists(resource_path('css'));
+        File::put(resource_path('css/app.css'), '/* workbench css */');
+
+        $library = new EvolveLibrary;
+
+        $this->assertWorkbenchWriteIsBlocked(fn () => $library->write([
+            'styles' => [
+                [
+                    'name' => 'App',
+                    'path' => 'resources/css/app.css',
+                    'style' => 'body { color: red; }',
+                ],
+            ],
+        ]));
+
+        $this->assertSame('/* workbench css */', File::get(resource_path('css/app.css')));
+        $this->assertFalse(File::exists(resource_path('evolve/manifest.json')));
+    }
+
+    public function test_artifacts_cannot_overwrite_starter_views_used_by_the_workbench_shell(): void
+    {
+        File::ensureDirectoryExists(resource_path('views/layouts/app'));
+        File::ensureDirectoryExists(resource_path('views/pages/auth'));
+        File::ensureDirectoryExists(resource_path('views/components'));
+        File::put(resource_path('views/layouts/app/sidebar.blade.php'), 'starter sidebar');
+        File::put(resource_path('views/pages/auth/login.blade.php'), 'starter login');
+        File::put(resource_path('views/components/app-logo.blade.php'), 'starter logo');
+
+        $library = new EvolveLibrary;
+
+        $this->assertWorkbenchWriteIsBlocked(fn () => $library->write([
+            'layouts' => [
+                [
+                    'name' => 'Sidebar',
+                    'path' => 'resources/views/layouts/app/sidebar.blade.php',
+                    'blade' => '<div>Changed</div>',
+                ],
+            ],
+        ]));
+
+        $this->assertWorkbenchWriteIsBlocked(fn () => $library->write([
+            'pages' => [
+                [
+                    'name' => 'Login',
+                    'path' => 'resources/views/pages/auth/login.blade.php',
+                    'php' => $this->componentPhp(),
+                    'blade' => '<div>Changed</div>',
+                ],
+            ],
+        ]));
+
+        $this->assertWorkbenchWriteIsBlocked(fn () => $library->write([
+            'components' => [
+                [
+                    'name' => 'App logo',
+                    'path' => 'resources/views/components/app-logo.blade.php',
+                    'php' => $this->componentPhp(),
+                    'blade' => '<div>Changed</div>',
+                ],
+            ],
+        ]));
+
+        $this->assertSame('starter sidebar', File::get(resource_path('views/layouts/app/sidebar.blade.php')));
+        $this->assertSame('starter login', File::get(resource_path('views/pages/auth/login.blade.php')));
+        $this->assertSame('starter logo', File::get(resource_path('views/components/app-logo.blade.php')));
+        $this->assertFalse(File::exists(resource_path('evolve/manifest.json')));
+    }
+
     public function test_single_artifact_updates_preserve_other_artifacts(): void
     {
         $library = new EvolveLibrary;
@@ -216,5 +287,15 @@ new class extends Component {
     //
 };
 PHP;
+    }
+
+    private function assertWorkbenchWriteIsBlocked(callable $callback): void
+    {
+        try {
+            $callback();
+            $this->fail('Workbench write was not blocked.');
+        } catch (ValidationException $exception) {
+            $this->assertStringContainsString('protected', $exception->getMessage());
+        }
     }
 }

@@ -157,6 +157,22 @@ class EvolveMcpServerTest extends TestCase
         $this->assertSame($before, File::get(resource_path('evolve/manifest.json')));
     }
 
+    public function test_mcp_artifact_writes_cannot_touch_workbench_assets(): void
+    {
+        File::ensureDirectoryExists(resource_path('css'));
+        File::put(resource_path('css/app.css'), '/* workbench css */');
+
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'style',
+            'name' => 'App',
+            'path' => 'resources/css/app.css',
+            'style' => 'body { color: red; }',
+            'dry_run' => false,
+        ])->assertHasErrors(['protected']);
+
+        $this->assertSame('/* workbench css */', File::get(resource_path('css/app.css')));
+    }
+
     public function test_content_tools_list_rows_and_upsert_granularly(): void
     {
         $fixture = $this->fixtureModelClass();
