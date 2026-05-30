@@ -158,6 +158,23 @@ class EvolveLibraryViewsTest extends TestCase
         $this->assertTrue($views->firstWhere('id', 'flux/icon/book-open-text')['is_hidden']);
     }
 
+    public function test_app_shell_partials_are_classified_as_app_shell_advanced(): void
+    {
+        File::ensureDirectoryExists(resource_path('views/partials'));
+        File::put(resource_path('views/partials/head.blade.php'), '<title>App</title>');
+        File::put(resource_path('views/partials/settings-heading.blade.php'), '<h1>Settings</h1>');
+
+        $views = collect((new EvolveLibrary)->all()['views']);
+
+        foreach (['partials/head', 'partials/settings-heading'] as $id) {
+            $view = $views->firstWhere('id', $id);
+
+            $this->assertSame('app_shell', $view['surface']);
+            $this->assertSame('advanced', $view['visibility']);
+            $this->assertSame('starter_kit', $view['origin']);
+        }
+    }
+
     public function test_non_partial_view_preview_renders_without_preview_shell(): void
     {
         File::ensureDirectoryExists(resource_path('views/evolve'));

@@ -249,6 +249,9 @@ class EvolveLibrary
         if ($kind === 'view' && $this->viewRole($id) === 'kit_internal') {
             $surface = 'developer';
             $visibility = 'hidden';
+        } elseif ($origin === 'starter_kit' && $kind === 'view' && $this->isAppShellPartialView($id)) {
+            $surface = 'app_shell';
+            $visibility = 'advanced';
         } elseif ($origin === 'starter_kit' && $kind === 'page' && (str_starts_with($id, 'auth/') || str_starts_with($id, 'settings/'))) {
             $surface = filled($this->starterKitRouteMetadata($kind, $id)['route'] ?? '') ? 'app_shell' : 'developer';
             $visibility = 'advanced';
@@ -1069,6 +1072,13 @@ class EvolveLibrary
         }
 
         return 'page';
+    }
+
+    protected function isAppShellPartialView(string $id): bool
+    {
+        $id = $this->safeId($id);
+
+        return $id === 'partials/head' || str_starts_with($id, 'partials/settings-');
     }
 
     public function isWorkbenchInternalArtifact(string $kind, string $id): bool
