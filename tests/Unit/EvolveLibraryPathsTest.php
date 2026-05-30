@@ -183,6 +183,30 @@ class EvolveLibraryPathsTest extends TestCase
         $this->assertSame(':root { --brand: blue; }', trim(File::get(resource_path('css/theme.css'))));
     }
 
+    public function test_artifacts_can_be_deleted(): void
+    {
+        $library = new EvolveLibrary;
+
+        $library->write([
+            'forms' => [
+                [
+                    'id' => 'contact',
+                    'name' => 'Contact',
+                    'slug' => '/contact',
+                    'php' => $this->componentPhp(),
+                    'blade' => '<form>Contact</form>',
+                ],
+            ],
+        ]);
+
+        $this->assertTrue(File::exists(resource_path('views/forms/contact.blade.php')));
+
+        $library->deleteArtifact('form', 'contact');
+
+        $this->assertSame([], $library->all()['forms']);
+        $this->assertFalse(File::exists(resource_path('views/forms/contact.blade.php')));
+    }
+
     private function componentPhp(): string
     {
         return <<<'PHP'

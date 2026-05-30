@@ -20,6 +20,8 @@
       background: linear-gradient(180deg, #303036, #242428); color: #fafafa; cursor: pointer;
     }
     .toolbar button:hover, .sidebar header button:hover { background: linear-gradient(180deg, #3a3a42, #2d2d33); }
+    .toolbar [data-danger] { border-color: #7f1d1d; background: linear-gradient(180deg, #51242b, #3f1f24); color: #fecaca; }
+    .toolbar [data-danger]:hover { background: linear-gradient(180deg, #632a32, #4c232a); }
     .spacer { flex: 1; }
     .workspace { flex: 1; display: flex; min-height: 0; }
     .workspace.resizing, .stage.resizing { cursor: col-resize; user-select: none; }
@@ -126,6 +128,7 @@
     <span class="kind" id="kind">component</span>
     <flux:button id="btn-reload" size="sm" variant="filled">Reload</flux:button>
     <span class="spacer"></span>
+    <flux:button id="btn-delete" size="sm" variant="filled" data-danger>Delete</flux:button>
     <flux:button id="btn-open" size="sm" variant="filled">Open</flux:button>
   </header>
 
@@ -213,6 +216,7 @@
     const contentSearch = document.getElementById('content-search');
     const contentModelName = document.getElementById('content-model-name');
     const contentModelPath = document.getElementById('content-model-path');
+    const deleteButton = document.getElementById('btn-delete');
     const fields = {
       name: document.getElementById('meta-name'),
       slug: document.getElementById('meta-slug'),
@@ -242,9 +246,13 @@
       contentModels = contentModels.map(model => ({ ...model, meta: `${(contentData[model.id] ?? []).length} rows` }));
       library = [...byKind('style'), ...byKind('layout'), ...byKind('page'), ...byKind('component'), ...byKind('form'), ...contentModels];
     };
-    const applyLibraryData = data => {
+    const applyLibraryData = (data, fallbackKey = '') => {
       library = [...libraryArtifacts(data), ...contentModels];
-      selectedKey = library.find(item => artifactKey(item) === selectedKey) ? selectedKey : artifactKey(library[0]);
+      selectedKey = library.find(item => artifactKey(item) === selectedKey)
+        ? selectedKey
+        : library.find(item => artifactKey(item) === fallbackKey)
+          ? fallbackKey
+          : artifactKey(library[0]);
       renderLists();
       syncInputs();
     };
@@ -348,6 +356,38 @@
     function scheduleContentSave(refresh = false) {
       clearTimeout(contentSaveTimer);
       contentSaveTimer = setTimeout(() => saveContent(refresh), 300);
+    }
+
+    function deleteSelectedArtifact() {
+      const artifact = selected();
+      if (!artifact || artifact.kind === 'content') return;
+
+      const kindItems = byKind(artifact.kind);
+      const index = kindItems.findIndex(item => artifactKey(item) === artifactKey(artifact));
+      const fallback = kindItems[index + 1] ?? kindItems[index - 1] ?? library.find(item => item.kind !== 'content') ?? byKind('content')[0];
+      const target = artifact.path || artifact.slug || artifact.id;
+
+      if (!confirm(`Delete ${artifact.kind} "${artifact.name || artifact.id}"?\n\nThis removes ${target}.`)) return;
+
+      clearTimeout(saveTimer);
+      deleteButton.disabled = true;
+
+      fetch(`${API}/${artifact.kind}/${artifactRouteId(artifact)}`, {
+        method: 'DELETE',
+        headers: { 'x-csrf-token': csrf },
+      }).then(r => {
+        if (!r.ok) throw new Error('Delete failed');
+        return r.json();
+      }).then(data => {
+        selectedKey = '';
+        applyLibraryData(data, artifactKey(fallback));
+        renderFrame();
+      }).catch(error => {
+        alert(error.message);
+      }).finally(() => {
+        deleteButton.disabled = false;
+        syncInputs();
+      });
     }
 
     function renderLists() {
@@ -564,6 +604,7 @@
       fields.style.value = c?.style ?? '';
       fields.usage.value = c?.usage ?? '';
       const isContent = c?.kind === 'content';
+      deleteButton.hidden = !c || isContent;
       stage.classList.toggle('content-mode', isContent);
       sourceSection('metadata').hidden = isContent;
       const pathField = document.querySelector('[data-meta="path"]');
@@ -714,6 +755,7 @@
     contentSearch.addEventListener('input', () => { contentFilter = contentSearch.value; renderContentIndex(); });
     document.getElementById('btn-reload').onclick = () => load();
     document.getElementById('btn-open').onclick = () => { const c = selected(); if (c) window.open(previewUrl(c), '_blank'); };
+    deleteButton.onclick = () => deleteSelectedArtifact();
 
     function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
     function highlightHtml(source) {

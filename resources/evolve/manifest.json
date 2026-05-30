@@ -9,11 +9,6 @@
             "id": "site",
             "name": "Site",
             "path": "resources/css/site.css"
-        },
-        {
-            "id": "test",
-            "name": "Test",
-            "path": "resources/css/test.css"
         }
     ],
     "components": [
@@ -68,12 +63,6 @@
             "name": "About",
             "path": "resources/views/layouts/about.blade.php",
             "usage": "<x-layouts::about>\n  <x-slot:hero>\n    <h1>An editorial shell for trust-building pages.</h1>\n  </x-slot:hero>\n\n  <x-slot:aside>\n    Preview side-panel content.\n  </x-slot:aside>\n\n  <livewire:feature-card icon=\"01\" title=\"Narrative first\" />\n</x-layouts::about>"
-        },
-        {
-            "id": "test",
-            "name": "New layout",
-            "path": "resources/views/layouts/test.blade.php",
-            "usage": "<x-layouts::test></x-layouts::test>"
         }
     ],
     "pages": [
@@ -88,12 +77,6 @@
             "name": "About",
             "slug": "/about",
             "usage": "<livewire:pages::about />"
-        },
-        {
-            "id": "new",
-            "name": "New page",
-            "slug": "/new",
-            "usage": "<livewire:pages::new />"
         }
     ]
 }
