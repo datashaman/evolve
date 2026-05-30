@@ -278,6 +278,48 @@ PHP,
         $this->assertSame('', $parents['orphan']);
     }
 
+    public function test_starter_kit_auth_and_settings_pages_are_discovered_as_app_shell_inventory(): void
+    {
+        File::ensureDirectoryExists(resource_path('views/pages/auth'));
+        File::ensureDirectoryExists(resource_path('views/pages/settings'));
+        File::put(resource_path('views/pages/auth/login.blade.php'), $this->componentSource('<div>Login</div>'));
+        File::put(resource_path('views/pages/settings/layout.blade.php'), '<div>{{ $slot }}</div>');
+        File::put(resource_path('views/pages/settings/⚡profile.blade.php'), $this->componentSource('<div>Profile</div>'));
+
+        $library = new EvolveLibrary;
+        $data = $library->all();
+        $pages = collect($data['pages']);
+        $websitePages = collect($data['surfaces']['website']['pages']);
+        $appShellPages = collect($data['surfaces']['app_shell']['pages']);
+        $developerPages = collect($data['surfaces']['developer']['pages']);
+
+        $login = $pages->firstWhere('id', 'auth/login');
+        $layout = $pages->firstWhere('id', 'settings/layout');
+        $profile = $pages->firstWhere('id', 'settings/profile');
+
+        $this->assertNotNull($login);
+        $this->assertNotNull($layout);
+        $this->assertNotNull($profile);
+        $this->assertSame('app_shell', $login['surface']);
+        $this->assertSame('advanced', $login['visibility']);
+        $this->assertSame('/login', $login['route']);
+        $this->assertSame('login', $login['route_name']);
+        $this->assertSame('developer', $layout['surface']);
+        $this->assertSame('advanced', $layout['visibility']);
+        $this->assertSame('', $layout['route']);
+        $this->assertSame('', $layout['route_name']);
+        $this->assertSame('/settings/profile', $profile['route']);
+        $this->assertSame('profile.edit', $profile['route_name']);
+        $this->assertSame('resources/views/pages/settings/⚡profile.blade.php', $profile['source_path']);
+        $this->assertSame('<div>Profile</div>', $profile['blade']);
+        $this->assertNull($websitePages->firstWhere('id', 'auth/login'));
+        $this->assertNull($websitePages->firstWhere('id', 'settings/profile'));
+        $this->assertNotNull($appShellPages->firstWhere('id', 'auth/login'));
+        $this->assertNotNull($appShellPages->firstWhere('id', 'settings/profile'));
+        $this->assertNull($appShellPages->firstWhere('id', 'settings/layout'));
+        $this->assertNotNull($developerPages->firstWhere('id', 'settings/layout'));
+    }
+
     private function componentPhp(): string
     {
         return <<<'PHP'
@@ -287,5 +329,10 @@ new class extends Component {
     //
 };
 PHP;
+    }
+
+    private function componentSource(string $blade): string
+    {
+        return "<?php\n\n".$this->componentPhp()."\n?>\n\n{$blade}\n";
     }
 }

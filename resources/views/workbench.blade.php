@@ -154,6 +154,14 @@
     <h1>Evolve Workbench</h1>
     <span class="kind" id="kind">component</span>
     <flux:button id="btn-reload" size="sm" variant="filled">Reload</flux:button>
+    <label class="preview-as" for="surface-mode">
+      Surface
+      <select id="surface-mode">
+        <option value="website">Website</option>
+        <option value="app_shell">App shell</option>
+        <option value="developer">Developer</option>
+      </select>
+    </label>
     <span class="spacer"></span>
     @if (config('evolve.preview.allow_impersonation'))
       <label class="preview-as" for="preview-as">
@@ -286,11 +294,19 @@
     const sourceResizeHandles = [...document.querySelectorAll('[data-resize-source]')];
     const collapseKey = 'evolve.sfc-collapse';
     const heightsKey = 'evolve.sfc-heights';
+    const surfaceKey = 'evolve.surface';
+    let libraryData = null;
+    const surfaceModeField = document.getElementById('surface-mode');
+    surfaceModeField.value = localStorage.getItem(surfaceKey) || 'website';
 
     const artifactKey = c => c ? `${c.kind}:${c.id}` : '';
     const selected = () => library.find(c => artifactKey(c) === selectedKey) ?? null;
     const byKind = kind => library.filter(c => c.kind === kind);
-    const libraryArtifacts = data => [...(data.styles ?? []), ...(data.layouts ?? []), ...(data.pages ?? []), ...(data.snippets ?? []), ...(data.components ?? []), ...(data.forms ?? []), ...(data.views ?? [])];
+    const surfaceData = data => data?.surfaces?.[surfaceModeField.value] ?? data ?? {};
+    const libraryArtifacts = data => {
+      const source = surfaceData(data);
+      return [...(source.styles ?? []), ...(source.layouts ?? []), ...(source.pages ?? []), ...(source.snippets ?? []), ...(source.components ?? []), ...(source.forms ?? []), ...(source.views ?? [])];
+    };
     const artifactRouteId = artifact => String(artifact.previous_id || artifact.id).split('/').map(encodeURIComponent).join('/');
     const selectedContentModel = () => contentModels.find(model => model.id === selectedContentId) ?? contentModels[0] ?? null;
     const refreshContentModel = () => {
@@ -298,6 +314,7 @@
       library = [...byKind('style'), ...byKind('layout'), ...byKind('page'), ...byKind('snippet'), ...byKind('component'), ...byKind('form'), ...byKind('view'), ...contentModels];
     };
     const applyLibraryData = (data, fallbackKey = '') => {
+      libraryData = data;
       library = [...libraryArtifacts(data), ...contentModels];
       selectedKey = library.find(item => artifactKey(item) === selectedKey)
         ? selectedKey
@@ -317,10 +334,7 @@
       contentData = content.data ?? {};
       selectedContentId = contentModels.find(model => model.id === selectedContentId)?.id ?? contentModels[0]?.id ?? '';
       contentRows = contentData[selectedContentId] ?? [];
-      library = [...libraryArtifacts(data), ...contentModels];
-      selectedKey ||= artifactKey(library[0]);
-      renderLists();
-      syncInputs();
+      applyLibraryData(data);
       renderFrame();
     }
 
@@ -788,7 +802,7 @@
       fetch(API, {
         method: 'PUT',
         headers: { 'content-type': 'application/json', 'x-csrf-token': csrf },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(mergeInventoryPayload(payload)),
       }).then(r => {
         if (!r.ok) throw new Error(errorMessage);
         return r.json();
@@ -796,6 +810,32 @@
         applyLibraryData(data);
         renderFrame();
       }).catch(error => alert(error.message));
+    }
+
+    function mergeInventoryPayload(payload) {
+      const merged = {};
+      const groups = ['styles', 'layouts', 'pages', 'snippets', 'components', 'forms', 'views'];
+
+      groups.forEach(group => {
+        if (!payload[group]) return;
+
+        const updates = new Map(payload[group].map(item => [item.id, item]));
+        const inventory = Array.isArray(libraryData?.[group]) ? libraryData[group] : [];
+        const seen = new Set();
+
+        merged[group] = inventory.map(item => {
+          const update = updates.get(item.id);
+          seen.add(item.id);
+
+          return update || item;
+        });
+
+        payload[group].forEach(item => {
+          if (!seen.has(item.id)) merged[group].push(item);
+        });
+      });
+
+      return { ...payload, ...merged };
     }
 
     function syncInputs() {
@@ -855,7 +895,7 @@
     function previewUrl(c) {
       if (c.kind === 'content') return '/';
       if (c.kind === 'style') return '/';
-      if (['form', 'page'].includes(c.kind)) return previewRoute(c.route || routeFromPath(c.path));
+      if (['form', 'page'].includes(c.kind) && c.route) return previewRoute(c.route);
       return `/workbench/preview/${c.kind}/${encodeURIComponent(c.id)}`;
     }
 
@@ -889,6 +929,14 @@
         .catch(() => { previewAsField.disabled = true; });
       previewAsField.addEventListener('change', () => renderFrame());
     }
+
+    surfaceModeField.onchange = () => {
+      localStorage.setItem(surfaceKey, surfaceModeField.value);
+      if (!libraryData) return;
+
+      applyLibraryData(libraryData);
+      renderFrame();
+    };
 
     function previewRoute(route) {
       return String(route || '/').replace(/\{([^}/?]+)\??\}/g, (_match, key) => key);

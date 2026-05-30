@@ -15,7 +15,7 @@ class EvolveLibrary
     {
         $manifest = $this->manifest();
 
-        return [
+        $inventory = [
             'styles' => $this->readStyles($manifest['styles'] ?? []),
             'components' => $this->readGroup('component', $manifest['components'] ?? []),
             'forms' => $this->readGroup('form', $manifest['forms'] ?? []),
@@ -23,6 +23,11 @@ class EvolveLibrary
             'pages' => $this->readGroup('page', $manifest['pages'] ?? []),
             'snippets' => $this->readGroup('snippet', $manifest['snippets'] ?? []),
             'views' => $this->readViews($manifest['views'] ?? []),
+        ];
+
+        return [
+            ...$inventory,
+            'surfaces' => $this->surfaces($inventory),
         ];
     }
 
@@ -99,11 +104,11 @@ class EvolveLibrary
     {
         return collect([
             ...collect($this->normalizePageTree($this->manifest()['pages'] ?? []))->map(function (array $page) {
-                $route = $this->safeRoute($page['route'] ?? $page['slug'] ?? '/'.($page['id'] ?? ''));
+                $route = $this->safeOptionalRoute($page['route'] ?? $page['slug'] ?? '');
 
                 return [
                     'route' => $route,
-                    'route_name' => $this->resolveRouteName($page['route_name'] ?? null, $route),
+                    'route_name' => $route !== '' ? $this->resolveRouteName($page['route_name'] ?? null, $route) : '',
                     'middleware' => $this->safeMiddleware($page['middleware'] ?? []),
                     'component' => 'pages::'.$this->componentName($page['id'] ?? ''),
                 ];
@@ -121,7 +126,7 @@ class EvolveLibrary
                     ];
                 }),
         ])
-            ->filter(fn (array $route) => $route['component'] !== 'pages::' && $route['component'] !== 'forms::')
+            ->filter(fn (array $route) => $route['route'] !== '' && $route['component'] !== 'pages::' && $route['component'] !== 'forms::')
             ->values()
             ->all();
     }
@@ -198,6 +203,80 @@ class EvolveLibrary
         return implode("\n\n", $styles)."\n";
     }
 
+    protected function surfaces(array $inventory): array
+    {
+        return [
+            'website' => $this->surface($inventory, ['website']),
+            'app_shell' => $this->surface($inventory, ['website', 'app_shell']),
+            'developer' => $this->surface($inventory, ['website', 'app_shell', 'developer']),
+        ];
+    }
+
+    protected function surface(array $inventory, array $surfaces): array
+    {
+        $projected = [];
+
+        foreach (['styles', 'layouts', 'pages', 'snippets', 'components', 'forms', 'views'] as $group) {
+            $projected[$group] = collect($inventory[$group] ?? [])
+                ->filter(fn (array $artifact): bool => ($artifact['visibility'] ?? 'default') !== 'hidden')
+                ->filter(fn (array $artifact): bool => in_array($artifact['surface'] ?? 'website', $surfaces, true))
+                ->values()
+                ->all();
+        }
+
+        return $projected;
+    }
+
+    protected function artifactClassification(string $kind, string $id): array
+    {
+        $id = $this->safeId($id);
+
+        if ($this->isWorkbenchInternalArtifact($kind, $id)) {
+            return [
+                'origin' => 'workbench',
+                'lifecycle' => 'workbench',
+                'surface' => 'internal',
+                'visibility' => 'hidden',
+                'role' => $this->artifactRole($kind, $id),
+                'is_hidden' => true,
+            ];
+        }
+
+        $origin = $this->isStarterKitArtifact($kind, $id) ? 'starter_kit' : 'project';
+        $surface = 'website';
+        $visibility = 'default';
+
+        if ($kind === 'view' && $this->viewRole($id) === 'kit_internal') {
+            $surface = 'developer';
+            $visibility = 'hidden';
+        } elseif ($origin === 'starter_kit' && $kind === 'page' && (str_starts_with($id, 'auth/') || str_starts_with($id, 'settings/'))) {
+            $surface = filled($this->starterKitRouteMetadata($kind, $id)['route'] ?? '') ? 'app_shell' : 'developer';
+            $visibility = 'advanced';
+        } elseif ($origin === 'starter_kit' && (
+            $kind === 'layout' && ($id === 'auth' || $id === 'app' || str_starts_with($id, 'auth/') || str_starts_with($id, 'app/'))
+        )) {
+            $surface = 'app_shell';
+            $visibility = 'advanced';
+        } elseif ($origin === 'starter_kit' && in_array($kind, ['component'], true)) {
+            $surface = 'developer';
+            $visibility = 'advanced';
+        }
+
+        return [
+            'origin' => $origin,
+            'lifecycle' => $surface === 'website' ? 'website' : 'developer',
+            'surface' => $surface,
+            'visibility' => $visibility,
+            'role' => $this->artifactRole($kind, $id),
+            'is_hidden' => $visibility === 'hidden',
+        ];
+    }
+
+    protected function artifactRole(string $kind, string $id): string
+    {
+        return $kind === 'view' ? $this->viewRole($id) : $kind;
+    }
+
     protected function readStyles(array $entries): array
     {
         return collect($entries)
@@ -213,6 +292,7 @@ class EvolveLibrary
                     'name' => $entry['name'] ?? Str::headline(basename($id)),
                     'is_starter_kit' => $this->isStarterKitArtifact('style', $id),
                     'has_original' => $this->hasStarterKitOriginal('style', $id),
+                    ...$this->artifactClassification('style', $id),
                     'slug' => '',
                     'php' => '',
                     'blade' => '',
@@ -290,6 +370,7 @@ class EvolveLibrary
                     'name' => $entry['name'] ?? Str::headline(basename($id)),
                     'is_starter_kit' => $this->isStarterKitArtifact('view', $id),
                     'has_original' => $this->hasStarterKitOriginal('view', $id),
+                    ...$this->artifactClassification('view', $id),
                     'view_role' => $viewRole,
                     'is_hidden' => $viewRole === 'kit_internal',
                     'metadata' => is_array($entry['metadata'] ?? null) ? $entry['metadata'] : [],
@@ -305,6 +386,84 @@ class EvolveLibrary
             ->filter()
             ->values()
             ->all();
+    }
+
+    protected function mergeDiscoveredStarterKitEntries(string $kind, array $entries): array
+    {
+        if (! in_array($kind, ['component', 'layout', 'page'], true)) {
+            return $entries;
+        }
+
+        $existingIds = collect($entries)
+            ->filter(fn ($entry): bool => is_array($entry))
+            ->map(fn (array $entry): string => $this->safeId((string) ($entry['id'] ?? $this->idFromPath((string) ($entry['path'] ?? '')))))
+            ->filter()
+            ->flip();
+
+        foreach ($this->discoverStarterKitEntries($kind) as $entry) {
+            if (! isset($existingIds[$entry['id']])) {
+                $entries[] = $entry;
+            }
+        }
+
+        return $entries;
+    }
+
+    protected function discoverStarterKitEntries(string $kind): array
+    {
+        $root = $this->rootFor($kind);
+
+        if (! File::isDirectory($root)) {
+            return [];
+        }
+
+        return collect(File::allFiles($root))
+            ->filter(fn ($file): bool => str_ends_with($file->getFilename(), '.blade.php'))
+            ->map(function ($file) use ($kind, $root): ?array {
+                $relative = ltrim(str_replace('\\', '/', substr($file->getPathname(), strlen($root))), '/');
+                $path = rtrim($this->relativeRootFor($kind), '/').'/'.$relative;
+                $id = $this->idFromPath($path);
+
+                if ($id === '' || ! $this->isStarterKitArtifact($kind, $id)) {
+                    return null;
+                }
+
+                return [
+                    'id' => $id,
+                    'name' => Str::headline(basename($id)),
+                    'path' => $path,
+                    ...$this->starterKitRouteMetadata($kind, $id),
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    protected function starterKitRouteMetadata(string $kind, string $id): array
+    {
+        if ($kind !== 'page') {
+            return [];
+        }
+
+        $routes = [
+            'auth/login' => ['route' => '/login', 'route_name' => 'login', 'middleware' => ['guest']],
+            'auth/register' => ['route' => '/register', 'route_name' => 'register', 'middleware' => ['guest']],
+            'auth/forgot-password' => ['route' => '/forgot-password', 'route_name' => 'password.request', 'middleware' => ['guest']],
+            'auth/reset-password' => ['route' => '/reset-password/{token}', 'route_name' => 'password.reset', 'middleware' => ['guest']],
+            'auth/confirm-password' => ['route' => '/confirm-password', 'route_name' => 'password.confirm', 'middleware' => ['auth']],
+            'auth/two-factor-challenge' => ['route' => '/two-factor-challenge', 'route_name' => 'two-factor.login', 'middleware' => ['guest']],
+            'auth/verify-email' => ['route' => '/email/verify', 'route_name' => 'verification.notice', 'middleware' => ['auth']],
+            'settings/profile' => ['route' => '/settings/profile', 'route_name' => 'profile.edit', 'middleware' => ['auth']],
+            'settings/appearance' => ['route' => '/settings/appearance', 'route_name' => 'appearance.edit', 'middleware' => ['auth', 'verified']],
+            'settings/security' => ['route' => '/settings/security', 'route_name' => 'security.edit', 'middleware' => ['auth', 'verified', 'password.confirm']],
+        ];
+
+        return $routes[$id] ?? [
+            'route' => '',
+            'route_name' => '',
+            'middleware' => [],
+        ];
     }
 
     protected function writeViews(?array $artifacts, array $previousEntries): array
@@ -415,6 +574,8 @@ class EvolveLibrary
 
     protected function readGroup(string $kind, array $entries): array
     {
+        $entries = $this->mergeDiscoveredStarterKitEntries($kind, $entries);
+
         if ($kind === 'page') {
             $entries = $this->normalizePageTree($entries);
         }
@@ -426,12 +587,16 @@ class EvolveLibrary
                     return null;
                 }
 
+                $sourcePath = $this->relativeSourcePath($kind, $id, $entry);
+                $absoluteSourcePath = $this->sourceFilePath($kind, $id, $sourcePath);
+
                 return [
                     'id' => $id,
                     'kind' => $kind,
                     'name' => $entry['name'] ?? Str::headline(basename($id)),
                     'is_starter_kit' => $this->isStarterKitArtifact($kind, $id),
                     'has_original' => $this->hasStarterKitOriginal($kind, $id),
+                    ...$this->artifactClassification($kind, $id),
                     ...($kind === 'form' ? (function () use ($entry) {
                         $route = $this->safeRoute($entry['route'] ?? $entry['slug'] ?? '');
                         $hasRoute = filled($entry['route'] ?? $entry['slug'] ?? '');
@@ -445,11 +610,11 @@ class EvolveLibrary
                         ];
                     })() : []),
                     ...($kind === 'page' ? (function () use ($entry) {
-                        $route = $this->safeRoute($entry['route'] ?? $entry['slug'] ?? '');
+                        $route = $this->safeOptionalRoute($entry['route'] ?? $entry['slug'] ?? '');
 
                         return [
                             'route' => $route,
-                            'route_name' => $this->resolveRouteName($entry['route_name'] ?? null, $route),
+                            'route_name' => $route !== '' ? $this->resolveRouteName($entry['route_name'] ?? null, $route) : '',
                             'middleware' => $this->safeMiddleware($entry['middleware'] ?? []),
                             'parent_id' => $this->safeId($entry['parent_id'] ?? ''),
                             'order' => (int) ($entry['order'] ?? 0),
@@ -458,12 +623,12 @@ class EvolveLibrary
                     })() : []),
                     'metadata' => is_array($entry['metadata'] ?? null) ? $entry['metadata'] : [],
                     'usage' => $entry['usage'] ?? '',
-                    'path' => $entry['path'] ?? $this->relativePath($kind, $id),
-                    'source_path' => $this->relativePath($kind, $id),
+                    'path' => $sourcePath,
+                    'source_path' => $sourcePath,
                     'component' => $this->componentReference($kind, $id),
                     ...(in_array($kind, ['layout', 'snippet'], true)
-                        ? ['php' => '', 'blade' => $this->parseLayout($this->filePath($kind, $id)), 'style' => $kind === 'layout' ? $this->layoutStyle($id) : '']
-                        : $this->parseSfc($this->filePath($kind, $id))),
+                        ? ['php' => '', 'blade' => $this->parseLayout($absoluteSourcePath), 'style' => $kind === 'layout' ? $this->layoutStyle($id) : '']
+                        : $this->parseSfc($absoluteSourcePath)),
                 ];
             })
             ->filter()
@@ -486,16 +651,19 @@ class EvolveLibrary
                 continue;
             }
 
-            $this->assertArtifactCanBeChanged($kind, $id);
+            $targetPath = $this->targetFilePath($kind, $id, $artifact);
+            $relativeTargetPath = $this->relativeTargetPath($kind, $id, $artifact);
+
+            $this->assertArtifactCanBeChanged($kind, $id, [$targetPath]);
 
             $keep[] = $id;
             if (in_array($kind, ['layout', 'snippet'], true)) {
-                $this->writeFile($this->filePath($kind, $id), trim((string) ($artifact['blade'] ?? '{{ $slot }}'))."\n");
+                $this->writeFile($targetPath, trim((string) ($artifact['blade'] ?? '{{ $slot }}'))."\n");
                 if ($kind === 'layout') {
                     $this->writeFile($this->layoutStylePath($id), trim((string) ($artifact['style'] ?? ''))."\n");
                 }
             } else {
-                $this->writeFile($this->filePath($kind, $id), $this->serializeSfc(
+                $this->writeFile($targetPath, $this->serializeSfc(
                     (string) ($artifact['php'] ?? $this->defaultPhp()),
                     (string) ($artifact['blade'] ?? '<div></div>'),
                     (string) ($artifact['style'] ?? ''),
@@ -509,13 +677,16 @@ class EvolveLibrary
             ];
 
             if (in_array($kind, ['component', 'layout', 'snippet'], true)) {
-                $entry['path'] = $this->relativePath($kind, $id);
+                $entry['path'] = $relativeTargetPath;
             }
 
             if ($kind === 'page') {
-                $entry['path'] = $this->relativePath($kind, $id);
-                $entry['route'] = $this->safeRoute($artifact['route'] ?? $artifact['slug'] ?? '/'.$id);
-                $entry['route_name'] = $this->resolveRouteName($artifact['route_name'] ?? null, $entry['route']);
+                $entry['path'] = $relativeTargetPath;
+                $hasExplicitRoute = array_key_exists('route', $artifact) || array_key_exists('slug', $artifact);
+                $entry['route'] = $hasExplicitRoute
+                    ? $this->safeOptionalRoute($artifact['route'] ?? $artifact['slug'] ?? '')
+                    : $this->safeRoute('/'.$id);
+                $entry['route_name'] = $entry['route'] !== '' ? $this->resolveRouteName($artifact['route_name'] ?? null, $entry['route']) : '';
                 $entry['middleware'] = $this->safeMiddleware($artifact['middleware'] ?? []);
                 $entry['parent_id'] = $this->safeId($artifact['parent_id'] ?? '');
                 $entry['order'] = max(0, (int) ($artifact['order'] ?? count($entries) + 1));
@@ -523,7 +694,7 @@ class EvolveLibrary
             }
 
             if ($kind === 'form') {
-                $entry['path'] = $this->relativePath($kind, $id);
+                $entry['path'] = $relativeTargetPath;
                 $entry['route'] = $this->safeRoute($artifact['route'] ?? $artifact['slug'] ?? '');
                 $hasRoute = filled($artifact['route'] ?? $artifact['slug'] ?? '');
                 $entry['route_name'] = $hasRoute
@@ -718,9 +889,11 @@ class EvolveLibrary
             $id = $this->safeId($entry['id'] ?? '');
 
             if ($id !== '' && ! in_array($id, $keep, true)) {
-                $this->assertArtifactCanBeChanged($kind, $id);
+                $targetPath = $this->sourceFilePath($kind, $id, $this->relativeSourcePath($kind, $id, $entry));
 
-                $this->deleteFile($this->filePath($kind, $id));
+                $this->assertArtifactCanBeChanged($kind, $id, [$targetPath]);
+
+                $this->deleteFile($targetPath);
                 if ($kind === 'layout') {
                     $this->deleteFile($this->layoutStylePath($id));
                 }
@@ -779,6 +952,18 @@ class EvolveLibrary
         };
     }
 
+    protected function relativeRootFor(string $kind): string
+    {
+        return match ($kind) {
+            'form' => 'resources/views/forms',
+            'layout' => 'resources/views/layouts',
+            'page' => 'resources/views/pages',
+            'snippet' => 'resources/views/snippets',
+            'view' => 'resources/views',
+            default => 'resources/views/components',
+        };
+    }
+
     protected function relativePath(string $kind, string $id): string
     {
         return match ($kind) {
@@ -789,6 +974,52 @@ class EvolveLibrary
             'view' => 'resources/views/'.$id.'.blade.php',
             default => 'resources/views/components/'.$id.'.blade.php',
         };
+    }
+
+    protected function relativeSourcePath(string $kind, string $id, array $entry): string
+    {
+        $path = (string) ($entry['path'] ?? $entry['source_path'] ?? '');
+
+        if ($this->validRelativeArtifactPath($kind, $id, $path)) {
+            return str_replace('\\', '/', trim($path));
+        }
+
+        return $this->relativePath($kind, $id);
+    }
+
+    protected function relativeTargetPath(string $kind, string $id, array $artifact): string
+    {
+        $path = (string) ($artifact['path'] ?? $artifact['source_path'] ?? '');
+
+        if ($this->validRelativeArtifactPath($kind, $id, $path)) {
+            return str_replace('\\', '/', trim($path));
+        }
+
+        return $this->relativePath($kind, $id);
+    }
+
+    protected function sourceFilePath(string $kind, string $id, string $relativePath): string
+    {
+        if (! $this->validRelativeArtifactPath($kind, $id, $relativePath)) {
+            return $this->filePath($kind, $id);
+        }
+
+        return base_path(str_replace('\\', '/', trim($relativePath)));
+    }
+
+    protected function targetFilePath(string $kind, string $id, array $artifact): string
+    {
+        return $this->sourceFilePath($kind, $id, $this->relativeTargetPath($kind, $id, $artifact));
+    }
+
+    protected function validRelativeArtifactPath(string $kind, string $id, string $path): bool
+    {
+        $path = str_replace('\\', '/', trim($path));
+
+        return $path !== ''
+            && str_starts_with($path, rtrim($this->relativeRootFor($kind), '/').'/')
+            && str_ends_with($path, '.blade.php')
+            && $this->idFromPath($path) === $this->safeId($id);
     }
 
     protected function componentReference(string $kind, string $id): string
@@ -803,7 +1034,7 @@ class EvolveLibrary
         };
     }
 
-    protected function assertArtifactCanBeChanged(string $kind, string $id): void
+    protected function assertArtifactCanBeChanged(string $kind, string $id, array $sourcePaths = []): void
     {
         if ($this->isWorkbenchInternalArtifact($kind, $id)) {
             throw ValidationException::withMessages([
@@ -812,7 +1043,7 @@ class EvolveLibrary
         }
 
         if ($this->isStarterKitArtifact($kind, $id)) {
-            $this->snapshotStarterKitOriginal($kind, $id);
+            $this->snapshotStarterKitOriginal($kind, $id, $sourcePaths);
         }
     }
 
@@ -899,11 +1130,16 @@ class EvolveLibrary
         return $restored;
     }
 
-    protected function snapshotStarterKitOriginal(string $kind, string $id): void
+    protected function snapshotStarterKitOriginal(string $kind, string $id, array $sourcePaths = []): void
     {
         $id = $this->safeId($id);
+        $sources = $sourcePaths !== [] ? $sourcePaths : $this->originalTargetSources($kind, $id);
 
-        foreach ($this->originalTargetSources($kind, $id) as $source) {
+        if ($kind === 'layout' && ! in_array($this->layoutStylePath($id), $sources, true)) {
+            $sources[] = $this->layoutStylePath($id);
+        }
+
+        foreach ($sources as $source) {
             $snapshot = $this->originalSourcePathFor($kind, $id, $source);
 
             if (File::exists($snapshot) || ! File::exists($source)) {
@@ -972,6 +1208,12 @@ class EvolveLibrary
     {
         if ($kind === 'layout' && str_contains($snapshot, '/styles/')) {
             return $this->layoutStylePath($id);
+        }
+
+        foreach ($this->discoverStarterKitEntries($kind) as $entry) {
+            if (($entry['id'] ?? '') === $this->safeId($id) && filled($entry['path'] ?? '')) {
+                return $this->sourceFilePath($kind, $id, (string) $entry['path']);
+            }
         }
 
         return $this->filePath($kind, $id);
@@ -1071,6 +1313,11 @@ class EvolveLibrary
         $route = preg_replace('#[^a-z0-9/_{}?-]#', '-', $route);
 
         return '/'.trim(preg_replace('#/+#', '/', $route), '/-');
+    }
+
+    protected function safeOptionalRoute(string $route): string
+    {
+        return trim($route) === '' ? '' : $this->safeRoute($route);
     }
 
     protected function safeRouteName(string $name): string
