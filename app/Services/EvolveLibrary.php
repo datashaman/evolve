@@ -2,12 +2,15 @@
 
 namespace App\Services;
 
+use App\Services\Concerns\GuardsWorkspacePaths;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class EvolveLibrary
 {
+    use GuardsWorkspacePaths;
+
     public function all(): array
     {
         $manifest = $this->manifest();
@@ -226,7 +229,7 @@ class EvolveLibrary
             if ($id !== '' && ! in_array($id, $keep, true)) {
                 $this->assertArtifactCanBeChanged('style', $id);
 
-                File::delete($this->stylePath($id));
+                $this->deleteFile($this->stylePath($id));
             }
         }
 
@@ -383,11 +386,28 @@ class EvolveLibrary
 
     protected function writeFile(string $path, string $content): void
     {
+        $this->assertPathInsideWorkspace($path);
         File::ensureDirectoryExists(dirname($path));
+        $this->assertPathInsideWorkspace(dirname($path));
+
+        if (File::exists($path) || is_link($path)) {
+            $this->assertPathInsideWorkspace($path);
+        }
 
         if (! File::exists($path) || File::get($path) !== $content) {
             File::put($path, $content);
         }
+    }
+
+    protected function deleteFile(string $path): void
+    {
+        $this->assertPathInsideWorkspace($path);
+
+        if (File::exists($path) || is_link($path)) {
+            $this->assertPathInsideWorkspace($path);
+        }
+
+        File::delete($path);
     }
 
     protected function deleteMissing(string $kind, array $keep, array $previousEntries): void
@@ -398,9 +418,9 @@ class EvolveLibrary
             if ($id !== '' && ! in_array($id, $keep, true)) {
                 $this->assertArtifactCanBeChanged($kind, $id);
 
-                File::delete($this->filePath($kind, $id));
+                $this->deleteFile($this->filePath($kind, $id));
                 if ($kind === 'layout') {
-                    File::delete($this->layoutStylePath($id));
+                    $this->deleteFile($this->layoutStylePath($id));
                 }
             }
         }

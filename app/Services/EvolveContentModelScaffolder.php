@@ -2,21 +2,27 @@
 
 namespace App\Services;
 
+use App\Services\Concerns\GuardsWorkspacePaths;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class EvolveContentModelScaffolder
 {
+    use GuardsWorkspacePaths;
+
     public function create(string $name): void
     {
         $classBase = Str::studly(Str::singular($name));
         $modelPath = app_path("Models/{$classBase}.php");
         $table = Str::plural(Str::snake($classBase));
 
+        $this->assertPathInsideWorkspace(dirname($modelPath));
+        $this->assertPathInsideWorkspace(database_path('migrations'));
+
         abort_if($classBase === 'User' || File::exists($modelPath), 422, 'Content model already exists.');
 
-        File::put($modelPath, $this->modelSource($classBase));
+        $this->writeFile($modelPath, $this->modelSource($classBase));
         $this->writeMigration($table);
         $this->ensureContentTable($table);
     }
@@ -43,7 +49,7 @@ class EvolveContentModelScaffolder
         $timestamp = now()->format('Y_m_d_His');
         $path = database_path("migrations/{$timestamp}_create_{$table}_table.php");
 
-        File::put($path, <<<PHP
+        $this->writeFile($path, <<<PHP
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -75,6 +81,19 @@ return new class extends Migration
     }
 };
 PHP);
+    }
+
+    protected function writeFile(string $path, string $content): void
+    {
+        $this->assertPathInsideWorkspace($path);
+        File::ensureDirectoryExists(dirname($path));
+        $this->assertPathInsideWorkspace(dirname($path));
+
+        if (File::exists($path) || is_link($path)) {
+            $this->assertPathInsideWorkspace($path);
+        }
+
+        File::put($path, $content);
     }
 
     protected function modelSource(string $name): string

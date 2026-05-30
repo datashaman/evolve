@@ -142,6 +142,34 @@ class EvolveLibraryPathsTest extends TestCase
         $this->assertFalse(File::exists(resource_path('evolve/manifest.json')));
     }
 
+    public function test_artifact_writes_cannot_follow_symlinks_outside_the_workspace(): void
+    {
+        $outsidePath = $this->originalBasePath.'/storage/framework/testing/evolve-outside-'.Str::random(8).'.css';
+        File::put($outsidePath, 'outside');
+        File::ensureDirectoryExists(resource_path('css'));
+        symlink($outsidePath, resource_path('css/escape.css'));
+
+        $library = new EvolveLibrary;
+
+        try {
+            $this->assertWorkbenchWriteIsBlocked(fn () => $library->write([
+                'styles' => [
+                    [
+                        'name' => 'Escape',
+                        'path' => 'resources/css/escape.css',
+                        'style' => 'inside',
+                    ],
+                ],
+            ]), 'current working folder');
+
+            $this->assertSame('outside', File::get($outsidePath));
+            $this->assertFalse(File::exists(resource_path('evolve/manifest.json')));
+        } finally {
+            File::delete(resource_path('css/escape.css'));
+            File::delete($outsidePath);
+        }
+    }
+
     public function test_artifacts_cannot_overwrite_starter_views_used_by_the_workbench_shell(): void
     {
         File::ensureDirectoryExists(resource_path('views/layouts/app'));
@@ -289,13 +317,13 @@ new class extends Component {
 PHP;
     }
 
-    private function assertWorkbenchWriteIsBlocked(callable $callback): void
+    private function assertWorkbenchWriteIsBlocked(callable $callback, string $message = 'protected'): void
     {
         try {
             $callback();
             $this->fail('Workbench write was not blocked.');
         } catch (ValidationException $exception) {
-            $this->assertStringContainsString('protected', $exception->getMessage());
+            $this->assertStringContainsString($message, $exception->getMessage());
         }
     }
 }
