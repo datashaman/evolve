@@ -91,7 +91,9 @@
     .metadata-field { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; align-items: center; min-width: 0; }
     .metadata-field[hidden] { display: none; }
     .metadata-field label { color: #a1a1aa; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
-    .metadata-field input, .metadata-field textarea { width: 100%; padding: 7px 9px; border: 1px solid #3f3f46; border-radius: 6px; background: #27272a; color: #fafafa; font: 13px ui-monospace, "SF Mono", Menlo, monospace; resize: vertical; }
+    .metadata-field input, .metadata-field textarea { width: 100%; padding: 7px 9px; border: 1px solid #3f3f46; border-radius: 6px; background: #27272a; color: #fafafa; font: 13px ui-monospace, "SF Mono", Menlo, monospace; line-height: 1.4; resize: vertical; }
+    .metadata-field:has(textarea) { align-items: start; }
+    .metadata-field:has(textarea) label { padding-top: 8px; }
     .meta-hint { color: #71717a; font-weight: 500; text-transform: none; letter-spacing: 0; font-size: 10px; margin-left: 6px; }
     .starter-kit-badge { display: inline-block; padding: 1px 6px; margin-left: 6px; border-radius: 999px; background: #4338ca; color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
     .sidebar li[data-depth="1"] { padding-left: 24px; }
@@ -199,7 +201,7 @@
               <div class="metadata-field" data-meta="path"><label for="meta-slug">Path</label><input id="meta-slug"></div>
               <div class="metadata-field" data-meta="route"><label for="meta-route">Route</label><input id="meta-route"></div>
               <div class="metadata-field" data-meta="route-name"><label for="meta-route-name">Route name</label><input id="meta-route-name" placeholder="auto"></div>
-              <div class="metadata-field" data-meta="middleware"><label for="meta-middleware">Middleware <span class="meta-hint">one per line; supports throttle:60,1 etc.</span></label><textarea id="meta-middleware" rows="3" placeholder="auth&#10;verified&#10;throttle:60,1"></textarea></div>
+              <div class="metadata-field" data-meta="middleware"><label for="meta-middleware">Middleware</label><textarea id="meta-middleware" rows="3" placeholder="auth&#10;verified"></textarea></div>
               <div class="metadata-field" data-meta="parent"><label for="meta-parent">Parent</label><input id="meta-parent" list="page-parent-options"></div>
               <div class="metadata-field" data-meta="order"><label for="meta-order">Order</label><input id="meta-order" type="number" min="0" step="1"></div>
               <datalist id="page-parent-options"></datalist>
