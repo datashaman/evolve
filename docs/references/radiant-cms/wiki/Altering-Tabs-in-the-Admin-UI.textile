@@ -1,0 +1,27 @@
+In the [[first article|Adding Custom Radius Tags]] about creating an extension, you see the generated code for the extension includes
+
+<pre><code>def activate
+  # admin.tabs.add "Custom Tags", "/admin/custom_tags", :after => "Layouts", :visibility => [:all]
+end</code></pre>
+
+By uncommenting that one line in the activate method, you would add a tab that when clicked, would take you to the url "/admin/custom_tags". Without a controller behind it accepting requests at that url, you'll get an error, but it is as simple as that.
+
+If you don't care where the tab shows up (in what order) or who sees it (according to any user's role) you can simply do
+
+<pre><code>def activate
+  admin.tabs.add "Custom Tags", "/admin/custom_tags"
+end</code></pre>
+
+Your other options include @:visibility => [:developer]@ or @:visibility => [:admin]@ or @:visibility => [:developer, :admin]@
+
+And you may also specify it's location with @:before => "Snippets"@.
+
+Alternatively, if you are making a ClientAlterationsExtension where you want to keep the source code of all of your extensions pristine and unchanged, you could alter the settings of existing tabs.
+
+To do this you would first need to set @config.extensions = [:all, :client_alterations]@ so that the ClientAlterationsExtension would be loaded last and could make changes to other extensions.
+
+Some people have been interested in limiting access to Snippets to developers and admins and restricting access from regular users. To do this all you need to do is add this line to your activate method of the ClientAlterationsExtension:
+
+<pre><code>admin.tabs["Snippets"].visibility = [:developer, :admin]</code></pre>
+
+*EDIT: This does not appear to work as of Radiant 1.0.1. See visible_by_controller method in NavSubItem. Visibility is now automatically calculated based on whether the user has access to the controller action.*

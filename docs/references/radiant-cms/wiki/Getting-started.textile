@@ -1,0 +1,138 @@
+h2. Getting Ready
+
+If you don't want to use your Radiant project to follow along with or haven't yet installed Radiant feel free to use the "live demo site":demo. The "*Username*" is "*admin*" and the "*Password*" is "*radiant*"; and don’t worry about breaking anything the entire demo site is reset to a pristine state on the hour. The demo site currently has the [[Roasters template]] installed instead of the "Empty" template that we'll use here, but you should be able to just delete or modify anything in your way.
+
+[demo]http://demo.radiantcms.org/admin/login
+
+If you would prefer to install your own copy of Radiant to follow along there are "installation instructions":install for a variety of systems. The "Empty" template is recommended for this article; afterwards a deeper understanding can be had by investigating the "Styled Blog" and "Roasters" templates. Not to mention existing implementations of common features; news feed, blog archive, Google Map and Disqus comments to name a few.
+
+[install]http://wiki.github.com/radiant/radiant#install
+
+h2. The Admin UI at a glance
+
+A site built around Radiant is administered from the "/admin" URL. Once logged in, the three main building blocks of Radiant can be edited: [[Pages]], [[Snippets]] and [[Layouts]].
+
+As you can see the Radiant administrative interface is a familiar tabbed interface, where each tab reveals a subset of functionality, by default you land on the [[Pages]] tab after successfully logging in.
+
+!{max-width:667px}http://img.skitch.com/20090410-ek3asqrfhpu9wfdauwdcq8dw55.png!
+
+Any [[extensions]] you [[install|Installing Extensions]] may add new tabs to the admin interface that contain the functionality specific to that extension. To see what extensions you have installed click the *Extensions* link at the top of the screen. Radiant comes with the *Archive*, *Markdown* and *Textile* extensions by default.
+
+h2. Hierarchical Organization
+
+Radiant is organized in a very intuitive and structured way. If you're a developer, you should be familiar with the term *tree*, and should readily notice from the organization within the administrative interface that Radiant forms an n-branch tree (the root being the main or home page of the site). If you're not familiar with tree structures or terminology, the easiest way to *see* this is to think of an upside-down tree (i.e. root at the top, branches and leaves at the bottom). At the very top of the tree, is the root (which as said above is the site's main or home page), from it you can spawn *children* (that is, branches of the tree). Please don't think of children as their own entity: they are fully dependent on their parent. But just as it is the case in nature, branches themselves can have children, and these children can, of course, have children of their own. Children who do not have children are usually referred to as *leaf nodes*.
+
+h2. Site Creation
+
+Radiant supplies no page template data at all when running from the "Empty" template, so you have to do some work to get going - create a [[layout|Layouts]] (typically using HTML), [[Snippets]] if need be, then populate the site with [[pages]].
+
+As with any site, getting a good layout template sorted will help a lot in the long term with making things easier to maintain and aiding easy changes in the site look and feel for purposes of modernization, corporate rebranding, or simply a change for change's sake.
+
+h2. Your First Page
+
+If you don't have any [[pages]] yet click the *New Homepage* button, otherwise click the name of the top most page in the tree (probably "Home" or something similar) if there is any content in the *body* "part":pages#parts in there just delete it.
+
+Give your new page a *title* and enter some content into the *body* part, set the *Status* to *published* and click *Create Page*, if you're editing an existing page make sure you set the *Layout* to *inherit*.
+
+!{max-width:667px}http://img.skitch.com/20090410-dsqfpmsdctppyhq8rb8tbfkqj7.png!
+
+Click the *View Site* link at the top of the page to see what your new page looks like. It probably doesn't look like much, it's just plain HTML. You could create an entire site in this way just letting the user agent do as it will with your content. However you probably want to use things like CSS, Javascript, page tracking tools and all the other things you're accustomed to using to develop websites, and Radiant is there for you.
+
+Refer to the [[Pages]] page for more details on the *Edit Page UI*, about page "*attributes*":pages#attributes and "*parts*":pages#parts.
+
+h2. A Basic Layout
+
+A [[layout|Layouts]] is the outermost block you use to build your site, with [[pages]] being the innermost and [[snippets]] somewhere in the middle. Refer to the [[Layouts]] page for a more lengthy explanation.
+
+Click on the *Layouts* tab. Now click the *New Layout* button.
+
+Give your layout a name and enter a basic structure for your site using HTML. For this simple example I've used the following:
+
+<pre><code><!DOCTYPE html>
+<html lang="en-us" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8"/>
+  <title>Demonstration</title>
+  <link rel="stylesheet" href="/stylesheet" media="all" title="Default" charset="utf-8"/>
+</head>
+<body>
+  <r:snippet name="header_footer">
+    <h1><r:title/></h1>
+    <r:content/>
+  </r:snippet>
+</body>
+</html></code></pre>
+
+!{max-width:667px}http://img.skitch.com/20090410-krggasknkqqe4qdpispii6duab.png!
+
+Now return to the *Pages* tab and the page you edited earlier, on that page select your new layout from the menu, while you're in there choose *Markdown* or *Textile* from the *Filter* menu if you hadn't already.
+
+!{max-width:667px}http://img.skitch.com/20090410-phwj4382h84dkdqm6p47ux3chh.png!
+
+Save your changes and click the *View Site* link. If you used the layout code from earlier you'll notice a handy error message noting that we're missing a [[snippet|Snippets]], otherwise you should see your site.
+
+h2. A Simple Snippet
+
+For the benefit of those using the code from above (or anyone interested in the [[snippet yielding]] technique used there) we'll cover making a snippet that inserts our site's "used on every page" header and footer elements.
+
+Click on the *Snippets* tab. Now click the *New Snippet* button.
+
+Give your snippet a name. For the above layout to work I've used the following:
+
+<pre><code><div class="header">
+  <h1>A Simple Demonstration Site</h1>
+</div>
+
+<r:yield/>
+
+<div class="footer">
+  <small>legal information</small>
+</div></code></pre>
+
+!{max-width:667px}http://img.skitch.com/20090410-eh5jg6hhfdk4162w93uis449f6.png!
+
+Save your changes and click the *View Site* link. Now you have a common header and footer that will be applied to any page you send through your layout.
+
+Refer to the [[Snippets]] page for the more information on snippets.
+
+h2. Create a Stylesheet in Radiant
+
+Go back to the *Pages* tab and click the *Add Child* button next to topmost page in your tree. We're going to use this page to contain our stylesheet. Note: *If you prefer to store your stylesheets and other assets on the file system for performance or other reasons that works fine too, just place your files in the appropriate directory within the @public@ directory in your Radiant project* See Also: [[Using Sass]]. For ease and demonstration we're going to do it directly within the Radiant Admin UI.
+
+Give your stylesheet page a name and insert your CSS code, here is some simple CSS used in this demonstration:
+
+<pre><code>html {
+  font-family: sans-serif }
+h1 {
+  text-transform: uppercase }
+p {
+  line-height: 1.5 }
+.header {
+  background-color: black;
+  color: white }
+.footer {
+  background-color: inherit;
+  color: #888888;
+  font-size: 75% }</code></pre>
+
+You can save your new stylesheet page now but it's still not quite ready to be used. We need to create a new layout which we can use to wrap our actual CSS code, the same way we use layouts to wrap our content. The difference here is that instead of using the layout for structure we're going to use it for serving a different MIME type, namely @text/css@.
+
+Click on the *Layouts* tab. Now click the *New Layout* button.
+
+Give your layout a name, click the *More* link then enter @text/css@ and in the body enter the following:
+
+<pre><code><r:content/></code></pre>
+
+!{max-width:667px}http://img.skitch.com/20090410-rri5ticp8iifhf6qwpip6qjwfh.png!
+
+Now save the layout.
+
+Return to your stylesheet page and set the layout to the new layout you made for wrapping stylesheets.
+
+!{max-width:667px}http://img.skitch.com/20090410-eise29h5s5jfnt9xgc8cmijfd8.png!
+
+Save the page and click the *View Site* link to see your site with the stylesheet applied.
+
+h2. Where to Next?
+
+If you're still feeling uneasy with the building block concept of Radiant reading all the wiki has to offer on [[Pages]], [[Layouts]] and [[Snippets]] should help. If you're ready to jump in, you probably want to know all there is to know about [[Radius Tags]].

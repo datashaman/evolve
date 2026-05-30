@@ -1,0 +1,108 @@
+*This is quick and dirty and does not really restrict a user from editing other pages, it just restricts which pages they see when logged into the admin tool.  A user could still edit a page by changing the id number of the URL.  An example of this would be @admin/pages/edit/1@ would still edit the home page (assuming it is ID 1), even though it is not viewable on their admin tool.*
+
+h2. What this hack does:
+
+<pre><code>+--+ Home Page <- Admin starts here when logged in
+   |
+   +--- About
+   |
+   +--+ Articles Dogs <- New user 'dog_editor' starts here when logged in
+      |
+      +--- Greyhound
+      |
+      +--- Poodle</code></pre>
+
+h2. Can also be used for multiple sites:
+
+<pre><code>+--+ Home Page <- Admin starts here when logged in
+    |
+    +---+ www.doggone.com <- New user 'dog_admin' starts here when logged in
+    |   |    
+    |   +--- About
+    |   |
+    |   +--- Articles
+    |  
+    +---+ www.catlovers.com  <- New user 'cat_admin' starts here when logged in
+        |    
+        +--- About
+        |
+        +--- Articles</code></pre>
+
+h2. Step 1.
+
+Add in a database field of type integer to the user table called 'page_id'. This can be done with migrations of a database editor like "CocoaMysql":http://cocoamysql.sourceforge.net/
+
+Using migrations, create a new file: @010_add_page_id_field_to_user.rb@
+
+<pre><code>class AddPageIdFieldToUser < ActiveRecord::Migration
+  def self.up
+    add_column "users", "page_id", :integer
+  end
+
+  def self.down
+    remove_column "users", "page_id"
+  end
+end</code></pre>
+
+Then run @rake migrate@ at the command line.
+
+h2. Step 2.
+
+Add in a new select box to the user admin tool to select the top page (optional) to restrict the page view in @app/views/admin/user/edit.rhtml@.
+
+After this code for the user role selection:
+
+<pre><code><tr>
+  <td class="label"><label for="user_admin">Roles</label></td>
+  <td class="field">
+    <span class="checkbox"><%= check_box "user", "admin" %>&nbsp;Administrator</span>
+    <span class="checkbox"><%= check_box "user", "developer" %>&nbsp;Developer</span>
+  </td>
+  <td class="help">Roles restrict user privileges and turn parts of the administrative interface on or off.</td>
+</tr></code></pre>
+
+Insert a new select box for what top-level page to restrict to:
+
+<pre><code><tr>
+  <td class="label"><label for="user_top_level_page">Top Level Page</label></td>
+  <td class="field">
+    <%= select "user", "page_id", Page.find(:all, :conditions=>['parent_id = 1 and status_id=100']).collect { |s| [ s.title, s.id ] }, :include_blank=>true } %>
+  </td>
+  <td class="help">Optional. Top level starting page for this user.</td>
+</tr></code></pre>
+
+*This assumes the home page is @page_id@ 1. If you take out the @:conditions@ specification, then any page on the site will show (and work in the page admin tool).  this way you could set the top-level page for a user further down into the site.  I added the conditions for @parent_id = 1@ (first-level page like about, or articles) and @status_id = 100@ is published.  You can also restrict to certain layouts this way, etc.*
+
+h2. Step 3.
+
+Edit the admin page controller to start at the page specified in the users page_id setting if it exists in @app/views/admin/page_controller.rb@:
+
+<pre><code>def index
+  #### new code ###########
+  user = User.find(session[:user].id)
+  if user.page_id
+    @homepage = Page.find(user.page_id)
+  else
+    @homepage = Page.find_by_parent_id(nil)    
+  end
+  #### end new code #########
+
+  ### WAS
+  # @homepage =Page.find_by_parent_id(nil)
+end</code></pre>
+
+That should do it. It is QnD (quick and dirty), but it just might be enough for your purposes.
+
+Optionally, I locked out access to edit snippets in <tt>app/views/admin/snippet_controller.rb</tt>:
+
+<pre><code>require_dependency 'admin/model_controller'
+require_dependency 'response_cache'
+
+class Admin::SnippetController < Admin::AbstractModelController
+  model :snippet
+
+  only_allow_access_to :new, :edit, :remove,
+    :when => [ :admin],
+    :denied_url => { :controller => 'snippet', :action => 'index' },
+    :denied_message => 'You must have developer privileges to perform this action.'
+end</code></pre>

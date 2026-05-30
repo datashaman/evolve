@@ -1,0 +1,43 @@
+Having Git installed on your system will make it simpler to download, install and manage Radiant extensions.
+
+h2. Using Macports
+
+If you have Macports installed, you can use it to install Git from the Terminal, like so…
+
+<pre><code>[sudo] port install git-core</code></pre>
+
+For information on installing Macports refer to "their documentation":http://www.macports.org/install.php.
+
+h2. Using Homebrew
+
+If you have Homebrew installed, you can use it to install Git from the Terminal, like so…
+
+<pre><code>brew install git</code></pre>
+
+
+For information on installing Homebrew refer to "their documentation":http://mxcl.github.com/homebrew.
+
+h2. Using the Finder
+
+You can download Git as a .pkg file to install using Mac OS X's Installer.
+
+# "Download the latest version":git
+# Double click the downloaded @.dmg@ file
+# Double click the @.pkg@ file
+# Follow the instructions from the installer
+# Ensure everything succeeded
+## Open the Terminal application from Applications / Utilities
+## Run: @git --version@
+
+If you don't see something like @git version 1.6.2@ something went wrong, most likely you don't have the install directory in your @PATH@. To find out if this is the case run:
+
+  export PATH="/usr/local/git/bin:$PATH"
+  git --version
+
+If you now see a version number as expected your shell's @PATH@ is the problem. Run @echo $SHELL@ and then refer to Google for the details of your shell (for example "add path bash").
+
+[git]http://code.google.com/p/git-osx-installer/downloads/list?can=3&q=&sort=-uploaded&colspec=Filename+Summary+Uploaded+Size+DownloadCount
+
+h2. GitX
+
+Additionally you may want to install "GitX":http://gitx.frim.nl/index.html which adds a very nice GUI on top of the Git tools.

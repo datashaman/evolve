@@ -1,0 +1,138 @@
+*This article assumes familiarity with [[Radiant's context changing behavior|Tags that Change Page Context]]*
+
+Where square brackets are used below, they indicate that the thing contained inside is optional (otherwise it is required), and things inside square brackets separated by a bar are the possible options when the field is not free form. If you decide to include it, don't include the square brackets - e.g.:
+
+<pre><code><r:children:each [offset="number"]></code></pre>
+
+...indicates that you could use the following:
+
+<pre><code><r:children:each offset="2"></code></pre>
+
+h2. Example Usage
+
+We'll use this sitemap in the rest of the examples in this article:
+
+<pre><code>Title                                     Publication date
+=====                                     ================
+Home                                      2007-01-01
+  \_News                                  2007-01-01
+      \_Anniversary                       2008-01-01
+      \_New product launch                2007-05-22
+      \_Second round funding secured      2008-06-15
+      \_We're recruiting!                 2008-07-03
+      \_Welcome to our new site           2007-01-18</code></pre>
+
+h3. Child Pages
+
+With the exception of the Home page, every page of a website has exactly one parent. By contrast, each page could have any number of children, from 0 upwards. As you might then expect, the options for selecting child pages are more complex than for selecting the parent.
+
+The @<r:children/>@ tag provides access to the children of the current *contextual* page. But if we were just to say @<r:children><r:title/></r:children>@, it would be ambiguous, so we have to be a little bit more specific. The @<r:children/>@ tag acts as a kind of *namespace*. There are a number of tags which we can use within that namespace, to provide greater specificity. Lets look at the most important of these: @<r:children:each/>@.
+
+All of the content inside of a @<r:children:each/>@ block will be rendered from the context of every child of the current page. For example:
+
+<pre><code><r:find url="/news">
+  <ul>
+    <r:children:each>
+    <li><r:title/></li>
+    </r:children:each>
+  </ul>
+</r:find></code></pre>
+
+would render as:
+
+<pre><code><ul>
+  <li>Welcome to our new site</li>
+  <li>New product launch</li>
+  <li>Anniversary</li>
+  <li>Second round funding secured</li>
+  <li>We're recruiting!</li>
+</ul></code></pre>
+
+Here, we are using the @<r:find/>@ tag to set the "News" page as the context. From there, we iterate through all of its children with the @<r:children:each/>@ tag. The block inside is rendered once for each child, creating a @<li>@ with the title of each page.
+
+You might have noticed that the order in which the news stories appear does not match the order in the site map. The pages are listed alphabetically in the site map, but our Radius generated list shows them in chronological order. There are a few attributes that we can use to specify how the child pages should be sorted. First, we can specify @order@ with a value of either @asc@ or @desc@. We could recreate the list above but in reverse order (i.e. most recent first) if we set this to @desc@, as follows:
+
+<pre><code>...
+  <r:children:each order="desc">
+    <li><r:title/></li>
+  </r:children:each>
+...</code></pre>
+
+Indeed, it usually appropriate to show the most recent news first, so you will probably want to specify @order="desc"@ every time.
+
+By default, @<r:children:each/>@ sorts children by date of publication, and in ascending order. You can override it to sort by any field stored in the database, with the attribute @by@. For example, the following would sort news stories alphabetically by their title:
+
+<pre><code>...
+  <r:children:each by="title">
+    <li><r:title/></li>
+  </r:children:each>
+...</code></pre>
+
+*If you find that you want to order pages arbitrarily, you might want to consider installing the [[Reorder extension|How to use the Reorder extension]]. This enhances the Radiant Pages view with buttons for Up, Down, Top and Bottom, allowing you to position pages in precisely the order you want. The arrangement specified in this view becomes the default sort order when iterating through pages. For more information, read the [[documentation|How to use the Reorder extension]].*
+
+It is also possible to limit the number of children that should be iterated through, by setting the attribute @limit@. For example, the following would only output the first 4 news stories:
+
+<pre><code>...
+  <r:children:each order="desc" limit="4">
+    <li><r:title/></li>
+  </r:children:each>
+...</code></pre>
+
+Finally, the @<r:children:each/>@ tag can be instructed to only return the children from a certain index onwards, by setting the @offset@ attribute. For example, with @offset="1"@, the first item would be omitted. The following example uses offset and limit to only return the 3 middle children:
+
+<pre><code>...
+  <r:children:each limit="3" offset="1">
+    <li><r:title/></li>
+  </r:children:each>
+...</code></pre>
+
+Compare the following output with the first example:
+
+<pre><code><ul>
+  <li>New product launch</li>
+  <li>Anniversary</li>
+  <li>Second round funding secured</li>
+</ul></code></pre>
+
+h3. First and Last
+
+When you are iterating through a set of pages, it can be useful to treat the items at each end of the collection differently. To make this possible, Radius provides @first@ and @last@ tags, within the @children@ namespace. These accept all of the same attributes as we discussed for @<r:children:each/>@, namely: @order@, @by@, @limit@ and @offset@. In the following example, we simply add a class to the @<li>@ elements:
+
+<pre><code><r:children>
+  <ul>
+  <r:first order="desc">
+    <li class="first"><r:title/></li>
+  </r:first>
+  <r:each order="desc" offset="1" limit="3">
+    <li class="first"><r:title/></li>
+  </r:each>
+  <r:last order="desc" limit="5">
+    <li class="last"><r:title/></li>
+  </r:last>
+  </ul>
+</r:children></code></pre>
+
+Which would output the following:
+
+<pre><code><ul>
+  <li class="first">We're recruiting!</li>
+  <li>Second round funding secured</li>
+  <li>Anniversary</li>
+  <li>New product launch</li>
+  <li class="last">Welcome to our new site</li>
+</ul></code></pre>
+
+Notice that in the example above, we haven't spelled out the @<r:children:each/>@ tag in full. Instead we just said @<r:each/>@. This lies within the @<r:children/>@ block, so it is *implied* that it uses that namespace, and we do not have to state this explicitly.
+
+h2. All Tags that Work with Collections
+
+* @<r:children>...</r:children>@
+* @<r:children:first>...</r:children:first>@
+* @<r:children:last>...</r:children:last>@
+* <code><r:children:each [offset="number"]
+  [limit="number"]
+  [by="attribute"]
+  [order="asc|desc"]
+  [status="draft|reviewed|published|hidden|all"]>...</r:children:each></code>
+
+For usage of a particular tag refer to the [[tag reference|Radius Tag Reference]].

@@ -1,0 +1,3 @@
+Since Slicehost lets you configure your server in any way you see fit, there isn't just one way to do it. Here are some articles that provide instructions for various setups.
+
+* [[Installing Radiant on Ubunutu Server with Ruby Enterprise Edition, Passenger, Apache and Nginx]]

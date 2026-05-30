@@ -1,0 +1,11 @@
+Radiant has a special mode to render your site with all pages with "draft" status. This feature is called *Development mode*. (Note: This is *not* the same as the Rails development environment)
+
+To activate it you simply alias your application's domain with a @dev@ subdomain, so if your normal site is at @www.example.com@ then create a DNS entry for @dev.example.com@ pointing to the same IP address. 
+
+Radiant will detect access to the site using the development subdomain and render your "draft" pages automatically!
+
+To change the subdomain name from @dev@, at the command prompt change to the Radiant directory and run @script/console@ and enter this command:
+
+<pre><code>Radiant::Config['dev.host'] = 'preview.example.com'</code></pre>
+
+*Anyone will be able to access the development site.* Be sure to use some kind of authentication system like "mod_auth for Apache 2.0":http://httpd.apache.org/docs/2.0/mod/mod_auth.html or "Apache 1.3":http://httpd.apache.org/docs/1.3/mod/mod_auth.html so that only authorized users can access the dev site.

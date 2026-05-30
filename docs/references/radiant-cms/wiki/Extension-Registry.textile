@@ -1,0 +1,20 @@
+The "Radiant Extension Repository":ext is the central list of extensions available to the @script/extension@ commands. All extension authors are encouraged to register their extensions, this significantly lowers the difficulty for users wanting to install your extension.
+
+Users are encouraged to browse the registry for interesting extensions and if so inclined "subscribe to the feed":feed to be notified when new extensions are released.
+
+To install any extension from the registry open a terminal window, navigate to the root of your Radiant project and run:
+
+<pre><code>./script/extension install extension_name</code></pre>
+
+Other available commands are:
+
+<pre><code>./script/extension uninstall extension_name
+./script/extension info extension_name
+./script/extension help</code></pre>
+
+@extension_name@ is the same as what is listed on the registry.
+
+!{max-width:667px}http://img.skitch.com/20090410-njc3i6u3e8d3mki54ea7t23g48.png!
+
+[ext]http://ext.radiantcms.org/
+[feed]http://ext.radiantcms.org/extensions.atom

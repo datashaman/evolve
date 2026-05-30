@@ -1,0 +1,3 @@
+h2. Any Radiant version - everything is handled.
+
+"AVLUX":http://avlux.net, the host for "RadiantCMS":http://radiantcms.org does all installation and configuration for any version of Radiant.  MySQL, Postgres or SQLite backend, running on Passenger. 

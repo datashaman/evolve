@@ -1,0 +1,108 @@
+*This is a work in progress.*
+
+This is a quick run down of extensions used to publish blogs with Radiant. However, Radiant is a very flexible system and there are other ways of doing things.
+
+h2. Basic Blog Features
+
+* Articles
+* Comments
+* Tags
+* Post to Post Navigation
+
+h2. Articles
+
+The simple approach to using Radiant as a blog is to create one page with a page type of *Archive* and add a child page to the archive to create a new post. 
+
+A simple set up would result in a page structure like this:
+
+* Home
+** About (Not blog post)
+** Articles (Archive page type)
+*** %B %Y Archive (Archive Month page type)
+*** Post 1 (blog post)
+*** Post 2 (also blog post)
+*** ...
+** Etc.
+
+You can then use something like this to link to your monthly archive pages:
+
+<pre><code><ul>
+  <r:find url="/articles/">
+    <r:children:each order="desc">
+      <r:header>
+        <li><a href="<r:date format="/articles/%Y/%m/" />"><r:date format="%B %Y" /></a></li>
+      </r:header>
+    </r:children:each>
+  </r:find>
+</ul></code></pre>
+
+And then use something like this on your home page to pull in your most recent posts:
+
+<pre><code><r:find url="/articles/">
+  <r:children:first order="desc" by="published_at">
+    <!--Display your entire first post here-->
+  </r:children:first>
+  <r:children:each order="desc" by="published_at" limit="4" offset="1">
+    <!--Display partial posts here (I use a summary/excerpt page part) -->
+  </r:children:each>
+</r:find></code></pre>
+
+and something like this in the body of the @%B %Y Archive@ page:
+
+<pre><code><r:archive:children:each order="asc">
+<div class="entry">
+  <h3><r:link /></h3>
+  <r:content />
+  <r:if_content part="extended"><r:link anchor="extended">more&#8230;</r:link></r:if_content>
+  <p class="info">Posted by <r:author /> on <r:date format="%d %b %Y" /></p>
+</div>
+</r:archive:children:each></code></pre>
+
+The simple blog template has this archive structured setup by default. It is a good starting point, and worth at least playing around with.
+
+If you intend to blog on specific categories and would like to navigate each category's archive separately Sean Cribbs has "a nice technique.":http://pastie.org/332219  *Note:* Sean's technique requires the installation of the "aggregation extension.":http://github.com/radiant/radiant-aggregation-extension/tree
+
+h2. Comments
+
+Refer to the [[Comments Extension]] page for more information.
+
+h2. Tagging
+
+Refer to the [[Tags Extension]] page for more information.
+Also available is the "Taggable Extension":http://github.com/spanner/radiant-taggable-extension .
+
+h2. Next/Previous Radius Tags
+
+You have multiple options for navigating between blog posts.
+
+h3. Blog Tags Extension
+
+The Blog Tags extension creates next/previous tags for each blog entry.
+
+Refer to the [[Blog Tags Extension]] page for more information.
+
+h3. Siblings Tags Extension
+
+The Siblings Tags extension does a similar task but sets them in a namespace of @siblings:next@ and @siblings:previous@ (as well as other tags).
+
+Refer to the [[Siblings Tags Extension]] page for more information.
+
+h3. Blog Extension
+
+The Blog extension takes the features of siblings_tags, adds to them and provides a way to loop through each page by author.
+
+Refer to the [[Blog Extension]] page for more information.
+
+h2. Separate category's archive
+
+Without extensions. All articles in one branch. Create an empty new page part, named like a category, in the example kubuntu. Then the category can be listed using something like this:
+
+<pre><code><r:find url="/posts">
+  <r:children:each order="desc">
+    <r:if_content part="kubuntu">
+      <div class="posts-menu">
+        <r:link />
+      </div>
+    </r:if_content>
+  </r:children:each>
+</r:find></code></pre>

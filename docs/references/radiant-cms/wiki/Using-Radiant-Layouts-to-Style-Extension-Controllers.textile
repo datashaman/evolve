@@ -1,0 +1,214 @@
+h2. Introduction
+
+Often when developing a custom site with Radiant, there are tasks that we want our site visitors to be able to accomplish, but that would be inappropriate or cumbersome to do in a static page structure.  For these tasks, we obviously would want to use a Rails controller and models to accomplish the task.  However, we also want to take advantage of the beautiful work our designers have done for the static pages, without duplicating code.  This is the motivation behind the "@share_layouts@":http://github.com/radiant/radiant-share-layouts-extension extension.
+
+h2. Overview
+
+Here's the basic steps we'll take to integrate our custom controller with a Radiant layout.
+
+# Create an extension and controller and wire up the routes.
+# Create a Layout in the Radiant Admin UI for our controller's output.
+# Specify the layout we want to use in our controller using the @radiant_layout@ declaration.
+# Create a view for the controller that renders blocks to be inserted into the Radiant layout.
+# View the action from our web browser.
+
+h2. Step-by-Step Tutorial
+
+h3. 1. Create a extension and controller
+
+Create a new Radiant project and bootstrap with the 'Styled Blog' template.  We'll make use of the existing layout in that template.  Now install the @share_layouts@ extension:
+
+<pre><code>  $ git clone http://github.com/radiant/radiant-share-layouts-extension.git vendor/extensions/layouts</code></pre>
+
+Edit your @config/environment.rb@ to make sure @share_layouts@ loads first:
+
+<pre><code>  config.extensions = [:layouts, :all]</code></pre>
+
+Now let's generate an extension called 'stats'.
+
+<pre><code>$ script/generate extension stats
+      create  vendor/extensions/stats/app/controllers
+      create  vendor/extensions/stats/app/helpers
+      create  vendor/extensions/stats/app/models
+      create  vendor/extensions/stats/app/views
+      create  vendor/extensions/stats/db/migrate
+      create  vendor/extensions/stats/lib/tasks
+      create  vendor/extensions/stats/README
+      create  vendor/extensions/stats/stats_extension.rb
+      create  vendor/extensions/stats/lib/tasks/stats_extension_tasks.rake
+      create  vendor/extensions/stats/spec/controllers
+      create  vendor/extensions/stats/spec/models
+      create  vendor/extensions/stats/spec/views
+      create  vendor/extensions/stats/spec/helpers
+      create  vendor/extensions/stats/Rakefile
+      create  vendor/extensions/stats/spec/spec_helper.rb
+      create  vendor/extensions/stats/spec/spec.opts</code></pre>
+
+Next we'll generate a controller for the extension.
+
+<pre><code>$ script/generate extension_controller stats stats
+      exists  app/controllers/
+      exists  app/helpers/
+      create  app/views/stats
+      exists  spec/controllers/
+      exists  spec/helpers/
+      create  spec/views/stats
+      create  spec/controllers/stats_controller_spec.rb
+      create  spec/helpers/stats_helper_spec.rb
+      create  app/controllers/stats_controller.rb
+      create  app/helpers/stats_helper.rb</code></pre>
+
+Our last task in this section is to wire up some routes for our controller.  In the example, we plan to have only one action, so we'll put just one route inside our extension file (@stats_extension.rb@):
+
+<pre><code>  define_routes do |map|
+    map.stats 'stats', :controller => 'stats', :action => 'index'
+  end</code></pre>
+
+h3. 2. Create or pick a layout to use with the controller
+
+Since we already have a layout that we want to use (the default layout that comes with the Styled Blog template), let's look at what parts are used in the layout.  If you haven't already, fire up @script/server@ and look at the "Normal" layout.  Here's the source:
+
+<pre><code><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+  <html>
+    <head>
+      <title><r:title /></title>
+      <link href="/rss/" rel="alternate" title="RSS" type="application/rss+xml" />
+      <link rel="stylesheet" type="text/css" href="/styles.css" />
+    </head>
+    <body>
+      <div id="page">
+        <r:snippet name="header" />
+        <div id="main">
+          <div id="content-wrapper">
+            <div id="content">
+              <r:unless_url matches="^/$"><h1><r:title /></h1></r:unless_url>
+              <r:content />
+              <r:if_content part="extended">
+              <div id="extended">
+                <r:content part="extended" />
+              </div>
+              </r:if_content>
+              <r:if_url matches="^/articles/\d{4}/\d{2}/\d{2}/.+"><r:unless_url matches="-archives/$"><p class="info">Posted by <r:author /> on <r:date /></p></r:unless_url></r:if_url>
+            </div>
+          </div>
+          <div id="sidebar-wrapper">
+            <div id="sidebar">
+              <r:content part="sidebar" inherit="true" />
+            </div>
+          </div>
+        </div>
+        <r:snippet name="footer" />
+      </div>
+    </body>
+  </html></code></pre>
+
+The main thing to look for are @<r:content />@ tags.  There are three:
+
+# @<r:content />@ in the "content" div.
+# @<r:content part="extended" />@, nested in the "content" div, but only displayed if it exists.
+# @<r:content part="sidebar" inherit="true" />@ in the "sidebar" div.
+
+We'll make use of these when we create our view template later.
+
+h3. 3. Specify the desired layout in the controller
+
+Open up @vendor/extensions/stats/app/controllers/stats_controller.rb@ and let's specify our layout and create our action.  While we're at it, we'll want to make our controller actually do something, so let's have it gather statistics about our Radiant installation.
+
+<pre><code>class StatsController < ApplicationController
+  radiant_layout 'Normal'
+  no_login_required
+
+  def index
+    @page_count = Page.count
+    @snippet_count = Snippet.count
+  end
+end</code></pre>
+
+The main thing to notice is the first line, @radiant_layout 'Normal'@.  This tells @share_layouts@ to render our controller actions inside the "Normal" layout that we investigated earlier.  The second line, @no_login_required@ makes sure that our visitors without accounts can see the controller's output. In our @index@ action we've simply collected some counts of the number of pages and snippets in the database.  We'll output these in the view.
+
+h3. 4. Create a view
+
+Now that we've got the guts hooked up, let's render something!  We'll want to make sure our view takes advantage of the content blocks that the layout asks for.  The way we do that is to capture blocks of content using the @content_for@ helper that comes with Rails.  Here's the Haml view template @app/views/stats/index.html.haml@ (Haml is included with 0.6.7 and later):
+
+<pre><code>%h1 Statistics
+
+  %dl
+    %dt Pages
+    %dd= @page_count
+    %dt Snippets
+    %dd= @snippet_count
+
+  - content_for :sidebar do
+    %p 
+      This page displays statistics about our Radiant
+      installation.</code></pre>
+
+Note that we used @content_for :sidebar@ to capture the paragraph to be inserted into the sidebar block.  Everything in the template that is _not_ inside a @content_for@ block will be treated as the "body" block.
+
+h3. 5. View our results
+
+Now fire up your web browser and look at the action (Go to @/stats@).  Here's what mine looks like:
+
+!{max-width:667px}http://farm4.static.flickr.com/3277/2642829535_e33fe329d7_o.png!
+
+h2. Discussion and Advanced Topics
+
+h3. Setting the title and breadcrumbs
+
+You have three options for setting the title and breadcrumbs for the layout.
+
+h4. 1. Set an instance variable
+
+The first and easiest option is to set the @@title@ or @@breadcrumbs@ instance variable in your controller.  These will automatically be added to the page that encapsulates your controller's view.  Example:
+
+<pre><code>def index
+  @title = "My cool controller"
+end</code></pre>
+
+h4. 2. Capture some content
+
+You can use @content_for@ with the parameter @:title@ or @:breadcrumbs@ and a content block to capture what should go in the title or breadcrumbs area. Example:
+
+<pre><code><% content_for :breadcrumbs do %>
+  <%= link_to "Home", '/' %> > My Page
+<% end %></code></pre>
+
+h4. 3. Use an "endpoint" page
+
+The endpoint page will be used for the title and breadcrumbs attributes if you don't specify them manually.  See below for more info about endpoints.
+
+h3. Choosing a layout dynamically
+
+Similarly to the title and breadcrumb attributes, the layout can be chosen dynamically in the controller.
+
+h4. 1. Set an instance variable
+
+You can directly set the layout in a controller action or filter via the @@radiant_layout@ instance variable:
+
+<pre><code>@radiant_layout = "No sidebar"</code></pre>
+
+h4. 2. Use a block
+
+You can alternatively pass a block to the @radiant_layout@ directive, which will yield the controller instance.  The return value of the block should be a string containing the name of a layout.
+
+<pre><code>radiant_layout do |controller|
+  case controller.action_name
+  when "index"
+    "Normal"
+  else
+    "No sidebar"
+  end
+end</code></pre>
+
+h3. Creating "endpoints"
+
+TODO
+
+h3. Generating Radius Code
+
+TODO
+
+h2. How it works
+
+TODO

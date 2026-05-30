@@ -1,0 +1,13 @@
+If you wish for your site to have a shop or subscription system then there are a few options available.
+
+h2. E-commerce
+
+h3. Rbiz
+
+"Rbiz":http://github.com/rubidine/rbiz is an e-commerce Rails plugin for building shopping cart systems. A "Radiant extension":http://github.com/rubidine/radiant_rbiz integrates Rbiz into your Radiant installation, making products, product categories, and the cart checkout process available to your Radiant pages.
+
+h2. Subscription Systems.
+
+h3. Spreedly
+
+"http://www.spreedly.com":http://www.spreedly.com is a site which manages subscriptions for you. There is also a "Radiant extension":http://github.com/pelargir/radiant-spreedly-extension/tree/master that more tightly integrates management into your radiant admin system

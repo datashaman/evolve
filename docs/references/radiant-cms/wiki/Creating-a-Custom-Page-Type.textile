@@ -1,0 +1,260 @@
+This article assumes that you know the basics of Radiant extensions, and have created an extension of your own. See [[Adding Custom Radius Tags]] for an introduction to extensions.
+
+The article is a tutorial that will take you through the creation of a custom page type called @PlayerPage@. Pages of the type @PlayerPage@ each represent a player in a tennis tournament. The article covers page type basics, adding custom fields to the page editor, adding tags to output these custom fields, automatically adding required page parts, and finally some common tasks that custom pages types often solves.
+
+h2. What is a page type?
+
+A normal page in Radiant is of the type @Page@. If custom tags or custom behavior, such as disabling caching, is needed in certain pages, a custom page type can be used. A page type is just a Rails model that inherits from @Page@ instead of inheriting directly from @ActiveRecord::Base@.
+
+All newer versions of Radiant are shipped with the Archive extension, which provides several custom pages types. The @ArchivePage@, for example, is able to generate a list of all its child pages using custom Radius tags, and to include the date a page was published in the slug. The Archive extension in @/vendor/extensions/archive@ is a good place to look for basic examples of custom page types.
+
+h2. Adding a custom page type to your extension
+
+Let's assume your extension is called "tennis". The first step is to generate a model class that will hold the special logic needed for pages of that type:
+
+<pre><code>./script/generate extension_model tennis PlayerPage</code></pre>
+
+This creates our model class, a spec to test it and a migration to add custom fields to the database.
+
+The model class must inherit from @Page@ to be a valid custom page type usable by Radiant. Open @/vendor/extensions/tennis/app/models/player_page.rb@ and change it to look like this:
+
+<pre><code>class PlayerPage < Page
+end</code></pre>
+
+Restart the server, and you should now be able to choose "Player" as a page type in the page editor.
+
+h3. Troubleshooting
+
+If "Player" doesn't show up as a page type, maybe you chose to put the ruby file somewhere else than in @app/models/@. If our page is called @SomePage@ and is placed in @/vendor/extensions/tennis/lib/some_page.rb@, you'll need to require the file in the top of @tennis_extension.rb@:
+
+<pre><code>require_dependency "#{File.expand_path(File.dirname(__FILE__))}/lib/some_page"</code></pre>
+
+- and to call the page in the @activate@ method:
+
+<pre><code>def activate
+  ...
+  SomePage
+end</code></pre>
+
+h2. Adding custom fields to the page type
+
+You can skip this step if you do not need to add custom data to your custom page type.
+
+In this tutorial, we need to add these specific fields representing player information:
+
+* first_name
+* last_name
+* rank
+
+h3. Modify migration to update database table
+
+So let's add them to the @pages@ table in the database. Open @/vendor/extensions/tennis/db/migrate/001_create_player_pages@ and replace the contents with this:
+
+<pre><code>class CreatePlayerPages < ActiveRecord::Migration
+  def self.up
+    add_column :pages, :player_first_name, :string
+    add_column :pages, :player_last_name, :string
+    add_column :pages, :player_rank, :integer
+  end
+
+  def self.down
+    remove_column :pages, :player_first_name
+    remove_column :pages, :player_last_name
+    remove_column :pages, :player_rank
+  end
+end</code></pre>
+
+Run @rake db:migrate:extensions@ to make the changes to the database table.
+
+h3. Add partial with fields to the page edit view
+
+We want @first_name@, @last_name@ and @rank@ to be editable as fields in the page editor form. To meet that end, we use the "shards" functionality of Radiant (it was formerly in an extension called _Shards_, but is now baked into core).
+
+Create a partial called @/vendor/extensions/tennis/app/views/admin/pages/_player_base_info.html.haml@ and add this content:
+
+<pre><code>- if @page.is_a?(PlayerPage)
+  %table.fieldset
+    - ['player_first_name', 'player_last_name', 'player_rank'].each do |field|
+      = render :partial => "meta_row",:locals => {:f => self}, :object => {:field => field, :type => "text_field", :args => [{:class => 'textbox', :maxlength => 100}]}</code></pre>
+
+
+This is a quite advanced example of how a partial could look. It it is written in HAML, since all the rest of Radiant uses it, but you can change the ending to @.html.erb@ and use the ERb you know. The first line makes sure the rest is only rendered when the page is a @PlayerPage@. This is needed, since the "shards" functionality currently only allow developers to add functionality for any page type, and we don't want these fields to show up on our ordinary pages. The third line loops through a collection of the three fields we want to be able to edit here. The fourth line uses the existing Radiant partial @meta_row@ to render each field as a nice looking row.
+
+(Note: the above use of the meta_row partial appears problematic, if so, see an "alternative":http://groups.google.com/group/radiantcms-dev/browse_thread/thread/b7ca49733511126c , below.)
+
+<pre><code>- if @page.is_a?(PlayerPage) 
+  - f = self 
+  %table.fieldset 
+    - ['player_first_name', 'player_last_name', 'player_rank'].each do |field| 
+      %tr 
+        %th.label 
+          = label(:page, field) 
+        %td.field 
+          = f.text_field "page", field, {:class => 'textbox', :maxlength => 100}</code></pre>
+
+This partial will not appear in the page editor view by magic, though. You need to tell Radiant to render it. Add this line to the @activate@ method of @tennis_extension.rb@:
+
+<pre><code>def activate
+  ...
+  admin.page.edit.add(:form, "player_base_info", :after => 'edit_extended_metadata')
+end</code></pre>
+
+This line tells Radiant render the partial @player_base_info@ in the form part of the page edit view just after the _edit_extended_metadata_ section. If you want to learn about other places you can add partials, checkout [[Modifying the Page UI]].
+
+h2. Adding custom page parts
+
+We also want a description and a list of sponsors for each player. Instead of having these as text fields, it makes sense to create them as page parts. We will just use the default @body@ part for the description, but let's make @PlayerPage@ automatically add a @sponsors@ page part when it is saved:
+
+<pre><code>class PlayerPage < Page
+  after_save :set_defaults
+
+  private
+
+      def set_defaults
+        parts.create(:name => 'sponsors', :content => %{
+  sponsor1:
+    name: Sponsor 1
+    image: [insert image url]
+    link: [insert homepage url]
+  sponsor2:
+    name: Sponsor 2
+    image: [insert image url]
+    link: [insert homepage url]
+        }) unless parts.any? { |part| part.name == 'sponsors' }
+      end
+
+end</code></pre>
+
+Wouldn't have been much nicer if we could have put this code in an @after_create@ block rather than an @after_save@? Then we wouldn't have had to make the check for existing parts, as we knew we were creating a brand new page. Unfortunately, new pages are always instantiated as the base class @Page@, and only the second time we press "Save and continue editing", the page is instantiated as our @PlayerPage@ type. This can be solved by adding the method directly to the @Page@ class, but that's too advanced a topic for this article.
+
+Notice how some default YAML code is inserted as the content of the part. We want to slurp this YAML into a Hash, and then use to generate the list of sponsors. That's coming up in later in the tutorial.
+
+h2. Forcing a specific layout
+
+To take advantage of our custom player data, we want all @PlayerPage@s to use the layout @Player@. The layout looks like this:
+
+<pre><code><r:inside_layout name="master">
+  <h2><r:player:first_name /> <r:player:last_name /></h2>
+  <strong>Rank:</strong> <r:player:rank />
+
+  <p><r:content /></p>
+
+  <h3>Sponsors:</h3>
+  <r:player:sponsors:each>
+    <r:link><r:image /></r:link>
+  </r:player:sponsors:each>
+
+</r:inside_layout></code></pre>
+
+The @<r:inside_layout>@ tags are from the "nested_layouts":http://ext.radiantcms.org/extensions/7-nested-layouts extension, allowing us to use the same master layout in multiple sublayouts such as this one. The other tags will be covered in the next section.
+
+To force the layout @Player@ for @PlayerPage@s, we add some code to the @set_defaults@ method that sets the layout every time the page is saved:
+
+<pre><code>def set_defaults
+  ...
+  player_layout = Layout.find_by_name('Player')
+  update_attribute(:layout_id, player_layout.id) if player_layout && layout_id != player_layout.id
+end</code></pre>
+
+h2. Adding custom page tags
+
+Our custom @PlayerPage@ would not be of much use if it didn't know how to display all this player data nicely. As illustrated in the previous section, we want to use the tags @<r:player:first_name />@, @<r:player:last_name />@, @<r:player:rank />@, @<r:player:sponsors:each>@ etc. in the @Player@ layout.
+
+The @first_name@, @last_name@ and @rank@ tags are easy to add, since they merely just output the player data directly:
+
+<pre><code>class PlayerPage < Page
+  ...
+
+  desc %{
+    Causes the tags referring to a players's attributes to refer to the current page.
+
+    *Usage:*
+    #open pre and code tag here ...
+<r:player>...</r:player>
+   #close pre and  code tag here.
+  }
+  tag 'player' do |tag|
+    tag.locals.player = tag.globals.page
+    tag.expand
+  end
+
+  [:first_name, :last_name, :rank].each do |method|
+    desc %{
+      Renders the @#{method}@ attribute of the current player.
+    }
+    tag "player:#{method}" do |tag|
+      tag.locals.player.send("player_#{method}")
+    end
+  end
+
+  ...
+end
+
+</code></pre>
+
+For sponsors, it's a bit more complicated. Our @<r:player:sponsors>@ tag should load sponsors from the YAML page part, the @<r:player:sponsors:each>@ should iterate through all sponsors of the player, and finally we need tags to output name, logo and homepage link of the sponsor:
+
+<pre><code>
+
+class PlayerPage < Page
+  ...
+
+  desc %{
+    Loads the sponsors of the player
+  }
+  tag 'player:sponsors' do |tag|
+    sponsor_content = tag.locals.page.render_part(:sponsors)
+    tag.locals.sponsors = YAML::load(sponsor_content) || {}
+    tag.expand
+  end
+
+  desc %{
+    Cycles through each sponsor of the player
+
+
+
+    *Usage:*
+#open pre & code tag here to make it fit nicely into radiant tag doc system ...
+<r:player:sponsors:each>
+     <r:link><r:image /></r:link>
+    </r:player:sponsors:each>
+#close pre code tag here
+
+  }
+  tag 'player:sponsors:each' do |tag|
+    result = []
+    tag.locals.sponsors.each_value do |sponsor|
+      debugger
+      tag.locals.sponsor = sponsor
+      result << tag.expand
+    end
+    result.join
+  end  
+
+  desc %{
+    Renders the name of the sponsor.
+  }
+  tag 'player:sponsors:name' do |tag|
+    tag.locals.sponsor['name']
+  end
+
+  desc %{
+    Renders a link to the homepage of the sponsor.
+  }
+  tag 'player:sponsors:link' do |tag|
+    "<a href=\"#{tag.locals.sponsor['link']}\">#{tag.expand}</a>"
+  end
+
+  desc %{
+    Renders the logo of the sponsor.
+  }
+  tag 'player:sponsors:image' do |tag|
+    "<img src=\"#{tag.locals.sponsor['image']}\" />"
+  end
+
+  ...
+end
+
+</code></pre>
+
+That's it! Our @PlayerPage@ is done.

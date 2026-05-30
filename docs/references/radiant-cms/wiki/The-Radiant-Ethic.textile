@@ -1,0 +1,7 @@
+h2. Guidelines for developing code for contribution to the Radiant open-source project.
+
+# *Code is a liability.* It is important to realize that every feature we add increases the complexity of the code base. The added complexity costs us exponentially over time to maintain. To this end we should do everything in our power to keep the code base lean. Removing unneeded code should be a sport.
+# *Features should only be added that are generally useful to the community.*
+# Features will not be accepted that do not live up to points 1 and 2. *Extensions are the perfect place to work out pet peeves.*
+# *Radiant is primarily designed for static Web sites* (that is, sites that are not dynamically generated). It is not, and should not become, portal software.
+# *Clarity and beauty should be valued over brevity.* We especially encourage people to submit patches to "clean up" the code base.

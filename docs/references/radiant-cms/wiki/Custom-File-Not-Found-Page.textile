@@ -1,0 +1,7 @@
+By default, when a user requests a URL that doesn't exist on the site, the server will return HTTP status 404 and a page titled "Page Not Found," in the style of the admin section.  To change this page:
+
+# Create a new child of the home page
+# Set its layout, title, and content as you would a normal page
+# Set its *Page Type* to *File Not Found*
+# Set its *Status* to *Published*
+# Create the page

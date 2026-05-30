@@ -1,0 +1,14 @@
+The tags extension allows us to tag our posts (and all other pages) and provides some handy Radiant tags to display tags.
+
+The tags extension is not available through the extension registry so you will need to refer to the "manual installation instructions":installing-extensions#manual. More information might be available on the "Tags extension page":http://github.com/jomz/radiant-tags-extension
+
+This extension allows two options, complex and simple tags. With simple tags each tag is delimitated by a space, while with complex
+tags the semi-colon is used. So to use multi word tags you need to use complex tags. To do so add the following to your environment.rb.
+
+<pre><code>Radiant::Config['tags.complex_strings'] = true</code></pre>
+
+This extension also adds a "Tag Search" page type, where you will end up when you click on a tag. You have to create this page and set the path to it in the config file. It defaults to /search/by-tag/. Changing it to tags:
+
+<pre><code>Radiant::Config['tags.results_page_url'] = "/tags/"</code></pre>
+
+This extension also provides lots of great Radius tags for tag clouds, listing tags, etc. check out the "help page":http://github.com/jomz/radiant-tags-extension/tree/master/HELP.md for more info.

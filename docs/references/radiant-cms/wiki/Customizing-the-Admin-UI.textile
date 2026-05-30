@@ -1,0 +1,35 @@
+Customizing the admin interface is relatively simple.
+
+The title and subtitle may be the first parts you'll want to change. While the [[Settings extension]] exist to do this from within the admin interface, you may not want to provide a way for your users to easily edit these settings themselves.
+
+You have two options:
+
+# make changes to your @config/environment.rb@ file
+# use @script/console@
+
+Refer to [[Additional Configuration Options]] for a list of all the configuration options and their possible settings.
+
+h2. Environment
+
+In your @config/environment.rb@ you can add details to the @config.after_initialize@ block. Your settings may look like this:
+
+<pre><code>config.after_initialize do
+  ...
+    Radiant::Config['admin.title'] = "Your Client's Name" if Radiant::Config['admin.title'] =~ /Radiant CMS/
+    Radiant::Config['admin.subtitle'] = 'Service with a smile!' if Radiant::Config['admin.subtitle'] =~ /Publishing for Small Teams/
+    Radiant::Config['defaults.page.parts'] = 'body' if Radiant::Config['defaults.page.parts'] =~ /body, extended/
+    Radiant::Config['defaults.page.status'] = 'published' if Radiant::Config['defaults.page.status'] =~ /draft/
+  ...
+end</code></pre>
+
+That code will set your admin details to whatever you specify. Adding the @if Radiant...@ to the end of each line makes it so that will only make those changes if your site is newly created. This means that if you make changes via the console or an extension after you have installed Radiant, the settings will not be reset to what you define in your Environment each time the server is restarted.
+
+Beware of what you set in your code. For example, if your Environment specifies that the @defaults.page.status@ should be 'published' then even if you change that setting back to 'draft' (via the console or an extension) then it will be reset by the code above when the application is next restarted.
+
+h2. Console
+
+If you choose to use @script/console@ you'll need to type similar settings in the console such as @Radiant::Config['admin.title'] = "Your Client's Name"@
+
+h2. Stylesheets
+
+You may also edit the stylesheets used in the admin interface. When you generate an instance of Radiant, you'll have access to the CSS file that manages the look and feel. You can find these styles in @public/stylesheets/admin/main.css@

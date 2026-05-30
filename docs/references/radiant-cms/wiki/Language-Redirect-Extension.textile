@@ -1,0 +1,52 @@
+Radiant currently lacks full multi-lingual support, but it does have a nice extension for directing visitors to sections of the site that are in the language that their browser requests. It's called the "Language Redirect" extension.
+
+You'll need to install the Language Redirect extension: See "Language Redirect Extension":lr. From the root of your Radiant project run:
+
+<pre><code>./script/extension install language_redirect</code></pre>
+
+(If this fails see the "manual installation instructions":installing-extensions#manual)
+
+Then restart your application server.
+
+Assuming your Web site has the following structure:
+
+<pre><code>Site Root: /
+|
++- English Home Page: /en/
+|
++- Italian Home Page: /it/
+|
++- Japanese Home Page: /ja/
+|
++- etc...</code></pre>
+
+You can use the "Language Redirect" extension to automatically send a redirect to the appropriate language subsection of the site, when a user hits the site root. Simply:
+
+# Set your site root's Page Type to "Language Redirect".
+# Create a page part on the site root called "config".
+# Put the following in the "config" part:
+
+<pre><code>en: /en/
+ja: /ja/
+it: /it/
+*: /en/</code></pre>
+
+The configuration is in key/value format, where the language is specified on the left side of the colon and the URL for that language is specified on the right side of the colon. In this case if the browser requests English content (en) they will be redirected to the "/en/" folder. If the browser requests Italian content, they will be redirected to the "/it/" folder. And so on... The last key/value pair uses "*" for the language. This tells the "Language Redirect" extension to redirect to the "/en/" folder if the browser requests a language that doesn't match any of the languages that have been defined in the "config" part.
+
+Additional instructions can be found in the "source":lr.
+
+*Question:*
+
+Any reason why you have to specify the path for /en/ twice? It seems it would be enough to specify ja, it and * so as not to repeat oneself.
+
+*Answer:*
+
+No reason at all. You are welcome to only specify /ja/ and star /en/.
+
+
+h2. Alternative
+
+If you don't want to replicate all your pages and stay a little more DRY, you could also check out the "Multilingual Pages Extension":multilingual_pages.
+
+[lr]http://github.com/intinig/radiant_language_redirect_extension/tree/master
+[multilingual_pages]http://github.com/yeah/radiant-multilingual-pages-extension/tree

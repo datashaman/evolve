@@ -1,0 +1,13 @@
+Having Git installed on your system will make it simpler to download, install and manage Radiant extensions.
+
+h2. Debian/Ubuntu
+
+On a Debian-based system (such as Ubuntu) use the APT to install Git, like so…
+
+<pre><code>sudo apt-get install git-core</code></pre>
+
+h2. Gentoo
+
+On a Gentoo-based system, use the Portage package management system to install Git, like so…
+
+<pre><code>sudo emerge dev-vcs/git</code></pre>

@@ -1,0 +1,17 @@
+h2. Symptoms
+
+You have installed or upgraded Radiant and run the migrations and update scripts. The site works perfectly except the main [[Pages]] administration page. When you view this page, instead ot the page list you see:
+
+<pre><code>index_sitemap_column_headers' default partial not found!</code></pre>
+
+h2. The Problem
+
+*You most probably have Shards or another extension installed which is interfering with the display of the page list*. This is particularly so if you upgraded a site that was built using an earlier version of Radiant + the Shards extension and you have upgraded to a newer version of Radiant (0.6.7, 0.6.9 or later) that has the Shards functionality integrated and does not require the Shards extension to be installed any more.
+
+h2. The Solution
+
+Check the "Extensions" page. If you have the Shards extension then [[uninstall it|Uninstalling Extensions]] and restart the server. Should this not fix the issue then disable all the extensions by setting:
+
+<pre><code>config.extensions = []</code></pre>
+
+in your @environment.rb@ then re-enabling them one by one by adding their name, e.g. @config.extensions = [:extension1]@ and restarting the server to see if the [[Pages]] admin page breaks, this will identify the problem extension.

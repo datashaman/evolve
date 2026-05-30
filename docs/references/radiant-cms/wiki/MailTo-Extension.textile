@@ -1,0 +1,17 @@
+The mail_to extension wraps the built-in Rails mail_to tag, and uses :encode => :javascript to prevent robots from harvesting your email addresses for spam.
+
+Install the mail_to extension by navigating to the root of your Radiant project and running:
+
+<pre><code>./script/extension install mail_to</code></pre>
+
+(If this fails see the "manual installation instructions":installing-extensions#manual)
+
+Restart your application server then use the tag like this:
+
+<pre><code><r:mail_to email="random@example.org" />;</code></pre>
+
+or
+
+<pre><code><r:mail_to email="random@example.org">email me</r:mail_to></code></pre>
+
+Note that using this with Textile can make the email tag fail; either turn off the page's textile or wrap the mail_to tag in @<notextile></notextile>@.

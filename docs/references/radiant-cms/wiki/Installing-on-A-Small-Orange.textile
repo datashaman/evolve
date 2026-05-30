@@ -1,0 +1,47 @@
+*_this article is STILL incomplete if you have successfully deployed Radiant to A Small Orange, AND you know what you are doing,  documenting your experience here would be a tremendous help to the Radiant and A Small Orange communities alike._*
+
+"A Small Orange":http://asmallorange.com has been a great web host so far. Radiant CMS is a content management system for publishing websites. I really recommend it for small teams, because it's simple to use and easy to set up. Here's a guide on how to set up RadiantCMS in a few minutes.
+
+Things you should already know how to do
+
+* Know how to use the shell
+* Know how to use ssh
+* Know how to use cpanel
+
+Quick and Dirty installation on ASO shared hosting
+
+h2. Firstly, a few caveats:
+* radiant isn't currently compatible with ruby 1.9, the version of ruby which is on the server.
+* this is full of omissions and inaccuracies
+* this is for installing your radiant app in a subdomain, these directions won't work for running your whole site off radiant
+* these instructions do not (yet) address best practices like freezing rails version to the vendor directory to prevent ASO breaking your radiant install by upgrading rails in the future
+* other things that are wrong with this that I simply have no clue about
+*_you have been warned_*
+
+1. open support ticket to request ssh access, mysql gem, and radiant gem installation
+2. use cpanel to create a new database (for example: databaseforradiant)
+3. create a new mysql user (radiantsqluser), assign that user to the database created in step 2 and grant it all privledges
+4. ssh into your document root and run the following command
+@radiant --database=mysql yourradiantsite@
+
+5. now you have to edit the database.yml and environment.rb files in the yourradiantsite/config directory
+in the environment.rb uncomment the ENV['RAILS_ENV'] ||= 'production' line
+in the database.yml write as follows
+@production:@
+@adapter: mysql@
+@database: yourASOusername_databaseforradiant@
+@username: yourASOusername_radiantsqluser@
+@password: radiantsqluserspassword@
+@host: localhost@
+
+6. in the yourradiantsite issue the bootstrap command
+@rake production db:bootstrap@
+follow the prompts
+
+7. go into cpanel and create a subdomain that points to yourradiantsite/public (for example: fancyradiantname.yourdomain.com)
+8. make a copy of your yourradiantsite/public/.htaccess file and put it in your public_html directory
+(I did this by chance, it works, I think, by letting Apache know to follow through the subdomain thing)
+
+Goto visit in a browser http://fancyradiantname.yourdomain.com
+
+If it doesn't work google the error messages, good luck!

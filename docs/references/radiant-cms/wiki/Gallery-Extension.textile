@@ -1,0 +1,33 @@
+Check the "Gallery GitHub":http://github.com/hairballopolis/radiant-gallery page for the most up-to-date information concerning the Gallery extension. There are more wiki pages for the gallery on the "Gallery Github Wiki":http://wiki.github.com/hairballopolis/radiant-gallery/
+
+h2. Installation
+
+From the root of your Radiant project run:
+
+<pre><code>./script/extension install gallery</code></pre>
+
+(If this fails see the "manual installation instructions":installing-extensions#manual)
+
+From the root of your Radiant project run:
+
+<pre><code>rake production radiant:extensions:gallery:install</code></pre>
+
+h2. Get Your First Gallery Set Up
+
+# Open your Radiant admin panel
+# Click on the "Galleries" tab
+# Create a new gallery by clicking "New Gallery"
+# Enter a @name@ and @description@ for your gallery
+# FTP or copy your images to [radiant directory]/public/galleries/import
+# On the index page for your gallery in the Radiant admin panel, click "Import Files" and follow the prompts
+# *Note:* with the most recent versions, it is necessary to edit the items and import controllers located in @/vendor/extensions/gallery/app/controllers@ in order for uploads or imports to function.  For example the file @gallery_importings_controller.rb@ needs to have the line @protect_from_forgery :except => [ :import ]@ added to it.  The item or items controller needs an exception added for the :create action.  (I apologize I don't remember the details - but you can look in the log file for the correct controller and action if upload or import is not working for you)
+
+h2. Install Your Gallery As a Page
+
+During installation, you are prompted to install a gallery layout.  Doing so is the easiest way to get your new gallery displaying on your site.  (Note: it appears that it is safe to repeat the "rake" command after having already set up images in your gallery in order to install a layout if you chose not to the first time, or to install multiple layouts).
+
+With one of these layouts created for you, simply select it from the drop-down on your gallery page.  Note that neither of these layouts use the @<r:content/>@ tag, so the actual content on the page will be ignored unless you change this.
+
+From here, it is up to you to experiment, move the relevant code snippets around to meet your needs, and alter these layouts to fit into the style of your site.
+
+*if you'd like to contribute, go for it!*

@@ -1,0 +1,109 @@
+This article assumes that you know the basics of Radiant extensions, and have created an extension of your own. See [[Adding Custom Radius Tags]] for an introduction to extensions.
+
+While you could choose to simply modify Radiant files directly when you need to change the behavior of Radiant, this is generally considered a Bad Thing, as it would make it hard to upgrade your website to a newer version of Radiant. This article explains how to extend and override the default Radiant behavior by placing your modifications in an extension.
+
+h2. Adding behavior
+
+By now you should know how to _add_ behavior to Radiant such as new tags. It it is done by letting the relevant class include a module in the @activate@ method of your extension, for example:
+
+<pre><code>def activate
+  Page.send :include, MyTags
+end</code></pre>
+
+Using this technique, you can add behavior to any class in Radiant, but what if you need to _change_ the behavior of some functionality?
+
+h2. A basic example of overriding behavior
+
+Let's say you have an extension that adds some tags that rely on session variables. Session is disabled in @SiteController@ per default, and since this is the controller that renders all Radiant pages, this is where session must be enabled.
+
+A simple way to achieve this, is to simply invoke @class_eval@, a method commonly used in Ruby metaprogramming, directly in the @activate@ method of your extension:
+
+<pre><code>def activate
+  SiteController.class_eval{
+    session :disabled => false
+  }
+end</code></pre>
+
+However, more well-structured manner of doing this, especially if need to do more than just run a single line of code, is to move the code into a module in a separate file, place it in the @lib@ directory of your extension, like this: 
+
+<pre><code>module MyExtension
+  module SiteControllerExt
+    def self.included(base)
+      base.class_eval {
+        session :disabled => false
+      }
+    end
+  end
+end</code></pre>
+
+- @require@ it in the extension initializer file and include it into the relevant class, like this:
+
+<pre><code>require_dependency "#{File.expand_path(File.dirname(__FILE__))}/lib/site_controller_ext"
+
+...
+
+def activate
+  SiteController.send(:include, MyExtension::SiteControllerExt)
+end</code></pre>
+
+h2. Extending a module
+
+It is easy to add methods to existing modules in Radiant. As an example, lets say you want to add some methods to @ApplicationHelper@ to make them available to all views in your extension. Since @ApplicationHelper@ is a module, we can simply create a file in the in the @lib@ directory:
+
+<pre><code>module ApplicationHelper
+  def my_helper_method
+    ...
+  end
+end</code></pre>
+
+- and @require@ it in the extension initializer:
+
+<pre><code>require_dependency "#{File.expand_path(File.dirname(__FILE__))}/lib/application_helper_ext"</code></pre>
+
+h2. Adding and overriding associations and validations in a Radiant model
+
+Perhaps your extension makes any page able to have, say, a schedulation model associated with it. If you have, in your extension, a @Schedule@ model, and you have a migration that adds the field @schedule_id@ to the @pages@ table, then you can make the @Page@ model belong to the @Schedule@ model using this code:
+
+<pre><code>def activate
+  Page.class_eval{
+    belongs_to :schedule
+  }
+end</code></pre>
+
+As mentioned previously, you should move the code into a separate module once you have more than a few lines, as to not clutter the @activate@ method.
+
+As another example, you might want to limit the maximum allowed length of a page's title to 100 characters, instead of the default 255, and add a custom error message. You can do this the same way:
+
+<pre><code>def activate
+  Page.class_eval{
+    validates_length_of :title, :maximum => 100, :message => 'Sorry, no space in the menu for titles longer than 100 characters.'
+  }
+end</code></pre>
+
+h2. Tracking user edited and updated records
+
+Radiant keeps track of which user has created or updated most default model objects (Page, Layout, Snippet). You can add your own models to be tracked as well. You'll need to add fields to your database table such as @created_by_id@ and @updated_by_id@.
+
+Supposing you had a MyModel, you would add this in the @activate@ method of your extension:
+
+<pre><code>UserActionObserver.instance.send :add_observer!, MyModel</code></pre>
+
+h2. Overriding existing methods
+
+Before going to overriding methods, you should always consider using "alias_method_chain":http://weblog.rubyonrails.org/2006/4/26/new-in-rails-module-alias_method_chain first. @alias_method_chain@ will allow you to do stuff before and after a method is called, thus effectively controlling what gets into the original method, and what is returned from the original method.
+
+However, sometimes that is not enough, and we want a completely new behavior from the method. Let's say you need to make some fundamental changes to how the Radiant @SiteController@ renders pages. This is a Bad Thing, but grown-up developers are allowed to do Bad Things if they understand the consequences. The "file_based_layout":http://ext.radiantcms.org/extensions/14-file-based-layout extension overrides the private @show_uncached_page@ method of @SiteController@ like this:
+
+<pre><code>module FileBasedLayout
+  module SiteControllerExt
+    def self.included(base)
+      base.class_eval {
+        private
+
+        def show_uncached_page(url)
+          ...
+        end
+      }
+    end
+  end
+end</code></pre>

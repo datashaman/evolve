@@ -1,0 +1,52 @@
+This page exists because many people have had difficulty installing and using the "page_attachments":http://github.com/radiant/radiant-page-attachments-extension.
+
+h2. First things first
+
+First, "install Radiant":http://wiki.github.com/radiant/radiant#install and check it's working. This includes making sure your web server will correctly run the dispatcher, etc.  Please consult your hosting provider for information on how to run a Rails application like Radiant if necessary or check for more information about "installing Radiant on your hosting provider":http://wiki.github.com/radiant/radiant#install.
+
+If you want @page_attachments@ to be able to display thumbnails of uploaded images, make sure that one of @image_science@, @mini_magick@, or @rmagick@ is installed on the server. You can check this by running:
+
+<pre><code>gem list</code></pre>
+
+h2. Installing Page Attachments
+
+<pre><code>./script/extension install page_attachments</code></pre>
+
+(If this fails see the "manual installation instructions":installing-extensions#manual)
+
+Restart your application and/or web server.
+
+h2. Using page_attachments
+
+When you login to your Radiant admin and edit a page, you should see an area below the main interface that says "Attachments (0)".  Click the "+" icon to add an attachment.  You can upload multiple attachments at once.  Attachments will not be saved or removed until the whole page is saved.  Therefore, if you accidentally deleted something you meant to keep, simply cancel the page-edit.
+
+h3. Referencing attachments in the page
+
+Please see the Tag Reference in the page-editing interface for the latest documentation on how to use attachments in a page.
+
+h3. Troubleshooting
+
+h4. Migration problems
+
+If you have a problem running the migrate task, and it fails with an error something like this.
+
+<pre><code>ld: library not found for -lfreeimage
+collect2: ld returned 1 exit status</code></pre>
+
+It means you have installed the ImageScience gem but you don't have FreeImage installed. So, either install FreeImage or uninstall the gem like so:
+
+<pre><code>gem uninstall image_science</code></pre>
+
+h4. RubyInline problem
+
+If you're using ImageScience as a user without a home directory, you may see this error:
+
+<pre><code>Define INLINEDIR or HOME in your environment and try again</code></pre>
+
+This is caused by RubyInline not having a place to store its generated files and can be easily fixed by specifying a path in your environment file like so:
+
+<pre><code>ENV['INLINEDIR'] = File.join(RAILS_ROOT,'tmp','ruby_inline')</code></pre>
+
+h4. Admin::PagesController undefined
+
+If you are using radiant-0.6.9 and you get the latest page_attachements extension (as of 1/4/09) it will produce this error.  This is because the 12/7/08 version of page_attachments is for a later version of radiant.  You can download the 10/16/08 version of page_attachments, or just edit the file page_attachments_extension.rb and change PagesController to PageController. 

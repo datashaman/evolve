@@ -1,0 +1,106 @@
+There is another [[conditional tag|Conditional Tags]] built in to Radiant which diverges from the @<r:if_@ or @<r:unless_@ naming convention. It is called @<r:header>@, whose condition would roughly translate as: *if this value differs from the predecessor*. This is useful if, when iterating over a collection of pages, you want to avoid repeating some value which might be common to two or more consecutive pages.
+
+We’ll use this sitemap in the rest of the examples in this article:
+
+<pre><code>Title                                     Publication date
+=====                                     ================
+Home                                      
+  \Blog                                   
+      \_Dolore magna aliqua               2008-03-15
+      \_Fugiat nulla pariatur             2008-01-18
+      \_Lorem ipsum                       2008-01-01
+      \_Officia deserunt mollit           2006-11-01
+      \_Reprehenderit in voluptate        2008-02-03
+      \_Tempor incididunt ut labore       2008-02-22
+      \_Voluptate velit                   2007-11-02</code></pre>
+
+h3. Single Headers
+
+Say you wanted to list all of the blog pages, grouped together under a heading of the month in which they were published. This is a perfect opportunity to use the @<r:header>@ tag. 
+
+<pre><code><r:find url="/blog">
+  <r:children:each order="desc">
+    <r:header><h3><r:date format="%B %Y" /></h3></r:header>
+    <h4><r:title/></h4>
+  </r:children:each>
+</r:find></code></pre>
+
+Using the example site map above, this snippet would output the following (blank lines have been added to improve readability):
+
+<pre><code><h3>March 2008</h3>
+<h4>Dolore magna aliqua</h4>
+
+<h3>February 2008</h3>
+<h4>Tempor incididunt ut labore</h4>
+<h4>Reprehenderit in voluptate</h4>
+
+<h3>January 2008</h3>
+<h4>Fugiat nulla pariatur</h4>
+<h4>Lorem ipsum</h4>
+
+<h3>November 2007</h3>
+<h4>Voluptate velit</h4>
+
+<h3>November 2006</h3>
+<h4>Officia deserunt mollit</h4></code></pre>
+
+The example above iterates through all of the child pages of the "Blog" page. Pages are sorted by date of publication (which is the default behavior), in descending order (as specified by @order="date"@), so they don't appear in the same order as in the site map. For each page, the contents of the @<r:header>@ tag are only output if they differ from the value from the previous page. 
+
+Lets step through the first few iterations in the example above:
+
+* For the first page, the contents of @<r:header>@ evaluate to @<h3>March 2008</h3>@. Being the first item, it has no predecessor, and so the @<r:header>@ tag allows its contents to be output. 
+* For the second page, the contents of @<r:header>@ evaluate to @<h3>February 2008</h3>@.  This is different from the previous value, so it is output to the page. 
+* The third page has the same month and year of publication as its predecessor (February 2008), so the @<r:header>@ tag suppresses its contents.
+* The fourth page renders @<h3>January 2008</h3>@, which is different from the previous value, so it is output to the page.
+
+h3. Multiple Headers
+
+The @<r:header>@ tag can be used more than once per block. By passing a @name@ attribute to each @<r:header>@ tag, they can operate independent of each other. We'll use another example to demonstrate how this might be useful.
+
+You might look at the example above and decide that it is unnecessary to repeat the year every time. Instead, we could just output the year once, then all articles for each month in which articles were published as subsections. 
+
+<pre><code><r:find url="/blog">
+  <r:children:each order="desc">
+    <r:header name="year" restart="month"><h2><r:date format="%Y"/></h2></r:header>
+    <r:header name="month"><h3><r:date format="%B"/></h3></r:header>
+    <h4><r:title/></h4>
+  </r:children:each>
+</r:find></code></pre>
+
+Using the example site map above, this snippet would output the following:
+
+<pre><code><h2>2008</h2>
+<h3>March</h3>
+<h4>Dolore magna aliqua</h4>
+
+<h3>February</h3>
+<h4>Tempor incididunt ut labore</h4>
+<h4>Reprehenderit in voluptate</h4>
+
+<h3>January</h3>
+<h4>Fugiat nulla pariatur</h4>
+<h4>Lorem ipsum</h4>
+
+<h2>2007</h2>
+<h3>November</h3>
+<h4>Voluptate velit</h4>
+
+<h2>2006</h2>
+<h3>November</h3>
+<h4>Officia deserunt mollit</h4></code></pre>
+
+The @<r:header name="year">@ tag compares its contents with the contents rendered within on the previous iteration, and the @<r:header name="month">@ tag does the same. Each distinctly named instance of the @<r:header>@ tag is unaffected by other instances of the same tag.
+
+The first five pages all render @<h2><r:date format="%Y"/></h2>@ as @<h2>2008</h2>@, so this is only output on the first pass. The sixth page was published a year before, so the contents of @<r:header name="year">@ are different from the preceding value, and are output to the page. 
+
+Now lets focus on the @<r:header name="month">@ tag, because this is where things get interesting. The sixth page was published in November 2007, whereas the seventh page was published in November 2006. These two pages are adjacent in the list, so when comparing @<r:header name="month"><h3><r:date format="%B"/></h3></r:header>@ we should find the same value: @<h3>November</h3>@. This means that the final page would not output its month, giving something like the following:
+
+<pre><code><h2>2007</h2>
+<h3>November</h3>
+<h4>Voluptate velit</h4>
+
+<h2>2006</h2>
+
+<h4>Officia deserunt mollit</h4></code></pre>
+
+Just because November 2006 and November 2007 have the same month name, doesn't mean they are the same month! Obviously, we want to output the month name in the example above. This was achieved in the earlier example by using the @restart@ attribute on the @<r:header name="year">@ tag. By setting @restart="month"@, we tell Radius that whenever the @year@ header encounters a new value, it should restart (reset) the @month@ header. When a header tag has been restart (reset), it has no previous value against which to make a comparison, as though it is making its first pass.

@@ -1,0 +1,56 @@
+*Author*: Constantine Yurevich
+*Homepage*: <a href="http://github.com/ConstantineYurevich/radiant-cy-image-extension">http://github.com/ConstantineYurevich/radiant-cy-image-extension</a>
+
+CyImage extension can be used to implement on-fly image resizing using ImageMagick directly on your Radiant pages.
+
+h2. Requirements
+
+1. ImageMagick should be installed
+2. RMagick ruby gem should be installed (gem install rmagick)
+
+h2. Installation
+
+<pre>
+<code>
+  cd vendor/extensions  
+  git clone git://github.com/ConstantineYurevich/radiant-cy-image-extension.git cy_image
+  rake radiant:extensions:cy_image:update
+</code>
+</pre>
+
+h2. Usage
+
+Creating thumbnail with defined width and height:
+
+<pre>
+<code>
+  <r:cy_image:thumbnail src="/images/test.jpg" height="100" width="100" alt="Test image" />
+</code>
+</pre>
+
+Disproportionate resize with defined width and height:
+
+<pre>
+<code>
+  <r:cy_image:resize src="/images/test.jpg" height="100" width="100" alt="Test image" />
+</code>
+</pre>
+
+Proportional resize with defined either width or height:
+
+<pre>
+<code>
+  <r:cy_image:resize src="/images/test.jpg" width="100" alt="Test image" />
+  <r:cy_image:resize src="/images/test.jpg" height="100" alt="Test image" />
+</code>
+</pre>
+
+Each tag will generate appx. the following code:
+
+<pre>
+<code>
+  <img src="/images/cy_image/cache/test_cfd24216cc89c683a44574931c3da509.jpg" height="100" alt="Test image" width="100" />
+</code>
+</pre>
+
+Where "/images/cy_image/cache/test_cfd24216cc89c683a44574931c3da509.jpg" is chached path of modified/resized/cropped image.

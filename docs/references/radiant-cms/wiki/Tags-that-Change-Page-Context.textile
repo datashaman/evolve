@@ -1,0 +1,91 @@
+You will often find situations where you want to insert some "page attribute":pages#attributes or "page part content":pages#parts from page A into page B, but you don't want to duplicate the content. This is where Radiant's powerful context switching comes in. What Radiant presents to your visitors as the "current page" can be drastically different from what the "current page" is as Radiant views it internally, since the latter is dynamic and might have been changed any number of times as the former is being created.
+
+For example suppose we have a "Home" page with a child of "Test" which has a "body" part containing "testing". In our "Home" page's "body" part we have,
+
+<pre><code>We show the visitor <r:title/>
+but get the content from
+<r:find url="/test"><r:title/></r:find></code></pre>
+
+As you can see, what you present as a single page to the visitor could be composed of any number of page attributes and parts from any number of disparate sources.
+
+Where square brackets are used below, they indicate that the thing contained inside is optional (otherwise it is required), and things inside square brackets separated by a bar are the possible options when the field is not free form. If you decide to include it, don't include the square brackets - e.g.:
+
+<pre><code><r:children:each [offset="number"]></code></pre>
+
+...indicates that you could use the following:
+
+<pre><code><r:children:each offset="2"></code></pre>
+
+h2. Example Usage
+
+We'll use this sitemap in the rest of the examples in this article:
+
+<pre><code>Title                      Slug          URL
+=====                      ====          ===
+Home                       /             /
+  \_About                  about         /about
+      \_History            history       /about/history
+      \_Purpose            purpose       /about/purpose
+      \_Where are we?      location      /about/location</code></pre>
+
+h3. Change Context to Parent
+
+If we were to enter the following in the page body of the "About" page:
+
+<pre><code><r:title/> is a child of <r:parent><r:link/></r:parent>.</code></pre>
+
+it would render as:
+
+<pre><code>About is a child of <a href="/">Home</a>.</code></pre>
+
+The @<r:link/>@ tag uses the title and URL for the "Home" page, which is the parent of the "About" page. So within the @<r:parent/>@ tags, the context in which Radius tags are interpreted is shifted from the current page to that of its parent.
+
+h3. Change Context to the actual current page
+
+Should you need to snap back into the context of the actual current page, there is a Radius tag for the job: @<r:page/>@. The following example should demonstrate how this works:
+
+<pre><code><r:parent>
+  The actual current page is <r:page><r:title/> (located at <r:url/>)</r:page>, 
+  but this block is rendered from the point-of-view of its parent page: <r:link/>.
+</r:parent></code></pre>
+
+This should generate the following markup:
+
+<pre><code>The actual current page is About (located at /about/), but this block
+is rendered from the point-of-view of its parent page: <a href="/">Home</a>.</code></pre>
+
+h3. Change Context to any page
+
+Another useful tag for altering the page context is @<r:find>@. This expects you to specify a URL of the page you would like to become the current context. For example, if the Home page contained the following in its page body:
+
+<pre><code><r:find url="/about/location">
+  <h2><r:title/></h2>
+  <r:link>Find us on the map</r:link>
+</r:find></code></pre>
+
+it would output:
+
+<pre><code><h2>Where are we?</h2>
+<a href="/about/location/">Find us on the map</a></code></pre>
+
+When you use the @<r:find/>@ tag, you should be aware that it is slightly brittle. If you were to change the slug for the "About" page or the "Location" page, then you would have to update the @url@ attribute of the @<r:find/>@ tag above to make it find the corresponding page. On the other hand, if you were to hard code the output of the above example (rather than using the Radius version), you would also have to update the @href@ attribute of the @<a/>@ tags.
+
+See Also: [[Tags that Work with Collections]]
+
+h2. All tags that change the scope
+
+* @<r:page>...</r:page>@
+* @<r:children>...</r:children>@
+* @<r:children:first>...</r:children:first>@
+* @<r:children:last>...</r:children:last>@
+* <code><r:children:each [offset="number"]
+  [limit="number"]
+  [by="position|published_at|updated_at|created_at|slug|title|keywords|description"]
+  [order="asc|desc"]
+  [status="draft|reviewed|published|hidden|all"]>...</r:children:each></code>
+* @<r:children:each:child>...</r:children:each:child>@
+* @<r:parent>...</r:parent>@
+* @<r:find url="value_to_find">...</r:find>@
+* @<r:random>...</r:random>@
+
+For usage of a particular tag refer to the [[tag reference|Radius Tag Reference]].

@@ -1,0 +1,56 @@
+h2. Install Will_Paginate
+
+I recommend installing will_paginate as a gem on your system, but for other methods check out the "will paginate wiki.":http://github.com/mislav/will_paginate/wikis/installation
+
+Add git hub as a gem source (if you have not already). Then install the will paginate gem.
+
+<pre><code>sudo gem sources -a http://gems.github.com
+sudo gem install mislav-will_paginate</code></pre>
+
+Now add following to config/environment.rb:
+
+<pre><code> config.gem 'will_paginate', :version => '~> 2.3.11', :source => 'http://gemcutter.org'</code></pre>
+
+For Site5 (and possibly other shared hosting):
+Navigate to vendor/plugins
+<pre><code>git clone git://github.com/mislav/will_paginate.git</code></pre>
+*Other ways to install will-paginate may cause 500 errors when clicking the "Comments" tab.
+
+h2. Install fastercsv
+
+<pre><code>sudo gem install fastercsv</code></pre>
+
+h2. Other
+
+Comments needs action mailer, so uncomment "config.frameworks -= [ :action_mailer ]" in /config/environment.rb.
+
+h2. Install the Comments Extension
+
+<pre><code>./script/extension install comments</code></pre>
+
+(If this fails follow the "manual installation instructions":installing-extensions#manual)
+
+This will have created three snippets you can use.
+
+h2. Enable Comments
+
+In your site layout (or another appropriate place), use the following code to display comment form:
+
+<pre><code><r:snippet name="comments" /></code></pre> 
+
+Enable comments on the page you want to.
+
+For more info check out the "readme.":http://github.com/ntalbott/radiant-comments/tree/master
+
+(This and some other repositories are a bit outdated for radiant 0.7.1, I'm using "sjlombardo's fork":http://github.com/sjlombardo/radiant-comments/tree/master successfully)
+
+h2. Set Akismet
+
+"Akismet":http://akismet.com/ is a spam blocking system with no CAPTCHA. Akismet provides a free service to personal users, all you need is a "WordPress login":http://wordpress.com/signup/ and API key. (You get the api key in your welcome email when you sign up!)
+
+To add the key, simply open up environment.rb and add the following at the very bottom of the file after the end of the Initializer block:
+
+<pre><code>Radiant::Config['comments.akismet_key'] = "your key here"
+Radiant::Config['comments.akismet_url'] = "your blog url here"</code></pre>
+
+You should now have comments working.

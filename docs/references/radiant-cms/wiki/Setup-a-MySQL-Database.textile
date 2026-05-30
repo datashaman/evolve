@@ -1,0 +1,33 @@
+<pre><code>create database radiant_dev;
+create database radiant_test;
+create database radiant_production;
+
+grant all on radiant_dev.* to u@'%' identified by 'pw';
+grant all on radiant_test.* to u@'%' identified by 'pw';
+grant all on radiant_production.* to u@'%' identified by 'pw';
+flush privileges;</code></pre>
+
+Where @u@ is the username and @pw@ the password. You'll need to put these values in @config/database.yml@.
+
+Your @database.yml@ should look similar to this:
+
+<pre><code>development:
+  adapter: mysql
+  database: radiant_dev
+  username: replace-with-your-username
+  password: replace-with-your-password
+  socket: /tmp/mysql.sock
+
+test:
+  adapter: mysql
+  database: radiant_test
+  username: replace-with-your-username
+  password: replace-with-your-password
+  socket: /tmp/mysql.sock
+
+production:
+  adapter: mysql
+  database: radiant_production
+  username: replace-with-your-username
+  password: replace-with-your-password
+  socket: /tmp/mysql.sock</code></pre>

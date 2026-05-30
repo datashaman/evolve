@@ -1,0 +1,260 @@
+One of the most exciting aspects of Radiant is the support for extensions. Since Radiant is a "no-fluff" content management system there are a lot of features supported by other systems that will never make it into Radiant. I've tried to keep things clean and simple so that Radiant is easy to learn and easy to support. The trouble is, my opinion of what features constitute "fluff" and what features are absolutely necessary is probably different than your own. Extensions give you the opportunity to change this.
+
+Using extensions you can customize nearly every aspect of Radiant. And because Radiant is made with Ruby on Rails, developing an extension is almost as easy as developing a regular Ruby on Rails application.
+
+In this tutorial I want to help you get started with your first extension. We will cover:
+
+* Using extension generators
+* Creating a custom model and controller
+* Running extension migrations
+* Creating custom tags
+
+I will assume that you already have the latest Radiant gem [[installed|Installation]] on your local computer and that you have a basic understanding of Ruby on Rails. If you have never used Ruby on Rails before please run through the Rolling with Rails tutorials ("Part I":http://www.onlamp.com/pub/a/onlamp/2006/12/14/revisiting-ruby-on-rails-revisited.html, "II":http://www.onlamp.com/pub/a/onlamp/2007/01/05/revisiting-ruby-on-rails-revisited-2.html, & "III":http://www.slash7.com/articles/2005/01/24/really-getting-started-in-rails) before you begin.
+
+h2. Part 1
+
+h3. Creating a New Project
+
+Let's create a test project. Open up a command prompt and "cd" to the appropriate directory, then execute the @radiant@ command to create a new project:
+
+<pre><code>radiant -d sqlite3 path/to/new/project</code></pre>
+
+As you can see I've chosen to use SQLite 3 as my database engine, but you are welcome to choose MySQL or PostgreSQL instead.
+
+The @radiant@ command will create a skeleton for our new project and then output the following instructions:
+
+<pre><code>== Installation and Setup
+
+Once you have extracted the files into the directory where you would like to
+install Radiant:
+
+1. Create the MySQL/PostgreSQL/SQLite databases for your Web site. You only
+   need to create the "production" database, but you may also want to create
+   the "development" and "test" databases if you are developing extensions
+   or running tests.
+
+2. Edit config/database.yml to taste.
+
+3. Run the database bootstrap rake task:
+
+     % rake production db:bootstrap
+
+   (If you would like bootstrap your development database run `rake
+   development db:bootstrap`.)
+
+4. Start it like a normal Rails application. To test execute:
+
+     % script/server -e production
+
+   And open your Web browser on port 3000 (http://localhost:3000). The
+   administrative interface is available at /admin/. By default the bootstrap
+   rake task creates a user called "admin" with a password of "radiant".
+
+When using Radiant on a production system you may also need to set permissions
+on the public and cache directories so that your Web server can access those
+directories with the user that it runs under.
+
+Once you've installed Radiant on your own Web site, be sure to add your name
+and Web site to the list of radiant users:
+
+http://wiki.radiantcms.org/Radiant_Users</code></pre>
+
+If you've chosen to use SQLite 3 as your database engine for this tutorial you can ignore steps 1 and 2. Otherwise create all three databases for the development, production, and test environments and edit @config/database.yml@ to taste. Then run the bootstrap rake task for the production and development environments:
+
+<pre><code>rake db:bootstrap
+rake production db:bootstrap</code></pre>
+
+Once you have bootstrapped both databases, start up the test server in production mode from the command line and verify that the site is running correctly before continuing:
+
+<pre><code>script/server -e production</code></pre>
+
+Now go to "http://localhost:3000/admin/" and login to verify that everything is working correctly.
+
+Once you are logged in click the "Extensions" link in the upper right corner to see the extensions that are currently installed:
+
+!{max-width:667px}http://farm2.static.flickr.com/1042/596617046_d3c0fe82b1.jpg!:http://www.flickr.com/photos/86701100@N00/596617046/
+
+Radiant ships with three pre-installed extensions at the moment. The "Archive", "Markdown" and "Textile" extensions. On the extensions screen you can view related information.
+
+Now go back to the console and press Ctrl+C to stop the test server.
+
+h3. Generating an Extension
+
+Let's create our first extension. The extension we will be creating is one that will make it easy for us to manage a list of links on our Web site. To create a new extension you should use the extension generator. The format for the command is:
+
+<pre><code>script/generate extension ExtensionName</code></pre>
+
+In our case we will call our extension LinkRoll. At the command prompt type:
+
+<pre><code>script/generate extension LinkRoll</code></pre>
+
+You should see the following output:
+
+<pre><code>create  vendor/extensions/link_roll/app/controllers
+create  vendor/extensions/link_roll/app/helpers
+create  vendor/extensions/link_roll/app/models
+create  vendor/extensions/link_roll/app/views
+create  vendor/extensions/link_roll/db/migrate
+create  vendor/extensions/link_roll/lib/tasks
+create  vendor/extensions/link_roll/README
+create  vendor/extensions/link_roll/link_roll_extension.rb
+create  vendor/extensions/link_roll/lib/tasks/link_roll_extension_tasks.rake
+create  vendor/extensions/link_roll/spec/controllers
+create  vendor/extensions/link_roll/spec/models
+create  vendor/extensions/link_roll/spec/views
+create  vendor/extensions/link_roll/spec/helpers
+create  vendor/extensions/link_roll/Rakefile
+create  vendor/extensions/link_roll/spec/spec_helper.rb
+create  vendor/extensions/link_roll/spec/spec.opts</code></pre>
+
+As you can see, the extension generator has created a skeleton extension for us in the vendor/extensions/link_roll folder. The extension we will create will be entirely contained in the link_roll folder. To use it in another project all we need to do is copy the link_roll folder into that project's vendor/extensions folder.
+
+Open up the "link_roll_extension.rb" file. It should look something like this:
+
+<pre><code># Uncomment this if you reference any of your controllers in activate
+# require_dependency 'application'
+
+class LinkRollExtension < Radiant::Extension
+  version "1.0"
+  description "Describe your extension here"
+  url "http://yourwebsite.com/link_roll"
+
+  # define_routes do |map|
+  #   map.connect 'admin/link_roll/:action', :controller => 'admin/link_roll'
+  # end
+
+  def activate
+    # admin.tabs.add "Link Roll", "/admin/link_roll", :after => "Layouts", :visibility => [:all]
+  end
+
+  def deactivate
+    # admin.tabs.remove "Link Roll"
+  end
+
+end</code></pre>
+
+Let's edit the attributes of the LinkRollExtension. The attributes are listed in the first part of the class definition. First, change the "description" attribute to:
+
+<pre><code>Allows you to add a link roll to your Web site.</code></pre>
+
+And change the "url" attribute to: 
+
+<pre><code>http://github.com/radiant/radiant-link-roll-extension/</code></pre>
+
+We will deal with the other two attributes in a moment. For now, let's start the server up again:
+
+<pre><code>script/server -e production</code></pre>
+
+Again, open your web browser up to "http://localhost:3000/admin/" and login. Click the "Extensions" link in the upper right corner. In the list of extensions you should now see the "Link Roll" extension:
+
+!{max-width:667px}http://farm2.static.flickr.com/1378/596617056_3d44710477.jpg!:http://www.flickr.com/photos/86701100@N00/596617056/
+
+Note that the description and the website correspond to the attributes that you just edited.
+
+h3. Generating a Model
+
+Let's go back to the command prompt for a moment and generate our first model. Press Ctrl+C again to stop the test server. Type:
+
+<pre><code>script/generate extension_model LinkRoll Link title:string url:string description:text</code></pre>
+
+This should output:
+
+<pre><code>exists  app/models/
+exists  spec/models
+create  app/models/link.rb
+create  spec/models/link.rb
+exists  db/migrate
+create  db/migrate/001_create_links.rb</code></pre>
+
+As you can see the extension_model generator takes several arguments. "LinkRoll" is the name of the extension that we want to add a model to. "Link" is the name of our new model. And the rest of the parameters are attribute:type formatted attributes of the new model.
+
+If you look at the output of the command, you will notice that it generated:
+
+* the file for the Link model
+* the rspec test
+* the migration
+
+Open up the migration file ("vendor/extensions/link_roll/db/migrate/001_create_links.rb"). It should look like this:
+
+<pre><code>class CreateLinks < ActiveRecord::Migration
+  def self.up
+    create_table :links do |t|
+      t.column :title, :string
+      t.column :url, :string
+      t.column :description, :text
+
+      t.timestamps
+    end
+  end
+
+  def self.down
+    drop_table :links
+  end
+end</code></pre>
+
+Note: *The actual file name of the migration file might be different because it will contain the actual date/time in the filename*
+
+You can see that the migration is already setup to create a "links" table for the associated Links model object. Also note that the attributes on the Links model are configured to reflect the attributes that were originally passed into the extension_model generator command.
+
+Let's run the migrations for this model (be sure to run them on both the development and production databases):
+
+<pre><code>rake db:migrate:extensions
+rake production db:migrate:extensions</code></pre>
+
+Note: *You can safely ignore this for now, but: Later, if you want to migrate your database to a specific version of your extension's schema (for example an earlier version to roll-back changes), you must use the migration task that was generated specifically for your extension*, for example:
+
+<pre><code>rake production radiant:extensions:link_roll:migrate VERSION=0</code></pre>
+
+The version number corresponds to the number of your _extension's_ migration (file), not the version number in the @schema_info@ table.
+
+h3. Generating a Controller
+
+Now that we have the appropriate model object setup for our link role, let's create the associated controller. Run the following command:
+
+<pre><code>script/generate extension_controller LinkRoll admin/links</code></pre>
+
+This should output:
+
+<pre><code>create  app/controllers/admin
+create  app/helpers/admin
+create  app/views/admin/links
+create  spec/controllers/admin
+create  spec/helpers/admin
+create  spec/views/admin/links
+create  spec/controllers/admin/links_controller_spec.rb
+create  spec/helpers/admin/links_helper_spec.rb
+create  app/controllers/admin/links_controller.rb
+create  app/helpers/admin/links_helper.rb</code></pre>
+
+If you look at the output of the command, you will notice that it generated:
+
+* the Admin::LinksController
+* the link controller helper
+* the folder for the link controller views
+* the RSpec files for controller and helper specifications
+
+Also note that we put the LinksController in the Admin module because it will be part of the admin interface.
+
+Open up the controller file now ("vendor/extensions/link_roll/app/controllers/admin/links_controller.rb"). It should look like this:
+
+<pre><code>class Admin::LinksController < Admin::ApplicationController
+end</code></pre>
+
+In the Radiant codebase, there is a controller called the @Admin::ResourceController@, which defines all of the actions required for a typical model. By making your LinksController inherit from this, instead of from the ApplicationController, you can get a lot of functionality for free. To make it work, you also need to specify the name of the Model which the controller should work with. This is done by declaring: @model_class Link@. 
+
+Your LinksController should look something like this:
+
+<pre><code>class Admin::LinksController < Admin::ResourceController
+  model_class Link
+end</code></pre>
+
+h3. Views
+
+The actions defined in the @Admin::ResourceController@ require the following views: index, edit, new, _form and remove.
+
+Create the following 5 files: 
+
+* link_roll/app/views/admin/links/index.html.erb
+* link_roll/app/views/admin/links/new.html.erb
+* link_roll/app/views/admin/links/edit.html.erb
+* link_roll

@@ -1,0 +1,79 @@
+There are a number of Radius tags which can be used to show or hide a block of content depending on some condition. These tags tend to follow a naming convention: they all begin as either @<r:if_@ or @<r:unless_@. Furthermore, they usually come in pairs.
+
+In most programming languages, there is a logical statement along the lines of @if/else@. For example, in Ruby it looks like this:
+
+<pre><code>if something is true
+  # do the thing you do when it is true
+else
+  # do the other thing
+end</code></pre>
+
+There is no Radius tag equivalent to @else@, but the same effect can be achieved by using a pair of conditions: @<r:if_@ and @<r:unless_@.
+
+Where square brackets are used below, they indicate that the thing contained inside is optional (otherwise it is required), and things inside square brackets separated by a bar are the possible options when the field is not free form. If you decide to include it, don't include the square brackets - e.g.:
+
+<pre><code><r:children:each [offset="number"]></code></pre>
+
+...indicates that you could use the following:
+
+<pre><code><r:children:each offset="2"></code></pre>
+
+h2. Example Usage
+
+h3. Test if a page has children
+
+Take for example a news listing and consider the situation where there are no news stories. In this case, the contents of the @<r:children:each>@ block would be output zero times, and we would be left with a @<ul></ul>@ containing no @<li>@ elements. To avoid this possibility, we could use the @<r:if_children>@ tag to first test whether the current page has any children. By placing the @<ul>@ within the @if@ block, we can ensure that it is only used if there are children. We can also use the @<r:unless_children>@ tag to do the equivalent of @else@, providing fallback content for when there are no children.
+
+<pre><code><r:find url="/news">
+  <r:if_children>
+    <ul>
+      <r:children:each>
+      <li><r:title/></li>
+      </r:children:each>
+    </ul>
+  </r:if_children>
+  <r:unless_children>
+    <p>There are no news stories just now. Please check back later.</p>
+  </r:unless_children>
+</r:find></code></pre>
+
+h3. Test if the current page uses a particular URL
+
+Another useful conditional tag is @<r:if_url>@ (and its corresponding @unless@ tag). This allows you to specify a @matches@ attribute, which is compared with the URL of the current page.
+
+Here is a simple example, which could be used in a [[Layouts]]:
+
+<pre><code><head>
+<r:if_url matches="^/$">
+  <title>Radiant Handbook</title>
+</r:if_url>
+<r:unless_url matches="^/$">
+  <title><r:title/> - Radiant Handbook</title>
+</r:unless_url>
+</head></code></pre>
+
+The @matches@ attribute used here is a regular expression: @^/$@. The @^@ represents the beginning of the string, and the @$@ represents the end of the string. So this matches a URL consisting of exactly: "/", this corresponds to the Home page. So the code above would set the page title as "Radiant Handbook" on the homepage, but for all subpages it would use the title of the page, then "... - Radiant Handbook".
+
+See Also: [[Using the Header Tag]]
+
+h2. All Conditional Tags
+
+* @<r:if_first>...</r:if_first>@
+* @<r:unless_first>...</r:unless_first>@
+* @<r:if_last>...</r:if_last>@
+* @<r:unless_last>...</r:unless_last>@
+* @<r:if_parent>...</r:if_parent>@
+* @<r:unless_parent>...</r:unless_parent>@
+* @<r:if_children [status="published|draft|hidden|reviewed"]>...</r:if_children>@
+* @<r:unless_children [status="published|draft|hidden|reviewed"]>...</r:unless_children>@
+* @<r:if_content [part="part_name, other_part"] [inherit="true"] [find="any"]>...</r:if_content>@
+* @<r:unless_content [part="part_name, other_part"] [inherit="true"] [find="any"]>...</r:unless_content>@
+* @<r:if_url matches="regexp" [ignore_case="true|false"]>...</r:if_url>@
+* @<r:unless_url matches="regexp" [ignore_case="true|false"]>...</r:unless_url>@
+* @<r:if_ancestor_or_self>...</r:if_ancestor_or_self>@
+* @<r:unless_ancestor_or_self>...</r:unless_ancestor_or_self>@
+* @<r:if_self>...</r:if_self>@
+* @<r:unless_self>...</r:unless_self>@
+* @<r:if_dev>...</r:if_dev>@
+* @<r:unless_dev>...</r:unless_dev>@
+* @<r:header [name="header_name"] [restart="name1[;name2;...]>...</r:header>@

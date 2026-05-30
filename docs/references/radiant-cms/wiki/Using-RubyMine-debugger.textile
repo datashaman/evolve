@@ -1,0 +1,58 @@
+"RubyMine":http://www.jetbrains.com/ruby/index.html is a powerful Ruby IDE implemented in Java by "JetBrains":http://www.jetbrains.com.  In addition to simple project editing and SCM integration, it offers fantastic code assist and completion, built-in web server management and testing tools and a great debugger that will save you time.
+
+Unfortunately, out-of-the-box, Radiant CMS does not match the criteria that RubyMine uses for recognizing a Ruby on Rails project, and for this reason, all of the debugging options seem to be missing in general.
+
+I will address how to prepare your installation to be recognized as a Ruby on Rails application and how to launch the debugger.  I will not address how debuggers work, as I believe RubyMine has great help files.
+
+h1. Making RubyMine see your project as a Rails app.
+
+Assuming you've already installed radiant, generate a new app.
+
+<code>
+$radiant footest
+</code>
+
+You should have a file structure that looks like:
+
+<pre><code>
+CHANGELOG
+CONTRIBUTORS
+INSTALL
+LICENSE
+README
+Rakefile
+config
+db
+log
+public
+script
+vendor
+</code></pre>
+
+You're almost there!  RubyMine looks for three characteristics before deciding something is rails.  The existence of config/boot.rb, db/migrate/ and app/.  A standard radiant install comes with two of these, all we have to do is make the last one.
+
+<pre><code>
+cd footest
+mkdir app/
+</code></pre>
+
+If you're using subversion to manage your project, there is no reason to commit this app directory back to the repository, as it's just for local testing.  You can set the ignore property on it.
+
+<pre><code>
+svn propedit svn:ignore ./app
+</code></pre>
+
+At this point, your radiant app should be ready to go!
+
+h1. Running RubyMine's debugger on your app.
+
+First of all, if you've ever opened your project in RubyMine before, you may need to delete the .idea folder in your project in order to get RubyMine to rescan it.
+
+# Next, simply open up your app in RubyMine.
+# Click on **Run > Debug** (Option+Cmd+F8 on OSX). 
+# In the left menu, expand **Rails** and choose the environment you'd like to debug in (usually development)
+# Click **Debug** at the bottom
+
+A server should now be launched at http://localhost:3000.  If you head over to this in your web browser, you'll be using your app through the debugger.  For more information about RubyMine's debugger, see their "Online Help":http://www.jetbrains.com/ruby/webhelp/index.jsp
+
+In code edit mode, there is a narrow channel to the left of your code.  If you click in there beside any line of code, you should see a red dot appear.  This is a "break point".  It is a place where your code will pause when running in debug mode.  Once you hit a break point, you can begin to move through your code step-by-step, and view the state of your application at every step!

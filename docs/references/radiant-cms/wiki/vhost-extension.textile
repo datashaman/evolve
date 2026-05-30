@@ -1,0 +1,4 @@
+Like the [[Multi Site Extension]] but each domain appears to operate independently with its own scoped pages, snippets, and layouts. Host multiple, independent web sites.
+
+p.s.
+Looks interesting to me, I have played a bit with the "saturnflyer's (Jim Gay) fork":http://github.com/saturnflyer/radiant-vhost-extension on 0.9rc2

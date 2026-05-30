@@ -1,0 +1,23 @@
+Radiant has a number of settings that can either be set in the config files or through the console. However, there are cases when the administrator does not have access to the console or simply prefers a GUI for such tasks. Alex Wayne's "Settings":settings extension exposes Radiant's configuration options to the administrative UI.
+
+[settings]http://github.com/Squeegy/radiant-settings
+
+h2. Installation
+
+From the root of your Radiant project run:
+
+<pre><code>./script/extension install settings</code></pre>
+
+(If this fails see the "manual installation instructions":installing-extensions#manual)
+
+Then restart your application server.
+
+h2. Usage
+
+Login to your Radiant site. Click the new tab called *Settings*.
+
+!{max-width:667px}http://img.skitch.com/20090410-dxhcstcafm4xi65ekaqjnyyxhm.png!
+
+Click on the small icon before the name or the name itself to edit a particular setting.
+
+Refer to [[Additional Configuration Options]] for a complete list of options and their possible settings. Refer to [[Customizing the Admin UI]] for instructions on accessing the same settings without the use of the Settings extension.

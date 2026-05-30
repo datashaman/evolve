@@ -1,0 +1,137 @@
+Here's a guide on how to set up RadiantCMS in a few minutes on "Site 5":http://site5.com.  I changed my shell from the default jailshell to bash by simply toggling shell access off and then back on again.  I don't know if this is required for the following (I don't think it should, but it's nice to be able to see the whole server).
+
+This guide assumes you:
+* Know how to use the shell
+* Know how to use ssh
+
+h2. Install Your Own Gems
+
+First, you need to install Radiant as a custom local gem since it is not preinstalled on Site5's servers.  
+
+<pre><code>$ gem env
+RubyGems Environment:
+  - RUBYGEMS VERSION: 1.3.5
+  - RUBY VERSION: 1.8.7 (2009-06-12 patchlevel 174) [i686-linux]
+  - INSTALLATION DIRECTORY: /usr/lib/ruby/gems/1.8
+  - RUBY EXECUTABLE: /usr/bin/ruby
+  - EXECUTABLE DIRECTORY: /usr/bin
+  - RUBYGEMS PLATFORMS:
+    - ruby
+    - x86-linux
+  - GEM PATHS:
+     - /usr/lib/ruby/gems/1.8
+     - /home/username/.gem/ruby/1.8
+  - GEM CONFIGURATION:
+     - :update_sources => true
+     - :verbose => true
+     - :benchmark => false
+     - :backtrace => false
+     - :bulk_threshold => 1000
+  - REMOTE SOURCES:
+     - http://gems.rubyforge.org/
+</code></pre>
+
+Although not required for the basic installation, some of the rake tasks depend upon the shell variables @$GEM_HOME@ and @$GEM_PATH@.  It's not a bad idea to add them to your @.bash_profile@ like so:
+
+<pre><code>export GEM_PATH=/home/username/.gem/ruby/1.8:/usr/lib/ruby/gems/1.8
+export GEM_HOME=/home/username/.gem/ruby/1.8</code></pre>
+
+It is also a good idea to add the /home/username/.gem/ruby/1.8/bin directory to your $PATH in .bash_profile, this will allow you to run 'the radiant' binary directly.
+
+Great!  Now this is very simple:
+
+<pre><code>$ gem install radiant</code></pre>
+
+h2. Create your Radiant Application
+
+Unpack the application using the @radiant@ command into the directory @radapp@ (it will create the directory if it does not exist).
+
+<pre><code>radiant --database mysql radapp</code></pre>
+
+h2. Configuration
+
+Now, you should have the new folder @radapp@ in your current directory.  Using Site5's SiteAdmin on your domain (located at yourdomain.com/siteadmin), create the databases @radiantdev@, @radianttest@, and @radiantlive@ (note that your username_ is prepended to all those table and user names).  Create a new MySQL user @radiant@, and give it access to all functions on all those databases (watch out -- those checkboxes to give privileges on the MySQL user page don't mirror your current settings.  To see that, you need to go to the databases page.)  Once that is all completed, edit @radapp/config/database.yml@ with those settings; the file should look something like this:
+
+<pre><code>development:
+   adapter: mysql
+   database: username_radiantdev
+   username: username_radiant
+   password: pword
+   host: localhost
+
+ test:
+   adapter: mysql
+   database: username_radianttest
+   username: username_radiant
+   password: pword
+   host: localhost
+
+ production:
+   adapter: mysql
+   database: username_radiantlive
+   username: username_radiant
+   password: pword
+   host: localhost</code></pre>
+
+Now edit the file @radapp/config/environment.rb@. You need to uncomment a line and add one more, so the following line (should be the 8th line down):
+
+<pre><code># ENV['RAILS_ENV'] ||= 'production'</code></pre>
+
+becomes...
+
+<pre><code>ENV['RAILS_ENV'] ||= 'production'
+ENV['GEM_PATH'] = '/home/username/.gem/ruby/1.8:/usr/lib/ruby/gems/1.8'
+</code></pre>
+
+h2. Bootstrap your Database
+
+Okay! All of the config files are setup.  Now in the radiant application folder, run the rake task to bootstrap the database.  Answer the prompts to your liking.
+
+<pre><code>$ cd radapp/
+$ rake production db:bootstrap</code></pre>
+
+h2. Setup the Symbolic Link
+
+Just create the symlink and you’re done! From your home directory, just do this:
+
+<pre><code>mv public_html public_html_bak
+ln -s ~/radapp/public ~/public_html</code></pre>
+
+Now point your browser to http://your.website.com/. It should be RadiantCMS! To edit pages, go to http://your.website.com/admin.
+
+It should be possible to place that symbolic link inside your public_html folder (instead of replacing it), but in my quick testing it, I can't seem to setup Radiant to recognize that it's in a subdirectory.  If you figure it out, add that information here.
+
+h2.  Deploy main domain to subdirectory 
+
+Site5's default domain points to ~/public_html/ if you currently have domain pointers pointing to ~/public_html/foldername symlinking directly to the public_html folder isn't an option.
+
+Here is a quick dirty work around.
+
+edit / create ~/public_html/.htaccess
+<pre><code>
+Options All
+RewriteEngine On
+RewriteBase /
+RewriteCond %{HTTP_HOST} ^domain.tld
+RewriteCond %{REQUEST_URI} !^/symlinkfoldername/(.*) [NC]
+RewriteRule ^(.*)$ /symlinkfoldername/$1
+</code></pre>
+
+edit your environments.rb file & add the line
+
+<pre><code>config.action_controller.relative_url_root = '/symlinkfoldername'</code></pre>
+
+Here is a little explaination on what the above does.
+
+requests to your main domain.tld are pointed to ~/public_html - This cannot be changed.
+The .htaccess file redirects incomming request to the symlinked folder pointing to your public folder of your rails application.
+The environments.rb file will now pick up your root url as /symlinkfoldername
+If you do not edit both files you will get a 404 stating the domain.tld/symlinkfoldername doesn't exist.
+
+h2. Phusion Passenger
+
+Site5 now supports Phusion Passenger... just add the following lines to your .htaccess file to enable it.
+
+<pre><code>
+PassengerEnabled on
+</code></pre>

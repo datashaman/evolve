@@ -1,0 +1,16 @@
+Tickets are fine, but patches are better. If you want to change something in Radiant or fix a bug you've run across, there's no faster way to make it happen than to do it yourself.  When developing your patch, keep in mind the [[The Radiant Ethic]].
+
+# Before you start:
+#* Subscribe to the "Radiant-Dev mailing list":http://groups.google.com/group/radiantcms-dev and discuss your proposed feature/patch there 
+# Get Radiant ready for patching:
+#* @git clone git://github.com/radiant/radiant.git@
+#* @git submodule init && git submodule update@
+#* Install the gems you need to run the test suite: @sudo rake RAILS_ENV=test gems:install@ 
+# Make a test-driven change:
+#* Add or change specifications that would prove that your change worked.
+#* Make the change to the source
+#* Verify that all existing specs still work as well as all the new ones you added by running rake 
+# Share your well-tested change:
+#* "Send a pull-request":http://github.com/guides/pull-requests or create a patch with your changes: @git format-patch --stdout > my_properly_named_patch.diff@
+#* Announce your change on the "Radiant-Dev mailing list":http://groups.google.com/group/radiantcms-dev.
+#* Keep an eye on your patch in case there are any reservations raised before it can be applied.

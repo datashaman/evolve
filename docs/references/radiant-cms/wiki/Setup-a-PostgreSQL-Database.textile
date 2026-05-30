@@ -1,0 +1,30 @@
+First, you need to install postgres gem
+
+<pre><code>sudo gem install postgres</code></pre>
+
+If you installed postgresql on a location other than the default, as when installing via macports on Mac OS X, you need to tell gem where to find it
+
+<pre><code>sudo gem install postgres -- --with-pgsql-include=/opt/local/include/postgresql81 --with-pgsql-lib=/opt/local/lib/postgresql81</code></pre>
+
+The @config/database.yml@ should look something like this
+
+<pre><code>development:
+  adapter: postgresql
+  database: radiant_dev
+  username: <username>
+  password: <password>
+  host: <hostname or ip address. eg.: localhost>
+
+test:
+  adapter: postgresql
+  database: radiant_test
+  username: <username>
+  password: <password>
+  host: <hostname or ip address. eg.: localhost>
+
+production:
+  adapter: postgresql
+  database: radiant_live
+  username: <username>
+  password: <password>
+  host: <hostname or ip address. eg.: localhost></code></pre>

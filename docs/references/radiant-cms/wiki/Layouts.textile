@@ -1,0 +1,9 @@
+Layouts describe entire pages or MIME type depending on your outlook. Layouts define where major content blocks will be placed or in the MIME type case how the browser will interpret the content. If you select the *Layouts* tab at the top of the Radiant administration interface you'll be presented with a list of layouts or an empty list if you've never created any before and used the "Empty" database template. The *New Layout* button at the bottom of the list leads to a form consisting of *name* and *body* text fields. Below the name field is a small *More* link, which if selected will add a content type field to the form. Layout names must be unique.
+
+As well as including [[Page|Pages]] content and [[Snippets]], one layout can include another layout, which is where the content type field comes in - layouts default to HTML, but you could, for example, create a layout for containing your Atom feed by setting the content type @application/atom+xml@.
+
+Layouts are written in whatever language is appropriate for the content type you selected. This could mean HTML, CSS, Javascript, XML or any other text format you can think of. Regardless of what language you're working in you can always intermingle [[Radius Tags]] with your content.
+
+h2. Edit Layout UI
+
+!{max-width:667px}http://img.skitch.com/20090409-g9pt1394cx8utmm14g58x5bq55.png!

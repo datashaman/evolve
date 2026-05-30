@@ -1,0 +1,1 @@
+For automated expiration and publishing of pages, see the "scheduler":http://github.com/radiant/radiant-scheduler-extension extension.

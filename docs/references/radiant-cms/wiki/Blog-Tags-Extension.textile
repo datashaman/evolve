@@ -1,0 +1,11 @@
+<pre><code>./script/extension install blog_tags</code></pre>
+
+(If this fails follow the "manual installation instructions":installing-extensions#manual)
+
+You can then use the following tags on your article layout/snippet/page.
+
+<pre><code><r:previous><r:link/></r:previous>
+<r:next><r:link/></r:next>
+<r:time_ago_in_words/></code></pre>
+
+The "readme":http://github.com/santry/blogtags/tree/master has more info.

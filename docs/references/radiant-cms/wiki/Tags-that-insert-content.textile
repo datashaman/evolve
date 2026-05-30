@@ -1,0 +1,105 @@
+The simplest of uses for a Radius tag is to insert some "page attribute":pages#attributes or "page part content":pages#parts directly in place.
+
+Where square brackets are used below, they indicate that the thing contained inside is optional (otherwise it is required), and things inside square brackets separated by a bar are the possible options when the field is not free form. If you decide to include it, don't include the square brackets - e.g.:
+
+<pre><code><r:content [part="part_name"]/></code></pre>
+
+...indicates that you could use the following:
+
+<pre><code><r:content part="extended"/></code></pre>
+
+h2. Example Usage
+
+h3. Links
+
+The @<r:link/>@ tag is useful for creating a hyperlink to the current page. It can be used in a couple of ways. If you call @<r:link/>@ as a single, self-closing tag, it behaves in a similar fashion to the @<r:title/>@ tag: it inserts the page title, but this time wrapped as a link pointing to the URL of the current page. For a page called "About us", whose URL is @/about-us@, the following:
+
+<pre><code><r:link/></code></pre>
+
+would output:
+
+<pre><code><a href="/about-us/">About us</a></code></pre>
+
+If you want to specify the link text, you can just expand it into a double-tag:
+
+<pre><code><r:link>Read more about us</r:link></code></pre>
+
+which gives:
+
+<pre><code><a href="/about-us/">Read more about us</a></code></pre>
+
+If you were to update the slug for this page to just @about@, then any @<r:link>@ tags referring to this page would automatically have their @href@ attribute updated to point to the updated URL.
+
+h3. Navigation
+
+Renders a list of links specified in the @urls@ attribute (separated by a vertical bar "|") according to three states:
+
+* @normal@ specifies the normal state for the link
+* @here@ specifies the state of the link when the url matches the current page's url
+* @selected@ specifies the state of the link when the current page is a child of the specified url
+
+The @between@ tag specifies what should be inserted in-between each of the links.
+
+<pre><code><r:navigation urls="Page 1: /1|Page 2: /2|Page 3: /3">
+  <r:normal><r:link/></r:normal>
+  <r:here><r:link class="here"/></r:here>
+  <r:selected><r:link class="selected"/></r:selected>
+  <r:between> | </r:between>
+</r:navigation></code></pre>
+
+If you need to use external URLs in your navigation, the colon in @http://@ will confuse the parser, so either use Decimal-Entity Notation:
+
+<pre><code><r:navigation urls="Home: /|Git: http&#58;//www.github.com"></code></pre>
+
+Also comes in handy with port numbers:
+
+<pre><code><r:navigation urls="Home: /|External: http&#58;//www.mysite.com&#58;8000"></code></pre>
+
+Or, use a double slash:
+
+<pre><code><r:navigation urls="Home: /|Photographs: //www.externalsite.com"></code></pre>
+
+The double-slash option is probably more standards-compliant as it is simply an RFC 2396 "Network-Path Reference".
+
+h3. Title
+
+Say we had a page called "About us", we might start the page like this:
+
+<pre><code><h1><r:title/></h1>
+<p>Lorem ipsum dolor...</code></pre>
+
+Which would be output as follows:
+
+<pre><code><h1>About us</h1>
+<p>Lorem ipsum dolor...</code></pre>
+
+The nice thing about using the @<r:title/>@ tag, instead of just writing "About us" in the page body, is that if you were to rename the page (e.g. to just "About"), then the heading would be automatically updated.
+
+h2. All Tags that Insert Content
+
+* @<r:author/>@
+* @<r:breadcrumb/>@
+* @<r:breadcrumbs [separator="separator_string"] [nolinks="true|false"]/>@
+* @<r:comment/>@
+* @<r:content [part="part_name"] [inherit="true|false"] [contextual="true|false"]/>@
+* @<r:count/>@
+* @<r:cycle values="1, 2, 3" [reset="true|false"] [name="cycle"]/>@
+* @<r:date [format="%A, %B %d, %Y"] [for="created_at|now|published_at|updated_at"]/>@
+* @<r:escape_html/>@
+* @<r:link [anchor="name"] [other attributes...]/>@
+* @<r:link [anchor="name"] [other attributes...]>...</r:link>@
+* @<r:meta:description [tag="true|false"]/>@
+* @<r:meta:keywords [tag="true|false"]/>@
+* @<r:meta [tag="true|false"]/>@
+* @<r:navigation urls="[Title: url|Title: url]>...</r:navigation>@
+* @<r:option/>@
+* @<r:rfc1123_date/>@
+* @<r:slug/>@
+* @<r:snippet name="snippet_name"/>@
+* @<r:snippet name="snippet_name">...</r:snippet>@
+* @<r:status [downcase='true|false']/>@
+* @<r:title/>@
+* @<r:url/>@
+* @<r:yield/>@
+
+For usage of a particular tag refer to the [[tag reference|Radius Tag Reference]].

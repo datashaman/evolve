@@ -1,0 +1,78 @@
+First, I created a root listing page (/podcast) for the podcast as an Archive page with this structure:
+
+<pre><code>-- body --
+
+<r:children:each limit="15" order="desc">
+  <div class="entry">
+    <h3><r:title /> <span class="author"><r:author /></span></h3>
+    <div class="info"><r:date /> | <r:content part="duration" /> | <a href="<r:content part="url" />">Download (MP4)</a></div>
+    <r:content />
+    <h4>Notes and Links</h4>
+    <r:content part="notes" />
+  </div>
+</r:children:each>
+
+<div id="highlight">
+  <a href="itpc://radiantcms.org/podcast.xml"><img id="rss-icon" src="http://www.feedburner.com/fb/images/pub/feed-icon32x32.png" alt="" /></a>
+  <a href="itpc://radiantcms.org/podcast.xml">Subscribe to the podcast</a>
+</div>
+
+-- head -- (this part renders in the <head> section of the layout)
+
+<link rel="alternate" type="application/rss+xml" href="itpc://radiantcms.org/podcast.xml" /></code></pre>
+
+That forms the basis of the "show notes" pages.  In order to support this and the XML feed, each child page of /podcast is constructed with these parts (in no particular order):
+
+* size (length in bytes of the episode)
+* body (the description of the episode, usually short)
+* url (an absolute URL to the episode)
+* type (the MIME content type of the episode)
+* notes (notes to put in the "show notes" page)
+* duration (how long the episode is in HH:MM:SS)
+
+Now, I use S3 to host the podcast episodes, so I put in this information manually.  If you were using page_attachments or some other media manager extension, you might be able to have it fill some of these in for you.
+
+The last part is to create the podcast feed.  As you may know podcast feeds are just RSS 2.0 feeds with a few extra tags added.  Here's the source of /podcast.xml:
+
+<pre><code><?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" version="2.0">
+<channel>
+  <title>Radiant CMS Podcast</title>
+  <link>http://radiantcms.org/podcast</link>
+  <itunes:subtitle>Publishing for Small Teams</itunes:subtitle>
+  <itunes:author>Radiant CMS</itunes:author>
+  <itunes:owner>
+    <itunes:name>Radiant CMS</itunes:name>
+    <itunes:email>radiant at radiantcms.org</itunes:email>
+  </itunes:owner>
+  <itunes:summary>Interviews with Radiant users and discussion about the progression of the Radiant project.</itunes:summary>
+  <description>Interviews with Radiant users and discussion about the progression of the Radiant project.</description>
+  <itunes:category text="Technology"><itunes:category text="Tech News" /></itunes:category>
+  <itunes:explicit>no</itunes:explicit>
+  <ttl>7200</ttl>
+  <language>en-us</language>
+  <r:find url="/podcast">
+    <r:children:each order="desc">
+      <item>
+        <title><r:title /></title>
+        <itunes:summary><r:content /></itunes:summary>
+        <enclosure url="<r:content part="url" />" length="<r:content part="size" />" type="<r:content part="type" />" />
+        <guid>http://radiantcms.org<r:url /></guid>
+        <pubDate><r:rfc1123_date /></pubDate>
+        <itunes:duration><r:content part="duration" /></itunes:duration>
+      </item>
+    </r:children:each>
+  </r:find>
+</channel>
+</rss></code></pre>
+
+The main thing to notice is how the parts of each episode page are pulled into the proper place in the feed.
+
+
+h2. podcast extension
+
+... or you can install the "podcast extension":https://github.com/spanner/radiant-podcast-extension and just do this:
+
+<pre><code><r:podcast from="children" /></code></pre>
+
+It requires "paperclipped":https://github.com/kbingman/paperclipped/tree and a recent RSS library.

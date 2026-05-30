@@ -1,0 +1,5 @@
+<pre><code>./script/extension install siblings_tags</code></pre>
+
+(If this fails follow the "manual installation instructions":installing-extensions#manual)
+
+For more details see the @siblings_tags@ "README":http://github.com/nelstrom/radiant-sibling-tags-extension/tree/master#readme file.

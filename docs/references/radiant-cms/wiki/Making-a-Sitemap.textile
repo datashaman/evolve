@@ -1,0 +1,102 @@
+Every site needs a sitemap, and Radiant can generate one automatically for the whole site and provide a simple way to exempt pages from the sitemap, all with the built in functionality! 
+
+h2. A Regular Sitemap
+
+h3. Step One
+
+Create a child of the homepage titled @Sitemap@, or something similar, and somewhere in its Body part enter the following:
+
+<pre><code><r:find url="/">
+  <r:link />
+</r:find>
+<ul>
+  <r:find url="/">
+    <r:snippet name="sitemapper"/>
+  </r:find>
+</ul></code></pre>
+
+h3. Step Two
+
+Create a [[Snippet|Snippets]] titled @sitemapper@ and contains:
+
+<pre><code><r:children:each by="title" order="asc">
+  <r:unless_content part="no-map">
+    <li>
+      <r:link />
+      <r:if_children>
+        <ul>
+          <r:snippet name="sitemapper" />
+        </ul>
+      </r:if_children>
+    </li>
+  </r:unless_content>
+</r:children:each></code></pre>
+
+*Note that the tag @<r:if_children>@ was introduced in version 0.6.4 of Radiant. It is possible to create a sitemap without this tag, but it may not pass w3c validation, because it will output an empty @<ul></ul>@.*
+
+h3. Step Three (Optional)
+
+Add a new "Page Part" titled @no-map@ to pages that you do not wish to appear in the Site Map, such a Stylesheet page and the Sitemap page itself.
+
+h2. A Google Sitemap
+
+Using a derivative of the above technique you can also generate a "sitemap.xml":http://en.wikipedia.org/wiki/Sitemaps to submit to Google and the other major search engines.
+
+h3. Step One
+
+First create a new [[layout|Layouts]] with @text/xml@ as "Content-Type", and the following content: 
+
+<pre><code><?xml version="1.0" encoding="UTF-8"?>
+  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <r:content />
+</urlset></code></pre>
+
+h3. Step Two
+
+Create a Google Sitemap page, with @sitemap.xml@ as the "slug". Set the layout to the one we just created and fill it with this content:
+
+<pre><code><r:find url="/">
+  <url>
+    <loc>http://yourdomain.com/</loc>
+    <lastmod><r:date format="%Y-%m-%d" /></lastmod>
+    <changefreq>
+      <r:if_content part="changefreq">
+        <r:content part="changefreq" />
+      </r:if_content>
+      <r:unless_content part="changefreq">weekly</r:unless_content>
+    </changefreq>
+    <r:if_content part="priority">
+      <priority><r:content part="priority" /></priority>
+    </r:if_content>
+  </url>
+  <r:snippet name="xml_sitemapper" />
+</r:find></code></pre>
+
+h3. Step Three
+
+Like with the basic Sitemap page, the magic happens in the @xml_sitemapper@ snippet which needs to be created with the following content:
+
+<pre><code><r:children:each by="title" order="asc">
+	<r:unless_content part="no-map">
+		<url>
+			<loc>http://yourdomain.com<r:url /></loc>
+			<lastmod><r:date format="%Y-%m-%d" /></lastmod>
+			<changefreq>
+				<r:if_content part="changefreq">
+					<r:content part="changefreq" />
+				</r:if_content>
+				<r:unless_content part="changefreq">weekly</r:unless_content>
+			</changefreq>
+			<r:if_content part="priority">
+				<priority>
+					<r:content part="priority" />
+				</priority>
+			</r:if_content>
+		</url>
+		<r:snippet name="xml_sitemapper" />
+	</r:unless_content>
+</r:children:each></code></pre>
+
+The @no-map@ page part has the same meaning of the simpler sitemapper snippet. The @changefreq@ page part is used to override the default for the changefreq property (weekly). The @priority@ page part is used to override the default for the (optional) priority property (0.5), when this page part is added, fill in a value in the range of (0.0 to 1.0). Don't forget to change the part @http://yourdomain.com<r:url/>@ to match your domain name.
+
+In some cases the recursive nature of this recipe may produce a SQL error: "stack level too deep" as it does on my Dreamhost'ed Radiant site. See "MySQL SystemStackError: stack level too deep:":http://lists.radiantcms.org/pipermail/radiant/2007-September/006434.html for a discussion. I don't know a work-around for the Dreamhost case because I have no control over the DB server.

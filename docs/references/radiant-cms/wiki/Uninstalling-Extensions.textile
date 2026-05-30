@@ -1,0 +1,26 @@
+h2(#script). Using the built-in scripts
+
+<pre><code>cd /path/to/radiant
+./script/extension uninstall extension_name</code></pre>
+
+For example if you wanted to uninstall the [[Help Extension]] you would run:
+
+<pre><code>cd /path/to/radiant
+./script/extension uninstall help</code></pre>
+
+Then you just restart your application server and the extension will be removed.
+
+h2(#manual). Manual uninstallation
+
+If you used the manual installation method you'll need to use an equally manually uninstallation method.
+
+<pre><code>cd /path/to/radiant
+rake radiant:extensions:help:migrate VERSION=0
+rm -r vendor/extensions/help</code></pre>
+
+Then restart your application server.
+
+h2(#ray). Using Ray
+
+<pre><code>cd /path/to/radiant
+rake ray:extension:uninstall name=help</code></pre>

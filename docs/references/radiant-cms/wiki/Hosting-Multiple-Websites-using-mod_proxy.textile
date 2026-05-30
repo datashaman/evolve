@@ -1,0 +1,38 @@
+Using mod_proxy you can map a domain to a sub-directory of Radiant, this can be used to host multiple websites without having to modify Radiant. Your Radiant page tree should be set up like this:
+
+<pre><code>Site Root
+ |
+ +- radiantpoweredwebsite.com
+ |  |
+ |  +- Home
+ |     |
+ |     +- Subpage 1
+ |     |
+ |     +- Subpage 2
+ |
+ +- billa.co.nr
+    |
+    +- Home
+       |
+       +- Subpage 1
+       |
+       +- Subpage 2</code></pre>
+
+With Apache and mod_proxy, you would set up domains like:
+
+<pre><code><VirtualHost ServerIP:80>
+  ServerName www.radiantpoweredwebsite.com
+  ProxyPass / http://www.yourradiantinstall.com/radiant/radiantpoweredwebsite-com/home/
+</VirtualHost>
+
+<VirtualHost ServerIP:80>
+  ServerName www.anotherwebsite.com
+  ProxyPass / http://www.yourradiantinstall.com/radiant/anotherwebsite-com/home/
+</VirtualHost></code></pre>
+
+Note: while the above approach can work, the urls for tags such as @link@ will "not be correct.":http://lists.radiantcms.org/pipermail/radiant/2007-December/007387.html  An alternative approach is to use the "virtual_domains":http://svn.devjavu.com/lexbrains/radiant_extensions/virtual_domain/tags/rel_1-2-2/ extension.  If using this extension, ProxyPass directly to the root of your radiant install, not the subdirectory.  i.e.:
+
+<pre><code><VirtualHost ServerIP:80>
+  ServerName www.anotherwebsite.com
+  ProxyPass / http://www.yourradiantinstall.com/radiant
+</VirtualHost></code></pre>

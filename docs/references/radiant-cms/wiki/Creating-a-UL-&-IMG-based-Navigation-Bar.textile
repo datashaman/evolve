@@ -1,0 +1,32 @@
+Here is the snippet from the Radius tags page for navigation:
+
+<pre><code><r:navigation urls="[Title: url | Title: url | ...]">
+  <r:normal><a href="<r:url />"><r:title /></a></r:normal>
+  <r:here><strong><r:title /></strong></r:here>
+  <r:selected><strong><a href="<r:url />"><r:title /></a></strong></r:selected>
+  <r:between> | </r:between>
+</r:navigation></pre></code>
+
+Here's the code augmented to work with a UL, LI images for each link, and a little obtrusive javascript to provide mouse-over image swapping.  It assumes nav images are in a subfolder "images/menu" names like "news.gif" and highlighted versions like "news-hv.gif"
+
+<pre><code><ul>
+<r:navigation urls="Title: /news | Title: /about | Title: /contact">
+  <r:normal>
+    <li><a href="<r:url />">
+      <img src="/images/menu<r:url/>.gif" alt="<r:url/>" onmouseover="javascript:this.src='/images/menu<r:url />-hv.gif'" onmouseout="javascript:this.src='/images/menu<r:url />.gif'"/>
+    </a></li>
+  </r:normal>
+  <r:here>
+    <li><a href="<r:url />">
+      <img src="/images/menu<r:url/>-hv.gif" alt="<r:url/>" />
+    </a></li>
+  </r:here>
+  <r:selected>
+    <li><a href="<r:url />">
+      <img src="/images/menu<r:url/>-hv.gif" alt="<r:url/>" />
+    </a></li>
+  </r:selected>
+  <r:between></r:between>
+</r:navigation>
+</ul>
+</pre></code>

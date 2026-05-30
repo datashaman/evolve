@@ -1,0 +1,48 @@
+Note: Joyent has a "wiki page covering installing Rails apps":http://wiki.joyent.com/shared:kb:installing-rails, with some "notes about RadiantCMS":http://wiki.joyent.com/shared:kb:installing-rails#unpacking-radiant.
+
+Get RadiantCMS from one of the released gems, or check it out from the subversion repository. Currently (August 23rd, 2006), "TextDrive":http://www.textdrive.com doesn't have the Radiant gem installed, (TXD does have the radiant gem installed on Cardero and Harwood as of Sept 4, 2006) so it's probably simpler to check it out from the "Subversion repository":http://dev.radiantcms.org/svn/radiant.
+
+If you plan to install Subversion radiant in your sites folder, then do
+
+<pre><code>cd ~/sites && svn co http://svn.radiantcms.org/radiant/trunk/radiant/</code></pre>
+
+Get TextDrive to assign you a port, make sure lighttpd is listening at that port and you can access it manually via !http://your.site.com:port/ which will let you know that the lighttpd/radiant combination is working fine. You can find more detailed instructions via the "Lighttpd - the painless way":http://manuals.textdrive.com/read/book/9 e-book on TextDrive. If you added
+
+<pre><code>server.tag                 = "lighttpd | TextDriven"</code></pre>
+
+to your lighttpd.conf, then 
+
+<pre><code>curl --head http://your.site.com:port/</code></pre>
+
+Should let you know whether this is coming from Apache or lighttpd ... If the proxying step is done properly, you should get one of the two lines below (or something very similar) inside the output
+
+<pre><code>Server: lighttpd/1.3.13
+Server: lighttpd | TextDriven</code></pre>
+
+You need to "tell Apache to act as a proxy for lighttpd":http://manuals.textdrive.com/read/chapter/62 (which has to run at a port assigned to you by TextDrive). 
+
+h2. Creating the Radiant databases
+
+If you check out Radiant from the subversion repository, you will need to create three databases. Before you do this, take a look at @config/database.yml@ in the radiant directory and create those same databases, except that on TextDrive, if your username was jake, the database would instead be jake_radiant_live (for the production database).
+
+<pre><code>ME=`whoami` for db in radiant_live radiant_test radiant_dev; do mysqladmin -p create $ME_$db ; done</code></pre>
+
+(Make sure the quotes are backquotes! And run the above command all in one line!)
+
+Once you setup your database.yml properly, type rake migrate and you should get a series of lines informing you that X, Y, Z just happened to your database.
+
+h2. mongrel: an alternative to lighttpd
+
+Deploying with mongrel is likely easier than with lighttpd. It could be (refreshingly) as simple as the instructions below.
+
+<pre><code>cd /users/home/jake/radiant && mongrel_rails start -e production -p your_port</code></pre>
+
+Then put the same command inside your crontab. Type 
+
+<pre><code>crontab -e </code></pre>
+
+to edit your jobs, and inside it put:
+
+<pre><code>@reboot cd /users/home/jake/radiant && mongrel_rails start -e production -p your_port</code></pre>
+
+See also: "http://www.fourhats.com/blog/archive/2006/08/27/radiant-on-textdrive/":http://www.fourhats.com/blog/archive/2006/08/27/radiant-on-textdrive/

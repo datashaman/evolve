@@ -1,0 +1,13 @@
+If you want to use SQLite all you'll have to do is create your @config/database.yml@ since the SQLite db files will be created when you run the setup script.
+
+<pre><code>development:
+  adapter: sqlite3
+  database: db/radiant_dev.sqlite.db
+
+test:
+  adapter: sqlite3
+  database: db/radiant_test.sqlite.db
+
+production:
+  adapter: sqlite3
+  database: db/radiant_live.sqlite.db</code></pre>

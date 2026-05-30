@@ -1,0 +1,9 @@
+Snippets are typically small fragments of pages which get reused, but which might not appear on every page. Two different [[Layouts]] can then share the same snippet without having to copy and paste between them. You may choose to use snippets even for text that is used on every [[Page|Pages]], just to keep your layout as terse as possible.
+
+Snippets are edited from the *Snippets* tab in the Radiant administrative interface. When you select the *New Snippet* button you'll be presented with a form where you can give the snippet a name and some body text. Snippet names *may not* contain spaces. The body text is relatively straightforward -- you can select a filter from the drop-down menu underneath the body text if you want Textile or Markdown support. A snippet should be written in a language appropriate for the content-type asserted by the [[Layout|Layouts]] that includes it, or layout used by a [[Page|Pages]] that includes it - Textile or Markdown filter use implies the snippet will always be part of an HTML document, though it's conceivable that you might be serving, say, plain text, and deliberately use the filter as an example of generated markup for part of a wider technical document.
+
+To insert the content of a snippet into a page use the @<r:snippet name="snippet_name"/>@ [[Radius Tag|Radius Tags]]
+
+h2. Edit Snippet UI
+
+!{max-width:667px}http://img.skitch.com/20090409-1871nrdnq297u8r8nkmn9y638r.png!

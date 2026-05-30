@@ -1,0 +1,9 @@
+Radiant can be run in one of two modes depending on your needs.
+
+h3. Instance Mode
+
+Instance mode is the recommended way of running Radiant. It is the default mode when you create a Radiant project with the `radiant` command. It allows you to create a version of Radiant (a project) that runs off of the Radiant gem with configuration specific files stored in the actual project. Instance mode also allows you to "vendorize" Radiant project with the `rake radiant:freeze` tasks.
+
+h3. Application Mode
+
+Application mode is the mode that Radiant runs in if you used `git clone` or unzipped a Radiant tarball to create your project. Application mode is only recommended if you are creating a patch or contributing to Radiant's development in some way. Application mode is the normal mode of running Rails applications. *Instance mode is preferable because it is easier to upgrade.*

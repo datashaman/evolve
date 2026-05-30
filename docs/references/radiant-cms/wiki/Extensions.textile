@@ -1,0 +1,14 @@
+Part of what makes Radiant great is that it fulfills the need for most content-management scenarios with pages, layouts and snippets. It's flexible and puts minimal restriction on the structure of the output. It reaches the 80% window. However there are those cases in the missing 20% where you might have other needs, for example:
+
+* Integration with some back-end data service
+* Management of a complex data structure that doesn't fit into the Radiant page-layout-snippet structure (or fits poorly)
+* Receiving and processing input from the website visitor through forms or other means
+* Complex manipulation of content information that would be impossible or too cumbersome using Radius
+
+Extensions are vertical slices of a Rails application, or mini-applications if you will, that are inserted into Radiant at runtime. In many ways, they tackle the same problem as Rails Engines or Merb Slices, which allow you to drop a pre-built application into your own and use it as if it were the same app. The execution of this feat has been quite arduous, and you can read more about it on "John Long's blog":http://www.wiseheartdesign.com/2006/12/6/rails-needs-something-better-than-engines/. Suffice it to say, with a minimal amount of boilerplate, you can have your own custom models, views, controllers, and libraries running inside Radiant. That’s the power of extensions.
+
+* [[Installing Extensions]]
+* [[Uninstalling Extensions]]
+* [[Creating Extensions]]
+* [[Ideas For Future Extensions]]
+* [[How-To: Create An Extension]]

@@ -1,0 +1,13 @@
+A number of articles about creating extensions exist on the wiki. Please add your own.
+
+* [[Adding Custom Radius Tags]]
+* [[Creating a Link Roll Extension]]
+* [[Removing the Scaffold from the Link Roll Extension]]
+* [[Altering Tabs in the Admin UI]]
+* [[Modifying the Page UI]]
+* [[Extending and Overriding Radiant Behavior]]
+* [[Creating a Custom Page Type]]
+* [[Using Radiant Layouts to Style Extension Controllers]]
+* [[How-To: Create An Extension]]
+* [[Extensions which depend on other extensions]]
+* [[How to enable Travis CI for an extension]]

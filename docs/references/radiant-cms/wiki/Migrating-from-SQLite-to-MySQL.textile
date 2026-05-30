@@ -1,0 +1,67 @@
+I noticed something while working on a couple "Radiant":http://www.radiantcms.com sites. I found that when I was building them locally, I prefer to work with SQLite3 databases. Then when I deploy them they use MySQL.  Since so much of the configuration and site template lives in the database, I wanted an easy way to go from SQLite to MySQL. In the end I built it!
+
+h2. Wouldn't it be Nice... to Backup from MySQL to SQLite? And vice-versa?
+
+At the same time, I always thought it would be nice to be able to create a backup of the live database in SQLite. That way, if a client ever wanted their site 'packaged up and portable' as it were, it would be easy, just dump the production DB into a SQLite development DB, zip up the radiant folder and you have the whole site ready to run.
+
+h2. My 'Plugin' - Installation
+
+I created this as a plugin for Radiant. Just download the package (at the end of this entry), uncompress into your plugins folder and you're ready to go.
+
+h2. How to Use it
+
+It's fairly simple. Make sure you have SQLite and MySQL set up and running. Then configure your installation to use a [[SQLite DB|Setup a SQLite Database]] for development and a [[MySQL DB|Setup a MySQL Database]] for production.
+
+<pre><code>development:
+  adapter: sqlite3
+  database: db/development.sqlite3
+
+production:
+  adapter: mysql
+  database: myradiant_production
+  username: radixhound
+  password: paSSwerd
+  host: localhost</code></pre>
+
+Then make sure your target DB is pre-created. So if you don't have a production DB up to this point, you can do this.
+
+<pre><code>rake db:migrate
+rake db:migrate:extensions</code></pre>
+
+Then when you want to transfer from development to production, you can do this...
+
+<pre><code>rake db:backup:to_db TARGET_DB=production</code></pre>
+
+To do the reverse, you will do this...
+
+<pre><code>rake production db:backup:to_db</code></pre>
+
+h2. Or Backup to another SQLite DB altogether...
+
+You can also configure a third, fourth or fifth DB in your database.yml file and use that to back-up to, in case you don't want to wipe out your development DB. Just add something like this to your database.yml file...
+
+<pre><code>backup:
+  adapter: sqlite3
+  database: db/development.sqlite3</code></pre>
+
+Then you can do this..
+
+<pre><code>rake production db:backup:to_db TARGET_DB=backup</code></pre>
+
+h2. Download the Goods
+
+"Zip":http://blog.radixhound.com/assets/2008/4/29/radiant_db_backup.zip or "Gzip":http://blog.radixhound.com/assets/2008/4/29/radiant_db_backup.tar.gz
+
+h2. One More Thing... (about non-standard ActiveRecord class names)
+
+This script will fail when it encounters non-standard class names for certain tables. For example, in Radiant the table 'config' is mapped to the class Radiant::Config. The solution is the 'exceptions' hash. Just add the odd entries in there and the script will know what to do with them.
+
+h2. And One More Thing...
+
+If you get error message when you tried to transfer the DB, edit 
+"vendor/plugins/db_backup/tasks/backup.rake"
+Just add " 'extension_meta','schema_migrations' " at the end of line 8, like this.
+
+<pre><code>ActiveRecord::Base.connection.tables.sort.reject! do |tbl|
+['schema_info', 'sessions', 'public_exceptions','extension_meta','schema_migrations'].include?(tbl)
+end</pre>

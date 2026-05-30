@@ -1,0 +1,27 @@
+The Reorder extension is an extension for Radiant CMS that allows you to specify and change the order of child pages within their parent page. If you are trying to ensure that child pages are accessed in a non-programatic sequence, this is a must-have extension.
+
+h2. Installation
+
+<pre><code>./script/extension install reorder</code></pre>
+
+(If this fails see the "manual installation instructions":installing-extensions#manual)
+
+Restart the server.
+
+h2. Usage
+
+Once the extension is installed, you should be able to see buttons to "move to top, move up, move down and move to end" - these are the buttons to use.  (See screenshot below).
+
+!{max-width:667px}http://img.skitch.com/20090410-n4pyk368j7d1yqhx5tfwkqe2jf.png!
+
+Just click these buttons, to rearrange the pages as you see fit.
+
+In your pages, you do not need to do anything special.  To sort by the sequence that you have just created, you need to just do a @<r:children:each>@ like normal.  The results will be sorted in the sequence that you've just set up.  Your code in the page may look like the sample below.
+
+<pre><code><r:find url='/'>
+  <r:children:each>
+    * <r:link />
+  </r:children:each>
+</r:find></code></pre>
+
+*It seems that at this stage, if you change the order of the children, the cache of the parent page is not expired.  This means that your change may not be propagated to the website immediately.  If you must force it, open the parent page and do a save on it again (without any changes is also fine) so that the cache for that page expires.  Note: I am still checking if this is the case.*

@@ -1,0 +1,75 @@
+This describes how to take an existing "site" and convert it to a Radiant Template, CSS and snippets.
+
+# Find a "free" [1] example web site you want to use. You may want to alter the graphics or colour scheme. I recommend that you go to Andreas Viklund's site http://andreasviklund.com/ and download a *free* template.  Get a zip file and unpack it.
+# Put ..
+#* The HTML in a named template
+#* The CSS in @/public/stylesheet@ [2],[3]
+#* The images in @/public/images@
+# Go to the template.
+#* Go the @<head>@ section
+#* Edit the reference to the stylesheet to match where you put the stylesheet.
+# Go through the @<body>@ to find references to images and edit them to match the new path @/public/images/...@.
+# Create the root page @/@.
+#* Set its template to the created template from step 1.
+#* Test by browsing to the root page.
+#* It *should* look like Andreas' example.
+#* If it doesn't, then you've made a mistake in step 2 and/or step 3
+# Create some dummy content of you own in @/@
+# Go to the template and find out where in @<body>@ the example content is.  Leave all the menu stuff alone for now.
+#* Replace Andreas' wordage with @<r:content />@
+# Test.
+#* You should now see your own content.
+# Gradually replace more of the basics in the template with your own  material.
+
+p. I strongly suggest doing this:
+
+* take the main menu stuff from the template and put it in a snippet    called "mainmenu" and replace it in the template with 	@<r:snippet name="mainmenu" />@ 
+* test
+
+p. You can put more content into snippets. Think of your page as a system of modules held together by the layout template. Menus, header, footer, navigation are likely candidates for snippets. This way you divide your page and make it more readable and maintainable. Instead of having one big template, you have nice small blocks, and since they are each snippets, they can be edited piece by piece.
+
+p. Now, based on hard earned experience, I suggest your template has bits like this in it ...
+
+bc..  <div id=sidebar>
+                <r:content part="sidebar-hi" inherit="true" />
+                <r:content part="sidebar" inherit="true" />
+                <r:content part="sidebar-page" />
+                <r:content part="sidebar-low" inherit="true" />
+        </div> <!-- end sidebar -->
+        <div class="clear"> </div>
+
+p. You'll soon figure out what to do with the "hi" "low" and page-specific parts 
+
+p. You might also want to use this as your template's core
+
+bc.    <div id="content">
+	    <r:unless_url matches="^/$">
+               <h1 class="headerstyle"><r:title /></h1>
+            </r:unless_url>
+            <r:content />  <!--  page main content -->
+            <p class="insidelink">[ <a href="#top">Back to top</a> ]</p>
+	    <r:if_content part="extended">
+                <div id="extended">
+                    <r:content part="extended" />
+                </div> <!-- end extended -->
+                <p class="insidelink">[ <a href="#top">Back to top</a> ]</p>
+             </r:if_content>
+	     <r:if_content part="extended2">
+                 <div id="extended2">
+                     <r:content part="extended2" />
+                 </div> <!-- end extended2 -->
+                 <p class="insidelink">[ <a href="#top">Back to top</a> ]</p>
+              </r:if_content>
+        </div> <!-- end div.content -->
+
+p. I've also found it useful to have this bit of code in the @<head>@
+
+bc.  <r:if_content part="head">
+	   <r:content part="head" />
+	</r:if_content>
+
+fn1.  "Free" as in released into the public domain, Creative Commons or other licencing
+
+fn2.  Another option is to create a Layout Template with @text/css@ as content type - let's call it StyleSheet. Then create a page with this newly created layout, give it a good name - e.g. "styles" -  and paste all your CSS content inside this page. Alter the links in your main layout to correctly map to the url you've given the newly created stylesheet page for your web design.. It's a bit slower than the filesystem access but you now easily can edit your styles inside the radiant admin interface without poking around in files.
+
+fn3.A further option is to make use of the SnS extension

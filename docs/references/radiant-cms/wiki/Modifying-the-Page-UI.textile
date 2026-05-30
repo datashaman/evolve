@@ -1,0 +1,153 @@
+*This article is an update of the deprecated Using the Shards extension article and is likely out of date in parts or in whole.*
+
+This article explains in detail how to add, remove and replace various user interface elements in the Radiant administration pages. See [[Creating a Custom Page Type]] for an example of when you might would want to do that. This article assumes that you know the basics of Radiant extensions, and have created an extension of your own. See [[Adding Custom Radius Tags]] for an introduction to extensions.
+
+h2. What is Shards?
+
+Shards is a feature built into Radiant that allows extension developers to modify aspects of Radiant's default administration interface. It does this by deconstructing each view template into hierarchical component pieces called "regions".  A developer may insert or remove view partials from these regions from an extension.  This permits:
+
+* Adding new user interface elements
+* Removing or replacing user interface elements
+* Customizing appearance using CSS
+* Customizing UI behavior with Javascript
+
+Before Radiant 0.6.7, Shards was a separate Radiant extension, but it turned out to be in such popular demand that it was integrated into the core of Radiant 0.6.7 and later versions.
+
+h2. Usage
+
+Shards regions are accessible from the Radiant::AdminUI object, which is simply named "admin" inside an extension class.  They are organized first by controller name, then by action name, and then by region.  For example, if I wanted to add a partial called "tags" to the "form_bottom" region of the Page editing screen, in my extension's @activate@ method, I would do this:
+
+<pre><code>  admin.page.edit.add :form_bottom, "tags"</code></pre>
+
+The @add@ method also allows you to insert partials in specific orders, i.e. before or after an existing partial. Examples:
+
+<pre><code>  admin.page.edit.add :main, "help_links", :before => "edit_header"
+  admin.page.edit.add :form_area, "categories", :after => "edit_page_parts"</code></pre>
+
+Alternatively, you may access a given region directly using a dot or bracket accessor. Regions are essentially arrays of partial names.
+
+<pre><code>  admin.page.edit.form_area
+  admin.page.edit['form_area']
+  admin.page.edit[:form_area]</code></pre>
+
+h2. Regions structure
+
+Below is a tree of the current structure of regions partials in Shards.  You may also discover this by reading the source of @/lib/radiant/admin_ui.rb@.  It is listed by controller and action(s).  Regions are in brackets.
+
+h3. Admin::PageController
+
+h4. #new, #edit (and #add_part)
+
+* [main]
+** edit_header
+** edit_form
+*** [form_top]
+*** [form]
+**** edit_title
+**** edit_extended_metadata (@meta)
+**** edit_page_parts
+***** part
+****** [part_controls]
+***** [parts_bottom]
+****** edit_layout_and_type
+****** edit_timestamp
+*** [form_bottom]
+**** edit_buttons (@buttons_partials)
+** edit_popups
+*** [popups]
+
+h4. #index (#children, and #remove)
+
+* [sitemap_head]
+** title_column_header
+** status_column_header
+** modify_column_header
+* [node]
+** title_column
+** status_column
+** add_child_column
+** remove_column
+
+h3. Admin::SnippetController
+
+h4. #new, #edit
+
+* [main]
+** edit_header
+** edit_form
+*** [form]
+**** edit_title
+**** edit_content
+**** edit_filter
+**** edit_timestamp
+*** [form_bottom]
+**** edit_buttons
+
+h3. Admin::LayoutController
+
+h4. #new, #edit
+
+* [main]
+** edit_header
+** edit_form
+*** [form]
+**** edit_title
+**** edit_content
+**** edit_filter
+**** edit_timestamp
+*** [form_bottom]
+**** edit_buttons
+
+h3. Admin::UserController
+
+h4. #new, #edit
+
+* [main]
+** edit_header
+** edit_form
+*** [form]
+**** edit_name
+**** edit_email
+**** edit_username
+**** edit_password
+**** edit_roles
+**** edit_notes
+*** [form_bottom]
+**** edit_timestamp
+**** edit_buttons
+
+
+h2. Tips and Tricks
+
+h3. Adding custom CSS and Javascripts
+
+There are two primary ways to add CSS or Javascript to any view: adding inline code, or adding includes.  You can do both inside any partial you have added to a region.
+
+h4. Adding inline CSS and Javascript
+
+The default Radiant admin layout supports @content_for@ with the names @:page_css@ and @:page_scripts@.  So, just as you would in any normal Rails application, pass a block of content to the @content_for@ call to add your inline CSS or Javascript.  Examples:
+
+<pre><code>  <% content_for :page_css do %>
+    h2 { color: red; }
+  <% end %></code></pre>
+
+<pre><code>  <% content_for :page_scripts do %>
+    alert("Hello, world!");
+  <% end %></code></pre>
+
+These blocks will be appended to any other blocks that have been added via @content_for@ and output in the @<head>@ section of the layout.
+
+h4. Adding included CSS and Javascript
+
+If you like to keep your CSS and Javascript in external files, you can add 'includes' to the layout with @include_stylesheet@ and @include_javascript@ like so:
+
+<pre><code>  <% include_javascript 'lowpro' %>
+  <% include_stylesheet 'custom' %></code></pre>
+
+Of course, this code must appear in a partial you have included with Shards.  The output will look something like this in the @<head>@ section of the layout:
+
+<pre><code>  <script src="/javascripts/lowpro.js"></script>
+  ...
+  <link rel="stylesheet" href="/stylesheets/custom.css" /></code></pre>
+
+Every extension generated since 0.6.3 comes with an @update@ Rake task that you can use to copy files from your extension into the @public@ directory of your Radiant site. Direct your users to run this task after installing your extension.

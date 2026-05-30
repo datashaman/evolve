@@ -1,0 +1,19 @@
+Radiant's cache is supposed to be invalidated automatically and/or every five minutes. However, there are situations where the automatic invalidation and/or five minute delay is not immediate enough. In these situations simply navigate to the root of your Radiant project and delete the @cache@ directory.
+
+<pre><code>cd /home/deploy/radiant_site/tmp
+rm -r cache</code></pre>
+
+h2. Clearing the page cache from within your code
+
+Since Radiant 0.8, ResponseCache has been replaced with Radiant::Cache (which inherits from "Rack::Cache":http://tomayko.com/src/rack-cache/
+Use this code to clear the entire cache without relying on a particular Radiant version:
+
+<pre><code>if defined? ResponseCache == 'constant'
+  ResponseCache.instance.clear
+else
+  Radiant::Cache.clear
+end</code></pre>
+
+h2. Circumvent cache in development
+
+Access dev.localhost.

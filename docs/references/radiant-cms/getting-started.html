@@ -1,0 +1,351 @@
+<html>
+
+<head>
+    <title> Getting started - radiant/radiant GitHub Wiki </title>
+    <style>
+        #main {
+            max-width: 38rem;
+            margin: auto;
+            overflow-wrap: break-word;
+            min-width: 0;
+            background-color: white;
+        }
+
+        body {
+            background-image: url('/callToAction.svg');
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        #header_button {
+            position: sticky;
+            top: 0;
+            padding: 10px;
+            border-style: ridge;
+            border-color: lightgrey;
+            border-width: thin;
+            color: red;
+            font-weight: bold;
+            background-color: honeydew;
+            font-size: large;
+        }
+
+        #header_button p {
+            margin-bottom: 0;
+            margin-top: 10px;
+        }
+
+        #header_info {
+            padding: 10px;
+            border-style: ridge;
+            border-color: lightgrey;
+            border-width: thin;
+            color: red;
+            font-weight: bold;
+            background-color: honeydew;
+            font-size: large;
+        }
+
+        #content,
+        #index {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        #footer_info {
+            position: sticky;
+            bottom: 0;
+            padding: 10px;
+            border-style: ridge;
+            border-color: lightgrey;
+            border-width: thin;
+            color: red;
+            font-weight: bold;
+            background-color: honeydew;
+        }
+
+        #footer_info .blocks {
+            background: black;
+            color: white;
+            /* outline: 1px solid blue; */
+            padding: .1em .2em;
+        }
+
+        /* Hide useless-parts of transcluded HTML */
+        .width-full.input-group {
+            display: none;
+        }
+
+        h5:nth-last-child(2) {
+            display: none;
+        }
+
+        .Box-row.wiki-more-pages-link {
+            display: none;
+        }
+
+        .filter-bar {
+            display: none;
+        }
+
+        .Box-title>.octicon {
+            display: none;
+        }
+
+        .anchor {
+            display: none;
+        }
+
+        pre {
+            overflow: auto;
+        }
+
+        #main {
+            word-wrap: break-word;
+        }
+
+        .Counter {
+            background-color: lightgray;
+            border-radius: 20px;
+            padding: 0 10px;
+        }
+
+        table {
+            max-width: 100%;
+            overflow: auto;
+            width: 100%;
+            display: block;
+        }
+
+        .js-wiki-sidebar-toc-toggle-chevron-button {
+            display: none;
+        }
+
+        a.visit_url_original {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2em; /* adjust as needed */
+            max-height: 1.2em; /* should match line-height */
+            display: block;
+        }
+
+        /* White background for span */
+        /* Rounded corners */
+        /* Black border */
+        .visit_url_pillbar {
+            background-color: white;
+            border-radius: 10px;
+            padding: 5px;
+            margin: 5px;
+            display: block;
+            border: 1px solid black;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Broken Images */
+        img:before {
+            content: "⚠️ MISSING OR BROKEN IMAGE RENDERING ERROR: PLEASE VIEW ORIGINAL PAGE ON GITHUB.COM ⚠️";
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        @font-face {
+            font-family: "color-emoji";
+            src: local("Apple Color Emoji"),
+                local("Segoe UI Emoji"),
+                local("Segoe UI Symbol"),
+                local("Noto Color Emoji");
+        }
+
+        .emoji {
+            font-family: "color-emoji";
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+        }
+
+        .visit_url_link {
+            font-size: xx-large;
+        }
+
+        .why_exist {
+            position: relative;
+            text-align: center;
+            /* italics */
+            font-style: italic;
+        }
+
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Not used, did not want to risk non-indexing. -->
+    <!-- <meta property="og:url" content="https://github.com/radiant/radiant/wiki/Getting-started"> -->
+    <!-- Did not want to risk contaminating content to be indexed. -->
+    <!-- <meta property="og:description" content="not used"> -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Getting started - radiant/radiant GitHub Wiki">
+</head>
+
+<body>
+    <div id="main">
+        <nav id="header_button">
+            <p>Content mirrored for search engine indexing from:</p>
+            <div>
+                <span class="visit_url_pillbar">
+                    <a href="https://github.com/radiant/radiant/wiki/Getting-started" class="visit_url_original">https://github.com/radiant/radiant/wiki/Getting-started</a>
+                </span>
+
+            </div>
+            <div class="why_exist">
+                <a href="/">Why does this service exist?</a>
+            </div>
+        </nav>
+        <aside id="header_info">
+            <!-- Last Modified Date added around here from redirect checker-->
+        <p>📅 Last Modified: Tue, 28 Jan 2014 14:13:23 GMT</p></aside>
+        <article id="content">
+            <h1>Getting started - radiant/radiant GitHub Wiki</h1>
+            <div id="mirrored"> 
+              <div class="markdown-body">
+                <div class="markdown-heading"><h2 class="heading-element">Getting Ready</h2><a aria-label="Permalink: Getting Ready" class="anchor" href="#getting-ready" id="user-content-getting-ready"><svg aria-hidden="true" class="octicon octicon-link" data-component="Octicon" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p>If you don’t want to use your Radiant project to follow along with or haven’t yet installed Radiant feel free to use the <a href="http://demo.radiantcms.org/admin/login" rel="nofollow ugc">live demo site</a>. The “<strong>Username</strong>” is “<strong>admin</strong>” and the “<strong>Password</strong>” is “<strong>radiant</strong>”; and don’t worry about breaking anything the entire demo site is reset to a pristine state on the hour. The demo site currently has the <a class="internal present" href="/m/radiant/radiant/wiki/Roasters-Template">Roasters template</a> installed instead of the “Empty” template that we’ll use here, but you should be able to just delete or modify anything in your way.</p>
+<p>If you would prefer to install your own copy of Radiant to follow along there are <a href="https://wiki.github.com/radiant/radiant#install" rel="nofollow ugc">installation instructions</a> for a variety of systems. The “Empty” template is recommended for this article; afterwards a deeper understanding can be had by investigating the “Styled Blog” and “Roasters” templates. Not to mention existing implementations of common features; news feed, blog archive, Google Map and Disqus comments to name a few.</p>
+<div class="markdown-heading"><h2 class="heading-element">The Admin UI at a glance</h2><a aria-label="Permalink: The Admin UI at a glance" class="anchor" href="#the-admin-ui-at-a-glance" id="user-content-the-admin-ui-at-a-glance"><svg aria-hidden="true" class="octicon octicon-link" data-component="Octicon" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p>A site built around Radiant is administered from the “/admin” <span>URL</span>. Once logged in, the three main building blocks of Radiant can be edited: <a class="internal present" href="/m/radiant/radiant/wiki/Pages">Pages</a>, <a class="internal present" href="/m/radiant/radiant/wiki/Snippets">Snippets</a> and <a class="internal present" href="/m/radiant/radiant/wiki/Layouts">Layouts</a>.</p>
+<p>As you can see the Radiant administrative interface is a familiar tabbed interface, where each tab reveals a subset of functionality, by default you land on the <a class="internal present" href="/m/radiant/radiant/wiki/Pages">Pages</a> tab after successfully logging in.</p>
+<p><img alt="" data-canonical-src="http://img.skitch.com/20090410-ek3asqrfhpu9wfdauwdcq8dw55.png" src="https://camo.githubusercontent.com/e8d8be89135425cbb3b871d061dbf45628beb4fe7a517772fb5ea1c0531a5e82/687474703a2f2f696d672e736b697463682e636f6d2f32303039303431302d656b3361737172666870753977666461757764637138647735352e706e67"></p>
+<p>Any <a class="internal present" href="/m/radiant/radiant/wiki/Extensions">extensions</a> you <a class="internal present" href="/m/radiant/radiant/wiki/Installing-Extensions">install</a> may add new tabs to the admin interface that contain the functionality specific to that extension. To see what extensions you have installed click the <strong>Extensions</strong> link at the top of the screen. Radiant comes with the <strong>Archive</strong>, <strong>Markdown</strong> and <strong>Textile</strong> extensions by default.</p>
+<div class="markdown-heading"><h2 class="heading-element">Hierarchical Organization</h2><a aria-label="Permalink: Hierarchical Organization" class="anchor" href="#hierarchical-organization" id="user-content-hierarchical-organization"><svg aria-hidden="true" class="octicon octicon-link" data-component="Octicon" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p>Radiant is organized in a very intuitive and structured way. If you’re a developer, you should be familiar with the term <strong>tree</strong>, and should readily notice from the organization within the administrative interface that Radiant forms an n-branch tree (the root being the main or home page of the site). If you’re not familiar with tree structures or terminology, the easiest way to <strong>see</strong> this is to think of an upside-down tree (i.e. root at the top, branches and leaves at the bottom). At the very top of the tree, is the root (which as said above is the site’s main or home page), from it you can spawn <strong>children</strong> (that is, branches of the tree). Please don’t think of children as their own entity: they are fully dependent on their parent. But just as it is the case in nature, branches themselves can have children, and these children can, of course, have children of their own. Children who do not have children are usually referred to as <strong>leaf nodes</strong>.</p>
+<div class="markdown-heading"><h2 class="heading-element">Site Creation</h2><a aria-label="Permalink: Site Creation" class="anchor" href="#site-creation" id="user-content-site-creation"><svg aria-hidden="true" class="octicon octicon-link" data-component="Octicon" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p>Radiant supplies no page template data at all when running from the “Empty” template, so you have to do some work to get going – create a <a class="internal present" href="/m/radiant/radiant/wiki/Layouts">layout</a> (typically using <span>HTML</span>), <a class="internal present" href="/m/radiant/radiant/wiki/Snippets">Snippets</a> if need be, then populate the site with <a class="internal present" href="/m/radiant/radiant/wiki/Pages">pages</a>.</p>
+<p>As with any site, getting a good layout template sorted will help a lot in the long term with making things easier to maintain and aiding easy changes in the site look and feel for purposes of modernization, corporate rebranding, or simply a change for change’s sake.</p>
+<div class="markdown-heading"><h2 class="heading-element">Your First Page</h2><a aria-label="Permalink: Your First Page" class="anchor" href="#your-first-page" id="user-content-your-first-page"><svg aria-hidden="true" class="octicon octicon-link" data-component="Octicon" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p>If you don’t have any <a class="internal present" href="/m/radiant/radiant/wiki/Pages">pages</a> yet click the <strong>New Homepage</strong> button, otherwise click the name of the top most page in the tree (probably “Home” or something similar) if there is any content in the <strong>body</strong> <a href="pages#parts">part</a> in there just delete it.</p>
+<p>Give your new page a <strong>title</strong> and enter some content into the <strong>body</strong> part, set the <strong>Status</strong> to <strong>published</strong> and click <strong>Create Page</strong>, if you’re editing an existing page make sure you set the <strong>Layout</strong> to <strong>inherit</strong>.</p>
+<p><img alt="" data-canonical-src="http://img.skitch.com/20090410-dsqfpmsdctppyhq8rb8tbfkqj7.png" src="https://camo.githubusercontent.com/9dcc9fd910fe51c77ed48796944256025a739c1ab7bfd25006bea83370d9e461/687474703a2f2f696d672e736b697463682e636f6d2f32303039303431302d64737166706d736463747070796871387262387462666b716a372e706e67"></p>
+<p>Click the <strong>View Site</strong> link at the top of the page to see what your new page looks like. It probably doesn’t look like much, it’s just plain <span>HTML</span>. You could create an entire site in this way just letting the user agent do as it will with your content. However you probably want to use things like <span>CSS</span>, Javascript, page tracking tools and all the other things you’re accustomed to using to develop websites, and Radiant is there for you.</p>
+<p>Refer to the <a class="internal present" href="/m/radiant/radiant/wiki/Pages">Pages</a> page for more details on the <strong>Edit Page UI</strong>, about page <a href="pages#attributes"><strong>attributes</strong></a> and <a href="pages#parts"><strong>parts</strong></a>.</p>
+<div class="markdown-heading"><h2 class="heading-element">A Basic Layout</h2><a aria-label="Permalink: A Basic Layout" class="anchor" href="#a-basic-layout" id="user-content-a-basic-layout"><svg aria-hidden="true" class="octicon octicon-link" data-component="Octicon" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p>A <a class="internal present" href="/m/radiant/radiant/wiki/Layouts">layout</a> is the outermost block you use to build your site, with <a class="internal present" href="/m/radiant/radiant/wiki/Pages">pages</a> being the innermost and <a class="internal present" href="/m/radiant/radiant/wiki/Snippets">snippets</a> somewhere in the middle. Refer to the <a class="internal present" href="/m/radiant/radiant/wiki/Layouts">Layouts</a> page for a more lengthy explanation.</p>
+<p>Click on the <strong>Layouts</strong> tab. Now click the <strong>New Layout</strong> button.</p>
+<p>Give your layout a name and enter a basic structure for your site using <span>HTML</span>. For this simple example I’ve used the following:</p>
+<div class="snippet-clipboard-content notranslate position-relative overflow-auto" data-snippet-clipboard-copy-content="<!DOCTYPE html>
+<html lang=&quot;en-us&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;>
+<head>
+  <meta charset=&quot;utf-8&quot;/>
+  <title>Demonstration</title>
+  <link rel=&quot;stylesheet&quot; href=&quot;/stylesheet&quot; media=&quot;all&quot; title=&quot;Default&quot; charset=&quot;utf-8&quot;/>
+</head>
+<body>
+  <r:snippet name=&quot;header_footer&quot;>
+    <h1><r:title/></h1>
+    <r:content/>
+  </r:snippet>
+</body>
+</html>"><pre class="notranslate"><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en-us" xmlns="http://www.w3.org/1999/xhtml"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"/&gt;
+  &lt;title&gt;Demonstration&lt;/title&gt;
+  &lt;link rel="stylesheet" href="/stylesheet" media="all" title="Default" charset="utf-8"/&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;r:snippet name="header_footer"&gt;
+    &lt;h1&gt;&lt;r:title/&gt;&lt;/h1&gt;
+    &lt;r:content/&gt;
+  &lt;/r:snippet&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+<p><img alt="" data-canonical-src="http://img.skitch.com/20090410-krggasknkqqe4qdpispii6duab.png" src="https://camo.githubusercontent.com/c16b7532050a6aeb40cedd1cbd6a014821e2618d2c999ddcd2576c76e79f0867/687474703a2f2f696d672e736b697463682e636f6d2f32303039303431302d6b72676761736b6e6b71716534716470697370696936647561622e706e67"></p>
+<p>Now return to the <strong>Pages</strong> tab and the page you edited earlier, on that page select your new layout from the menu, while you’re in there choose <strong>Markdown</strong> or <strong>Textile</strong> from the <strong>Filter</strong> menu if you hadn’t already.</p>
+<p><img alt="" data-canonical-src="http://img.skitch.com/20090410-phwj4382h84dkdqm6p47ux3chh.png" src="https://camo.githubusercontent.com/c7b106eafe5da299a7ef70a1b4f04baace695c9fdb5c66a6dba0ea706a110faf/687474703a2f2f696d672e736b697463682e636f6d2f32303039303431302d7068776a34333832683834646b64716d367034377578336368682e706e67"></p>
+<p>Save your changes and click the <strong>View Site</strong> link. If you used the layout code from earlier you’ll notice a handy error message noting that we’re missing a <a class="internal present" href="/m/radiant/radiant/wiki/Snippets">snippet</a>, otherwise you should see your site.</p>
+<div class="markdown-heading"><h2 class="heading-element">A Simple Snippet</h2><a aria-label="Permalink: A Simple Snippet" class="anchor" href="#a-simple-snippet" id="user-content-a-simple-snippet"><svg aria-hidden="true" class="octicon octicon-link" data-component="Octicon" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p>For the benefit of those using the code from above (or anyone interested in the <a class="internal absent" href="/m/radiant/radiant/wiki/snippet-yielding">snippet yielding</a> technique used there) we’ll cover making a snippet that inserts our site’s “used on every page” header and footer elements.</p>
+<p>Click on the <strong>Snippets</strong> tab. Now click the <strong>New Snippet</strong> button.</p>
+<p>Give your snippet a name. For the above layout to work I’ve used the following:</p>
+<div class="snippet-clipboard-content notranslate position-relative overflow-auto" data-snippet-clipboard-copy-content="<div class=&quot;header&quot;>
+  <h1>A Simple Demonstration Site</h1>
+</div>
+
+<r:yield/>
+
+<div class=&quot;footer&quot;>
+  <small>legal information</small>
+</div>"><pre class="notranslate"><code>&lt;div class="header"&gt;
+  &lt;h1&gt;A Simple Demonstration Site&lt;/h1&gt;
+&lt;/div&gt;
+
+&lt;r:yield/&gt;
+
+&lt;div class="footer"&gt;
+  &lt;small&gt;legal information&lt;/small&gt;
+&lt;/div&gt;</code></pre></div>
+<p><img alt="" data-canonical-src="http://img.skitch.com/20090410-eh5jg6hhfdk4162w93uis449f6.png" src="https://camo.githubusercontent.com/ebaa8ac3bdbf98db0ee288b0c0157dce7c20b52a9cc8f8419a3eadfe163bed66/687474703a2f2f696d672e736b697463682e636f6d2f32303039303431302d6568356a6736686866646b3431363277393375697334343966362e706e67"></p>
+<p>Save your changes and click the <strong>View Site</strong> link. Now you have a common header and footer that will be applied to any page you send through your layout.</p>
+<p>Refer to the <a class="internal present" href="/m/radiant/radiant/wiki/Snippets">Snippets</a> page for the more information on snippets.</p>
+<div class="markdown-heading"><h2 class="heading-element">Create a Stylesheet in Radiant</h2><a aria-label="Permalink: Create a Stylesheet in Radiant" class="anchor" href="#create-a-stylesheet-in-radiant" id="user-content-create-a-stylesheet-in-radiant"><svg aria-hidden="true" class="octicon octicon-link" data-component="Octicon" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p>Go back to the <strong>Pages</strong> tab and click the <strong>Add Child</strong> button next to topmost page in your tree. We’re going to use this page to contain our stylesheet. Note: <strong>If you prefer to store your stylesheets and other assets on the file system for performance or other reasons that works fine too, just place your files in the appropriate directory within the <code>public</code> directory in your Radiant project</strong> See Also: <a class="internal present" href="/m/radiant/radiant/wiki/Using-Sass">Using Sass</a>. For ease and demonstration we’re going to do it directly within the Radiant Admin UI.</p>
+<p>Give your stylesheet page a name and insert your <span>CSS</span> code, here is some simple <span>CSS</span> used in this demonstration:</p>
+<div class="snippet-clipboard-content notranslate position-relative overflow-auto" data-snippet-clipboard-copy-content="html {
+  font-family: sans-serif }
+h1 {
+  text-transform: uppercase }
+p {
+  line-height: 1.5 }
+.header {
+  background-color: black;
+  color: white }
+.footer {
+  background-color: inherit;
+  color: #888888;
+  font-size: 75% }"><pre class="notranslate"><code>html {
+  font-family: sans-serif }
+h1 {
+  text-transform: uppercase }
+p {
+  line-height: 1.5 }
+.header {
+  background-color: black;
+  color: white }
+.footer {
+  background-color: inherit;
+  color: #888888;
+  font-size: 75% }</code></pre></div>
+<p>You can save your new stylesheet page now but it’s still not quite ready to be used. We need to create a new layout which we can use to wrap our actual <span>CSS</span> code, the same way we use layouts to wrap our content. The difference here is that instead of using the layout for structure we’re going to use it for serving a different <span>MIME</span> type, namely <code>text/css</code>.</p>
+<p>Click on the <strong>Layouts</strong> tab. Now click the <strong>New Layout</strong> button.</p>
+<p>Give your layout a name, click the <strong>More</strong> link then enter <code>text/css</code> and in the body enter the following:</p>
+<div class="snippet-clipboard-content notranslate position-relative overflow-auto" data-snippet-clipboard-copy-content="<r:content/>"><pre class="notranslate"><code>&lt;r:content/&gt;</code></pre></div>
+<p><img alt="" data-canonical-src="http://img.skitch.com/20090410-rri5ticp8iifhf6qwpip6qjwfh.png" src="https://camo.githubusercontent.com/8f14ccb85e99c7a01adb9727990c7fd780e3b6953e9eac73fce9c892818f55a3/687474703a2f2f696d672e736b697463682e636f6d2f32303039303431302d727269357469637038696966686636717770697036716a7766682e706e67"></p>
+<p>Now save the layout.</p>
+<p>Return to your stylesheet page and set the layout to the new layout you made for wrapping stylesheets.</p>
+<p><img alt="" data-canonical-src="http://img.skitch.com/20090410-eise29h5s5jfnt9xgc8cmijfd8.png" src="https://camo.githubusercontent.com/76b1d5511a236e0d8f75cc6e4190d4f9011ffadf548c5b7b42accdd31eddf505/687474703a2f2f696d672e736b697463682e636f6d2f32303039303431302d656973653239683573356a666e743978676338636d696a6664382e706e67"></p>
+<p>Save the page and click the <strong>View Site</strong> link to see your site with the stylesheet applied.</p>
+<div class="markdown-heading"><h2 class="heading-element">Where to Next?</h2><a aria-label="Permalink: Where to Next?" class="anchor" href="#where-to-next" id="user-content-where-to-next"><svg aria-hidden="true" class="octicon octicon-link" data-component="Octicon" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p>If you’re still feeling uneasy with the building block concept of Radiant reading all the wiki has to offer on <a class="internal present" href="/m/radiant/radiant/wiki/Pages">Pages</a>, <a class="internal present" href="/m/radiant/radiant/wiki/Layouts">Layouts</a> and <a class="internal present" href="/m/radiant/radiant/wiki/Snippets">Snippets</a> should help. If you’re ready to jump in, you probably want to know all there is to know about <a class="internal present" href="/m/radiant/radiant/wiki/Radius-Tags">Radius Tags</a>.</p>
+              </div>
+
+              <div class="tmp-mt-5 Link--muted wiki-footer" id="wiki-footer">
+                <a class="d-block tmp-p-3 Link--muted text-center border border-dashed rounded-2" href="/m/radiant/radiant/wiki/_new?wiki%5Bname%5D=_Footer">
+                  <svg aria-hidden="true" class="octicon octicon-plus mr-1 tmp-mr-1" data-component="Octicon" data-view-component="true" height="16" version="1.1" viewBox="0 0 16 16" width="16">
+    <path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"></path>
+</svg> Add a custom footer
+</a>              </div>
+           <h6>⚠️ **GitHub.com Fallback** ⚠️</h6> </div>
+        </article>
+        <nav id="index">
+            <a href="/m/radiant/radiant/wiki_index">🗂️ Page Index for this GitHub Wiki</a>
+        </nav>
+    </div>
+</body>
+
+</html>

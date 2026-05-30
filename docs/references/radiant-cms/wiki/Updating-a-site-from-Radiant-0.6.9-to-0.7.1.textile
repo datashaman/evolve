@@ -1,0 +1,97 @@
+The transition from Radiant 0.6.x to 0.7.x has a few potential pitfalls. This article lists the straightforward upgrade instructions, followed by a troubleshooting section, which includes common errors and their workarounds.
+
+h2. The simple upgrade path
+
+The following instructions are taken from the "release notes for Radiant 0.7.1":http://radiantcms.org/blog/archives/2009/02/15/radiant-0-7-1---engraving-release-bugfixes/
+
+<ol>
+<li>To install use the gem command (with ‘sudo’ as necessary): <pre><code>gem install radiant</code></pre></li>
+<li>Change the RADIANT_GEM_VERSION constant in config/environment.rb to “0.7.1” or remove it altogether.</li>
+<li>Update the Radiant assets in your project:<pre><code>rake radiant:update</code></pre></li>
+<li>Copy your customizations back into config/environment.rb, if necessary.</li>
+<li>Migrate the database:<pre><code>rake production db:migrate</code></pre></li>
+<li>Restart the server</li>
+</ol>
+
+
+h2. Troubleshooting
+
+<dl>
+<dt>
+<h3>Problem: RSpec problems</h3>
+
+When you run @rake radiant:update@, you see something like:
+
+<pre><code>can't activate rspec (= 1.1.12, runtime), already activated rspec-1.2.0</code></pre>
+</dt>
+<dd>
+<h3>Solution: Ensure you have no rspec versions greater than 1.1.12</h3>
+
+If you have any versions of rspec newer than 1.1.12, you will have to uninstall them. Run the following to see which versions of rspec you have:
+
+<pre><code>gem list | grep rspec</code></pre>
+
+If this were to output, for example:
+
+<pre><code>rspec (1.2.6, 1.2.4, 1.1.3, 1.1.12, 1.1.1)</code></pre>
+
+Then you should run the following commands:
+
+<pre><code>sudo gem uninstall rspec -v=1.2.6
+sudo gem uninstall rspec -v=1.2.4
+sudo gem uninstall rspec -v=1.1.3
+</code></pre>
+
+Try running @rake radiant:update@ again. You should no longer see the error message concerning RSpec (although you may run into one of the other problems listed here). 
+
+When you successfully run @rake radiant:update@, you should be able to reinstall the newer versions of RSpec again. 
+</dd>
+
+<dt>
+<h3>Problem: Extensions in conflict with Radiant 0.7</h3>
+
+When you run @rake radiant:update@, you see something like:
+
+<pre><code>rake radiant:update --trace
+rake aborted!
+uninitialized constant Admin::PageController
+</code></pre>
+</dt>
+<dd>
+<h3>Solution: Ensure that your Extensions are 0.7 compatible</h3>
+
+Many extensions were broken by changes in version 0.7 of Radiant. Extension developers were advised to 'tag' their extensions as 0.6.9, before fixing them to work with version 0.7. For each extension you have installed in your 0.6.9 site, check to see if it has been updated to work with 0.7. If there is a version for 0.7, then install that in place of your existing 0.6 version.
+
+Some extensions will not have been affected by the update from 0.6 to 0.7. If you are unsure whether an extension is safe for 0.7, take a look inside the @/app/controllers@ directory. If there are controllers with names like @page_controller_extensions@ (note in particular, that _page_ is singular), then it is probably not ready for 0.7.
+</dd>
+
+<dt>
+<h3>Problem: System claims that Radiant gem is not installed</h3>
+
+When you try to start the server, or run any rake task, the following is output:
+
+<pre><code>Missing the Radiant 0.7.1 gem. Please `gem install -v=0.7.1 rails`, 
+update your RADIANT_GEM_VERSION setting in config/environment.rb 
+for the Rails version you do have installed, or comment out 
+RADIANT_GEM_VERSION to use the latest version installed.
+</code></pre>
+
+Even though running @gem list@ shows that you have the Radiant 0.7.1 gem installed.
+
+</dt>
+<dd>
+<h3>Solution: Unpack the Radiant gem into your vendor directory</h3>
+
+By unpacking the gem into the vendor directory, we can force Radiant to boot up using that specific version, rather than by loading the gem from the usual path. This workaround has some resemblance to the practice of running Radiant _on edge_, except we'll be using a stable version, instead of the bleeding edge.
+
+<pre><code>cd vendor
+gem unpack radiant -v=0.7.1
+# this creates a directory called radiant-0.7.1
+# rename it
+mv radiant-0.7.1/ radiant/
+</code></pre>
+
+You should now be able to run rake tasks and restart your server without seeing a message about "Missing the Radiant 0.7.1 gem". 
+</dd>
+</dl>
+

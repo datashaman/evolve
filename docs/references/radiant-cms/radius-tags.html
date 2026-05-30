@@ -1,0 +1,268 @@
+<html>
+
+<head>
+    <title> Radius Tags - radiant/radiant GitHub Wiki </title>
+    <style>
+        #main {
+            max-width: 38rem;
+            margin: auto;
+            overflow-wrap: break-word;
+            min-width: 0;
+            background-color: white;
+        }
+
+        body {
+            background-image: url('/callToAction.svg');
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        #header_button {
+            position: sticky;
+            top: 0;
+            padding: 10px;
+            border-style: ridge;
+            border-color: lightgrey;
+            border-width: thin;
+            color: red;
+            font-weight: bold;
+            background-color: honeydew;
+            font-size: large;
+        }
+
+        #header_button p {
+            margin-bottom: 0;
+            margin-top: 10px;
+        }
+
+        #header_info {
+            padding: 10px;
+            border-style: ridge;
+            border-color: lightgrey;
+            border-width: thin;
+            color: red;
+            font-weight: bold;
+            background-color: honeydew;
+            font-size: large;
+        }
+
+        #content,
+        #index {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        #footer_info {
+            position: sticky;
+            bottom: 0;
+            padding: 10px;
+            border-style: ridge;
+            border-color: lightgrey;
+            border-width: thin;
+            color: red;
+            font-weight: bold;
+            background-color: honeydew;
+        }
+
+        #footer_info .blocks {
+            background: black;
+            color: white;
+            /* outline: 1px solid blue; */
+            padding: .1em .2em;
+        }
+
+        /* Hide useless-parts of transcluded HTML */
+        .width-full.input-group {
+            display: none;
+        }
+
+        h5:nth-last-child(2) {
+            display: none;
+        }
+
+        .Box-row.wiki-more-pages-link {
+            display: none;
+        }
+
+        .filter-bar {
+            display: none;
+        }
+
+        .Box-title>.octicon {
+            display: none;
+        }
+
+        .anchor {
+            display: none;
+        }
+
+        pre {
+            overflow: auto;
+        }
+
+        #main {
+            word-wrap: break-word;
+        }
+
+        .Counter {
+            background-color: lightgray;
+            border-radius: 20px;
+            padding: 0 10px;
+        }
+
+        table {
+            max-width: 100%;
+            overflow: auto;
+            width: 100%;
+            display: block;
+        }
+
+        .js-wiki-sidebar-toc-toggle-chevron-button {
+            display: none;
+        }
+
+        a.visit_url_original {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2em; /* adjust as needed */
+            max-height: 1.2em; /* should match line-height */
+            display: block;
+        }
+
+        /* White background for span */
+        /* Rounded corners */
+        /* Black border */
+        .visit_url_pillbar {
+            background-color: white;
+            border-radius: 10px;
+            padding: 5px;
+            margin: 5px;
+            display: block;
+            border: 1px solid black;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Broken Images */
+        img:before {
+            content: "⚠️ MISSING OR BROKEN IMAGE RENDERING ERROR: PLEASE VIEW ORIGINAL PAGE ON GITHUB.COM ⚠️";
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        @font-face {
+            font-family: "color-emoji";
+            src: local("Apple Color Emoji"),
+                local("Segoe UI Emoji"),
+                local("Segoe UI Symbol"),
+                local("Noto Color Emoji");
+        }
+
+        .emoji {
+            font-family: "color-emoji";
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+        }
+
+        .visit_url_link {
+            font-size: xx-large;
+        }
+
+        .why_exist {
+            position: relative;
+            text-align: center;
+            /* italics */
+            font-style: italic;
+        }
+
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Not used, did not want to risk non-indexing. -->
+    <!-- <meta property="og:url" content="https://github.com/radiant/radiant/wiki/Radius-Tags"> -->
+    <!-- Did not want to risk contaminating content to be indexed. -->
+    <!-- <meta property="og:description" content="not used"> -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Radius Tags - radiant/radiant GitHub Wiki">
+</head>
+
+<body>
+    <div id="main">
+        <nav id="header_button">
+            <p>Content mirrored for search engine indexing from:</p>
+            <div>
+                <span class="visit_url_pillbar">
+                    <a href="https://github.com/radiant/radiant/wiki/Radius-Tags" class="visit_url_original">https://github.com/radiant/radiant/wiki/Radius-Tags</a>
+                </span>
+
+            </div>
+            <div class="why_exist">
+                <a href="/">Why does this service exist?</a>
+            </div>
+        </nav>
+        <aside id="header_info">
+            <!-- Last Modified Date added around here from redirect checker-->
+        <p>📅 Last Modified: Wed, 06 Jan 2016 16:42:36 GMT</p></aside>
+        <article id="content">
+            <h1>Radius Tags - radiant/radiant GitHub Wiki</h1>
+            <div id="mirrored"> 
+              <div class="markdown-body">
+                <p>At the heart of Radiant are Radius tags; sometimes just called tag(s) for brevity. A Radius tag is very similar to an <span>HTML</span> tag, if you’re familiar with <span>HTML</span> you’ll feel right at home. Here’s a simple example that demonstrates using <a class="internal present" href="/m/radiant/radiant/wiki/Tags-that-insert-content">tags that insert content</a> to retrieve the current page’s title and <span>URL</span>.</p>
+<div class="snippet-clipboard-content notranslate position-relative overflow-auto" data-snippet-clipboard-copy-content="This page's title is: <r:title/>
+This page's URL is: <r:url/>"><pre class="notranslate"><code>This page's title is: &lt;r:title/&gt;
+This page's URL is: &lt;r:url/&gt;</code></pre></div>
+<p>And here’s the same example except with the addition of a <a class="internal present" href="/m/radiant/radiant/wiki/Tags-that-Change-Page-Context">tag that changes scope</a> so that the current page shows the title and <span>URL</span> of it’s parent page.</p>
+<div class="snippet-clipboard-content notranslate position-relative overflow-auto" data-snippet-clipboard-copy-content="<r:parent>
+  My parent's title is: <r:title/>
+  My parent's URL is: <r:url/>
+</r:parent>"><pre class="notranslate"><code>&lt;r:parent&gt;
+  My parent's title is: &lt;r:title/&gt;
+  My parent's URL is: &lt;r:url/&gt;
+&lt;/r:parent&gt;</code></pre></div>
+<p>Radiant comes with a useful selection of Radius <a class="internal present" href="/m/radiant/radiant/wiki/Radiant-Tag-Reference">tags</a> right out the box and <a class="internal present" href="/m/radiant/radiant/wiki/Adding-Custom-Radius-Tags">adding your own tags</a> is straightforward. As we’ve already seen in the previous example some tags can <a class="internal present" href="/m/radiant/radiant/wiki/Tags-that-insert-content">insert content</a> others can <a class="internal present" href="/m/radiant/radiant/wiki/Tags-that-Change-Page-Context">change the context we're in</a>, behave like <a class="internal present" href="/m/radiant/radiant/wiki/Conditional-Tags">conditional statements</a> or allow you to <a class="internal present" href="/m/radiant/radiant/wiki/Tags-that-Work-with-Collections">iterate over collections</a>. Once you understand the basics of Radius, you should find that the <a class="internal present" href="/m/radiant/radiant/wiki/Radiant-Tag-Reference">tags</a> not covered explicitly are fairly self-explanatory.</p>
+<div class="markdown-heading"><h2 class="heading-element">Basic Usage</h2><a aria-label="Permalink: Basic Usage" class="anchor" href="#basic-usage" id="user-content-basic-usage"><svg aria-hidden="true" class="octicon octicon-link" data-component="Octicon" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95l-2.5 2.5a3.5 3.5 0 0 1-4.95 0 .751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018 1.998 1.998 0 0 0 2.83 0l2.5-2.5a2.002 2.002 0 0 0-2.83-2.83l-1.25 1.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042Zm-4.69 9.64a1.998 1.998 0 0 0 2.83 0l1.25-1.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042l-1.25 1.25a3.5 3.5 0 1 1-4.95-4.95l2.5-2.5a3.5 3.5 0 0 1 4.95 0 .751.751 0 0 1-.018 1.042.751.751 0 0 1-1.042.018 1.998 1.998 0 0 0-2.83 0l-2.5 2.5a1.998 1.998 0 0 0 0 2.83Z"></path></svg></a></div>
+<p>In general, you can use a Radius tag wherever it would be appropriate to use an <span>HTML</span> tag, this means that tags can only be used in <a class="internal present" href="/m/radiant/radiant/wiki/Pages">page</a>, <a class="internal present" href="/m/radiant/radiant/wiki/Layouts">layout</a> or <a class="internal present" href="/m/radiant/radiant/wiki/Snippets">snippet</a> content, but not in names or titles.</p>
+<p>As the <code>&lt;r:parent&gt;</code> example above shows, it is possible to nest Radius tags <strong>within</strong> other Radius tags, so long as they are separate elements. However, <strong>using a Radius tag as the the attribute of another Radius tag is <em><span>NOT</span> <span>ALLOWED</span></em></strong>. For example:</p>
+<div class="snippet-clipboard-content notranslate position-relative overflow-auto" data-snippet-clipboard-copy-content="<r:if_url matches=&quot;<r:parent><r:url/></r:parent>&quot;>...</r:if_url>
+                   ^ DON'T DO THIS, it breaks! ^"><pre class="notranslate"><code>&lt;r:if_url matches="&lt;r:parent&gt;&lt;r:url/&gt;&lt;/r:parent&gt;"&gt;...&lt;/r:if_url&gt;
+                   ^ DON'T DO THIS, it breaks! ^</code></pre></div>
+<p>Now you’re probably wondering, “How can I use variables or constants within the attributes of a Radius tag?” The answer is that you can’t.</p>
+<p>The syntax of Radius is designed so that it fits within the namespace of <span>XML</span>. So if your text editor has syntax highlighting, then the illegal example above will probably <strong>look</strong> wrong.</p>
+<p><strong>Note: You <em><span>CAN</span></em> use Radius tags within the attributes of <span>HTML</span> tags.</strong> For example:</p>
+<div class="snippet-clipboard-content notranslate position-relative overflow-auto" data-snippet-clipboard-copy-content="<body id=&quot;<r:slug/>&quot;>"><pre class="notranslate"><code>&lt;body id="&lt;r:slug/&gt;"&gt;</code></pre></div>
+<p><strong>Radius tags fall into four categories:</strong></p>
+<ul>
+	<li>
+<strong><a class="internal present" href="/m/radiant/radiant/wiki/Tags-that-insert-content">Tags that Insert Content</a></strong> are the self-closing style tags, like <code>&lt;r:title/&gt;</code>, and refer to the different <a href="pages#attributes">page attributes</a> or content. <code>&lt;r:link&gt;</code> and <code>&lt;r:snippet&gt;</code> are notable exceptions that can act as both a self-closing and container element, the <code>&lt;r:navigation&gt;</code> tag is always used as a container.</li>
+	<li>
+<strong><a class="internal present" href="/m/radiant/radiant/wiki/Tags-that-Change-Page-Context">Tags that Change Page Context</a></strong> are the container style tags, like <code>&lt;r:parent&gt;...&lt;/r:parent&gt;</code>, and control from which page the contained tags get their content.</li>
+	<li>
+<strong><a class="internal present" href="/m/radiant/radiant/wiki/Conditional-Tags">Conditional Tags</a></strong> are the container style tags that begin with <code>&lt;r:if_</code> or <code>&lt;r:unless_</code>, like, <code>&lt;r:if_content&gt;we have a body part&lt;/r:if_content&gt;</code> and only render their containing elements when the condition is successfully met.</li>
+	<li>
+<strong><a class="internal present" href="/m/radiant/radiant/wiki/Tags-that-Work-with-Collections">Tags that Work with Collections</a></strong> are the container style tags that don’t fit into another category, like <code>&lt;r:children&gt;...&lt;/r:children&gt;</code> and operate on one or more pages at a time.</li>
+</ul>
+              </div>
+
+              <div class="tmp-mt-5 Link--muted wiki-footer" id="wiki-footer">
+                <a class="d-block tmp-p-3 Link--muted text-center border border-dashed rounded-2" href="/m/radiant/radiant/wiki/_new?wiki%5Bname%5D=_Footer">
+                  <svg aria-hidden="true" class="octicon octicon-plus mr-1 tmp-mr-1" data-component="Octicon" data-view-component="true" height="16" version="1.1" viewBox="0 0 16 16" width="16">
+    <path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"></path>
+</svg> Add a custom footer
+</a>              </div>
+           <h6>⚠️ **GitHub.com Fallback** ⚠️</h6> </div>
+        </article>
+        <nav id="index">
+            <a href="/m/radiant/radiant/wiki_index">🗂️ Page Index for this GitHub Wiki</a>
+        </nav>
+    </div>
+</body>
+
+</html>

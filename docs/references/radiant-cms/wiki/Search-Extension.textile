@@ -1,0 +1,87 @@
+*This How To demonstrates the installation of the search extension, as well as how to patch it for a more versatile search experience. An example is given of how to incorporate a search form into the layout of a page. The example is then modified to provide live search results in place.*
+
+*See Also: "Extension: sphinx_search":http://ext.radiantcms.org/extensions/15-sphinx-search for a possible alternative search extension.*
+
+h2(#install_the_search_extension). Install the search extension
+
+The search extension is available through git at
+
+<pre><code>http://github.com/radiant/radiant-search-extension/tree/master
+</code></pre>
+
+The search extension is not in the extension registry so you will need to refer to the "manual installation instructions":installing-extensions#manual. More information may be available on the "Search extension page":http://github.com/radiant/radiant-search-extension
+
+This provides the tags for creating a search form, and outputting results returned when the form is submitted. The extension provides a new page type, called "Search". These tags may only be used on a page of that type. This is fine if you intend to have a designated search page, but it limits you from providing a site wide search box, as is common today.
+
+h2(#creating_a_search_form). Creating a search form
+
+I want to have a search form visible on every page of the site, so I'm going to put the code directly into my main layout. If you are using multiple layouts for your site, you might prefer to put the following code into a snippet, calling the snippet from each layout:
+
+<pre><code><div id="searchform">
+  <r:search:form submit="Search" url="/search"  exclude_pages="/rss/,/styles.css/,/sitemap.xml/">
+    <r:input value="search" accesskey="s"/>
+  </r:search:form>
+</div><!-- #searchform --></code></pre>
+
+The first radius tag @<r:search:form>@ creates the form itself. As is true of any XHTML form, it is necessary to supply an action. I have provided the URL "/search/", which we will create shortly. The exclude_pages attribute contains a comma-separated list of URLs which should be excluded from the search. Here, I've specified three pages on my site which are not intended for human readers (you may have more). Take care not to put spaces after the commas, or it won't parse properly. 
+
+The second radius tag @<r:input/>@ creates a text field within the search form. If you supply no additional attributes, this tag will expand to @<input type="text" name="q">@. It is not possible to override the values of type and name. You can, however, provide any other attributes that an @<input>@ tag would normally accept. Here, I've added an initial value of "Search", which will be displayed in the text field initially. I have also provided an accesskey of "s", to enable better accessibility. Be sure to save your changes before proceeding.
+
+h2(#creating_a_search_page_to_display_the_results). Creating a Search page to display the results
+
+In our search form we supplied @url="/search"@, so lets create a page with that URL to deal with the form when it is submitted. Add a child to the home page of your site, and give it the title "Search results". Now click 'more' below the title field to expose slug and breadcrumbs. Leave the breadcrumb as is, but change the slug to 'search'. Now our page resolves to the URL "/search/", and our search form can submit its results this way.
+
+If you click 'Available tags' in the editing area, then enter into its 'Search tags' filter the word 'Search', you should see the following tags: @<r:search>@, @<r:search:form>@, and @<r:search:form:input>@. These tags are available on normal pages, and we already used them in creating our search form. Now change the page type from "normal" to "Search". Go back into 'Available Tags' and repeat your search for tags with the word "Search". You should now see plenty more options, for dealing with search results. 
+
+Enter the following into your search page:
+
+<pre><code><div id="results">
+  <r:search:empty>
+    <em>Nothing found for "<r:search:query/>".</em>
+  </r:search:empty>
+  <r:search:results>
+    Found the following pages that contain "<r:search:query/>".
+    <ol>
+      <r:search:results:each>
+        <li>
+          <h3><r:link/> - by <r:author/></h3>
+          <r:search:highlight length="100"><r:content/></r:search:highlight>
+        </li>
+      </r:search:results:each>
+    </ol>
+  </r:search:results>
+</div></code></pre>
+
+@<r:search:highlight length="100"><r:content/></r:search:highlight>@ Highlights the search keywords from the content of the contained block. It strips all HTML tags and truncates the relevant part. Useful for displaying a snippet of a found page. The optional 'length' attribute specifies how many characters to truncate to.
+
+Save your page, and now take a look at your site. You should have a search form visible on every page. Type some text into the form and press enter, and you should be taken to your search results page. 
+
+For more information, check the "readme":http://github.com/radiant/radiant-search-extension/tree/master
+
+h2(#upgrade_to_ajax_live_search). Upgrade to AJAX live search
+
+This step is optional. If your site is large, then it may be inappropriate to present results in place, because there is currently no means to limit the number of results returned. On a small site however, live search will add a touch of polish to impress your visitors.
+
+h3(#import_prototype). Import Prototype
+
+The live search functionality depends on the prototype javascript library. When you create a Radiant project, prototype is installed by default in the directory @/public/javascripts/prototype.js@, so all you need to do is add the following line of code to the @<head>@ section of your layout(s):
+
+<pre><code><script src="/javascripts/prototype.js" type="text/javascript" charset="utf-8"></script></code></pre>
+
+h3(#modify_the_search_form). Modify the search form</h3>
+
+We only need to make a couple of small changes to our search form to enable live search. First of all, we need to provide a container in which the results can be displayed. So create a @<div id="search_results"></div>@ immediately after the search form. Best to leave the div empty, because its contents will be replaced with the search results when the form is submitted.
+
+Two additional attributes need to be added to the @<r:search:form>@ tag. You need to tell it where to display the results, with @ajax_results="search_results"@ (this being the empty div we just created). You can also specify an interval of time which should elapse between the user typing and the form being submitted. The default value is 500 milliseconds, but lets just make that explicit by adding @ajax_delay="500"@. 
+
+Your search form should now look something like this:
+
+<pre><code><div id="search">
+  <r:search:form action="/livesearch/" ajax_results="search_results" ajax_delay="500"
+   exclude_pages="/rss/,/styles.css/,/sitemap.xml/">
+    <r:input value="search" accesskey="s"/>
+  </r:search:form>
+  <div id="search_results"></div>
+</div></code></pre>
+
+Now save your page and go back to the website. Try typing something in your search form. You should see the output from your /search/ page going directly into the container div called "search_results". And there you have it: live search!

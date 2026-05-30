@@ -1,0 +1,43 @@
+h1. Prerequisites
+
+h2. JBoss Rails
+
+This assumes you have a working "JBoss Rails":http://oddthesis.org/ already installed.  If not, please see its own instructions.
+
+h2. Install the JBoss Rails Support package into your Radiant project
+
+<pre>
+cd vendor/plugins
+unzip jboss-rails-support.zip
+</pre>
+
+h2. Install the JDBC driver for your database
+
+<pre>
+rake jboss:gems:jdbc:install
+</pre>
+
+h2. Freeze and get to edge
+
+<pre>
+rake radiant:edge:freeze
+rake radiant:update
+rake db:migrate
+</pre>
+
+h2. Create a symlink to vendor/rails/
+
+Until an issue is fixed in JBoss Rails, you'll need a symlink
+
+<pre>
+cd vendor
+ln -s radiant/vendor/rails ./rails
+</pre>
+
+h2. Deploy
+
+<pre>
+rake jboss:rails:deploy
+</pre>
+
+h2. Have a beer.

@@ -1,0 +1,23 @@
+h2. Symptoms
+
+After upgrading the posting date fields are no longer visible when publishing a page.
+
+h2. The problem
+
+In 0.6.8, these fields were made invisible unless a certain config option is set.
+
+h2. The Solution
+
+To turn them on, from the console or inside an extension, run this:
+
+<pre><code>Radiant::Config['page.edit.published_date?'] = true</code></pre>
+
+For example, this is what you might see if running the command at the console:
+
+<pre><code>script/console production
+Loading production environment (Rails 2.0.2)
+>> Radiant::Config['page.edit.published_date?'] = true
+=> true
+>> quit</code></pre>
+
+Don't forget the "production" after "script/console", otherwise you will end up changing the config option in the development environment, which is probably not what you want.

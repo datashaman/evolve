@@ -1,0 +1,9 @@
+When you have a very long pages, split it up into multiple parts for each section. Then in the Body Part, arrange the parts in order using the Radius content tag. 
+
+This way your layouts are not cluttered with multiple parts and you can still divide the page into smaller chunks.
+
+This is very useful when writing a page that contains ruby code that has to be highlighted: Create a page part like source_filename that is enclosed in @<r:code>@ tags and in the main article just do @<r:content part="source_filename"/>@
+
+It also allows you to change the order of the parts if you need to add one part in between two others.
+
+Another option is to put the page parts in child-pages.

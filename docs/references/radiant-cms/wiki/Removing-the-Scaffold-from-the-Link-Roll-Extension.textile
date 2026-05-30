@@ -1,0 +1,234 @@
+*This article should be considered a follow up to the original [[Creating a Link Roll Extension]] tutorial. If you have already followed that article, this picks up where it left off.*
+
+Scaffolding is very useful for quickly mocking up a controller and views, but the results are not what you could call a finished product. This article attempts to show how to make your Radiant extension look as though it belongs in Radiant.
+
+h2. Routes
+
+In @link_roll_extension.rb@, set the following routes
+
+<pre><code>define_routes do |map|
+  map.with_options(:controller => 'admin/links') do |link|
+    link.link_index           'admin/links',             :action => 'index'
+    link.link_new             'admin/links/new',         :action => 'new'
+    link.link_edit            'admin/links/edit/:id',    :action => 'edit'
+    link.link_remove          'admin/links/remove/:id',  :action => 'remove'
+  end
+end</code></pre>
+
+These rules define named routes for each of the 4 actions listed above. You can see a list of these by running @rake routes@ at the command line, e.g.:
+
+<pre><code>rake routes | grep link
+# output:
+  link_index   /admin/links             {:controller=>"admin/link", :action=>"index"}
+  link_new     /admin/links/new         {:controller=>"admin/link", :action=>"new"}
+  link_edit    /admin/links/edit/:id    {:controller=>"admin/link", :action=>"edit"}
+  link_remove  /admin/links/remove/:id  {:controller=>"admin/link", :action=>"remove"}</code></pre>
+
+Later, when we create the views, we will be using named routes such as @link_edit_url@ and @link_remove_url@, to create links to edit or remove a page. The named routes are also used in the @Admin::AbstractModelController@, which provides a lot of functionality for free. If your routes don't exactly match those listed above, then the extension might not work as expected, so go back and check now.
+
+h2. Controller
+
+In @/app/controllers/admin/links_controller.rb@, replace:
+
+<pre><code>class Admin::LinksController < ApplicationController
+  scaffold
+end</code></pre>
+
+with:
+
+<pre><code>class Admin::LinksController < Admin::AbstractModelController
+  model_class Link
+end</code></pre>
+
+The @Admin::AbstractModelController@ defines actions for an abstract model, and by specifying @model_class Link@, the Link model acquires all of this behaviour for free.
+
+h2. Views
+
+The actions defined in the @Admin::AbstractModelController@ require only 3 views: index, edit and remove. Conveniently, the @edit@ page can be used for the @new@ and @edit@ actions.
+
+Create the following 3 files: 
+
+* @link_roll/app/views/admin/index.html.erb@
+* @link_roll/app/views/admin/edit.html.erb@
+* @link_roll/app/views/admin/remove.html.erb@
+
+The code for each of these follows:
+
+<pre><code># link_roll/app/views/admin/index.html.erb
+
+<% include_stylesheet 'admin/links/links' %>
+
+<h1>Links</h1>
+
+<p>You can enter links here, which will show up on the public side of your website.</p>
+
+<table cellspacing="0" cellpadding="0" border="0" class="index" id="links">
+
+  <thead>
+    <tr>
+      <th class="link">Link</th>
+      <th class="modify">Modify</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <%# @links.each do |link| %>
+    <% Link.find(:all).each do |link| %>
+      <tr class="node level-1">
+        <td class="link">
+          <%# image('links/link') %>
+          <%= link_to link.title, link_edit_url(:id => link.id) %>
+        </td>
+        <td class="remove">
+          <%= link_to image('remove', :alt => 'Remove link'), link_remove_url(:id => link.id) %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+
+</table>
+
+<p><%= link_to image("links/new-link", :alt => "New link"), {:action => :new} %></p></code></pre>
+
+<pre><code># link_roll/app/views/admin/edit.html.erb
+
+<% include_stylesheet 'admin/links/links' %>
+
+<% if @link.new_record? %>
+  <h1>New link</h1>
+<% else %>
+  <h1>Edit: <%= @link.title %></h1>
+<% end %>
+
+<% form_tag do %>
+  <div class="form-area">
+    <div  id="link_form_area">
+      <p class="title">
+        <label for="link_title">Title</label>
+        <%= text_field "link", "title", :class => 'textbox', :maxlength => 255 %>
+      </p>
+
+      <p class="url">
+        <label for="link_url">URL</label>
+        <%= text_area "link", "url", :class => 'textbox', :maxlength => 255 %>
+      </p>
+
+      <p class="description">
+        <label for="link_description">Description</label>
+        <%= text_area "link", "description", :class => 'textbox', :maxlength => 255 %>
+      </p>
+
+       <span class="clear">&nbsp;</span>
+    </div>
+  </div>
+
+  <p class="buttons">
+    <%= save_model_button(@link) %>
+    <%= save_model_and_continue_editing_button(@link) %>
+    or 
+    <%= link_to "Cancel", {:action => :index} %>
+  </p>
+<% end %></code></pre>
+
+<pre><code># link_roll/app/views/admin/remove.html.erb
+
+<h1>Remove Link</h1>
+
+<p>Are you sure you want to <strong class="warning">permanently remove</strong> the following link?</p>
+
+<table class="index" id="links" cellpadding="0" cellspacing="0" border="0">
+  <tbody>
+    <tr class="node level-1">
+      <td class="link">
+        <%= image('links/link', :alt => 'link-icon') %>
+        <%= h @link.title %>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<% form_tag do %>
+  <p class="buttons">
+    <input class="button" type="submit" value="Delete Link"/>
+    or
+    <%= link_to 'Cancel', link_index_url %>
+  </p>
+<%- end -%></code></pre>
+
+h2. Assets
+
+If you launch your Radiant site now, you should find that the admin area includes an extra "Links" tab, and that it is capable of listing Links, adding new links and editing or deleting existing links. But the extension looks unfinished. It doesn't stand up well beside the admin for the default Radiant models: Pages, Snippets and Layouts. In this section, we will add a stylesheet, and a couple of icons for links, just to add the final gloss.
+
+h3. Styles
+
+In the views above, we included the line: @<% include_stylesheet 'admin/links/link' %>@. We need to create a stylesheet at this location within the @public/stylesheets@ directory of our Radiant site. 
+
+Create the following file: 
+
+* @link_roll/public/stylesheets/admin/links/links.css@
+
+And paste into it the following code:
+
+<pre><code>#content table.index .node .link {
+    font-size:115%;
+    font-weight:bold; }
+
+#content table.index .node .link a, 
+#content table.index .node .link a:visited {
+    color:black;
+    text-decoration:none; }
+
+#content .form-area #link_url.textbox,
+#content .form-area #link_description.textbox {
+    font-size:150%;
+    height:200px;
+    width:100%; }
+
+#content .form-area .title .textbox {
+    font-family:Georgia,Palatino,"Times New Roman",Times,serif;
+    font-size:200%;
+    width:100%; }
+
+#content #link_form_area{
+    width:500px; }
+
+#content #link_form_area .row {
+    clear:both;
+    height:1em;
+    margin:1em 0;
+    width:100%; }
+
+#content .form-area .url,
+#content .form-area .description {
+    margin-bottom:1em;
+    margin-top:1em; }
+
+#content .index tr.inactive td.link a,
+#content .index tr.inactive td.link a:visited{
+    font-style: italic;
+    text-decoration: line-through; }</code></pre>
+
+h3. Images
+
+In the @index.html.erb@ view above there are a couple of image tags. We need to add these to the @public/images/@ directory of our Radiant site, so that it can find them. Here are two example icons.
+
+!{max-width:667px}http://img.skitch.com/20081002-hfftepaspy6b3qakeg95jtbum.png!
+
+!{max-width:667px}http://img.skitch.com/20081002-t4yy6ysrd7n2exn1tab4r5fdgp.png!
+
+Save these images from this page, to the following locations:
+
+* @link_roll/public/images/admin/links/link.png@
+* @link_roll/public/images/admin/links/new-link.png@
+
+If you want to roll your own, you can use the buttons that come with Radiant as a starting point. A good source of icons is the "famfamfam library":http://www.famfamfam.com/lab/icons/silk/. The font used by the buttons in Radiant is 11pt Verdana, without anti-aliasing.
+
+h3. Copying assets from the extension to the app
+
+At the moment, our new images and stylesheet are locked within the extension, out of reach of the Radiant site. We need to run a rake task to copy them into the @/public@ directory of our Radiant site, where they can be used. Run the following:
+
+<pre><code>rake radiant:extensions:link_roll:update</code></pre>
+
+This should copy everything in the @public@ directory of your extension into the @public@ directory of your Radiant app. If you navigate to @http://localhost:3000/admin/links@, you should find that the listings page is styled in a manner consistent with the rest of the Radiant interface.
+
+It can become confusing when you are developing an extension, and you have two copies of the same stylesheet; one in the public directory of the extension, and the other in the public directory of your Radiant site. You should always consider the version inside your extension as being the _master_. If you want to modify your stylesheet, change the version in your extension, then copy the changes across by running @rake radiant:extensions:link_roll:update@, which will copy your master version into the Radiant site, overwriting the existing version, if one exists.

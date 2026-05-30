@@ -1,0 +1,79 @@
+You've signed up for a "PrimeHosting":http://www.primehosting.co.uk/ Personal Shared account and paypal'd your first year's subscription, and just got the email with subject "Prime Hosting Limited :: Your Login Information" wherein all your login details are listed.
+
+You need to email support@primehosting.co.uk and and ask them to install Radiant as a GEM and enable shell access. When support email you back to confirm this has been done,
+
+<pre><code>radiant --unpack radiantsite</code></pre>
+
+Now switch to a web browser (don't close the session as we'll come back to that in a moment) and visit http://your.server.ip.address/cpanel and login with the usual details.
+
+Click 'MySQL Databases', 3rd row and 3rd colomn, and in the first section, 'Current Databases', enter to the right of "New Database:" @radiantdev@ and click 'Create Database'
+
+Then click 'Go Back' and repeat for two more databases: @radianttest radiantlive@
+
+Now in the 2nd section, 'Current Users', add the user @rdb@ with a simple password that will only be used to access these databases. Then click 'Go Back' and in the 3rd section, 'Add Users To Your Databases', click 'Add User to Database'.
+
+Then click 'Go back' and on the drop down menu to the right of 'Database:' select 'username_radiantlive' and click 'Add User to Database'
+
+Then click 'Go back' and on the drop down menu to the right of 'Database:' select 'username_radianttest' and click 'Add User to Database'
+
+Now go back to the command prompt and:
+
+<pre><code>cd radiantsite/
+cp config/database.mysql.yml config/database.yml</code></pre>
+
+Now edit this file:
+
+<pre><code>nano config/database.yml</code></pre>
+
+To be as follows, replaceing username with your username and yourpassword with the mysql password you created a moment ago:
+
+<pre><code>development:
+   adapter: mysql
+   database: username_radiantdev
+   username: username_rdb
+   password: yourpassword
+   socket: /tmp/mysql.sock
+
+ test:
+   adapter: mysql
+   database: username_radianttest
+   username: username_rdb
+   password: yourpassword
+   socket: /tmp/mysql.sock
+
+ production:
+   adapter: mysql
+   database: username_radiantlive
+   username: username_rdb
+   password: yourpassword
+   socket: /tmp/mysql.sock</code></pre>
+
+Now we can initialise the database:
+
+<pre><code>script/setup_database production</code></pre>
+
+At the end of this you will be asked to select a database template.  You can pick any of these, but 3 is best if you've never used Radiant before as the Styled Blog shows off its features and best practices.
+
+Now we link Radiant to Apache with these three commands:
+
+<pre><code>cd ~
+rm -rf public_html
+ln -s radiant/public public_html</code></pre>
+
+Finally, we add some directives to Radiant's .htaccess that are specific to PrimeHosting:
+
+<pre><code>nano public_html/.htaccess</code></pre>
+
+Add these two lines to the top to make sure UTF8 XHTML validates:
+
+<pre><code># PrimeHosting
+AddDefaultCharset UTF-8</code></pre>
+
+And Radiant is now installed. The cost of it being that easy is that you'll have to wait up to an hour for PrimeHosting to kickstart the Rails process for you. When its started, you can see the ruby process by:
+
+<pre><code>ps aux | grep lesb | grep ruby</code></pre>
+
+Which will show output similar to:
+
+<pre><code>username  16333  0.3  1.2 29740 25268 ?       S    15:13   0:01 ruby dispatch.fcgi
+username  21834  0.0  0.0  3492  480 ?        S+   15:20   0:00 grep ruby</code></pre>

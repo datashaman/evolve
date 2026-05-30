@@ -1,0 +1,50 @@
+h2. Motivation
+
+Assume you have the following situation.  You have 1 or more rails/php/ColdFusion/.NET applications that manipulate data and the data is stored in a PostgreSQL database.  You are now deploying Radiant and want to pull information from those applications into extensions/tags written for Radiant.  The question is how do you deploy radiant and obtain access to those tables (even if some table names are in conflict)?
+
+h2. Solution
+
+Divide the database into schemas.  Each user will have their own schema and the schema search path can be altered so that each user will find their tables first, and still have access to other users' tables.  For users of JRuby and the postgres JDBC adapter, you may not be able to use this how-to as it is.  This appears to work with MRI Ruby and the regular Postgres adapter.
+
+h3. Schemas
+
+Most people are familiar with creating databases and users.  Normally the mapping between databases and applications is 1 to 1, so that a given application, including radiant, has its own separate database.  For example, it is common practice to create a database, create a user, and then grant admin rights to that user on the given database.  When the user uses rake to create their tables, they will create those tables in the PUBLIC schema.  
+
+A database, however, can be split up between multiple users using schemas.  You can think of a schema as a namespace for tables that also provides security.  By creating a schema for user, and granting them rights on that schema, the user will create tables on that schema instead of public.  For example, SCHEMA_INFO is created in the user's schema instead of in the PUBLIC schema.  Each user can have their own private copy of SCHEMA_INFO.
+
+h3. Privileges
+
+A user normally cannot see the schemas of other users.  They must explicitly be given permissions to access the schemas and any objects within those schemas.  For example, simply creating additional schemas and creating tables in those schemas will probably not be visible to existing users.  If you create the RADIANT schema, bootstrap the database within the RADIANT schema, and login as the RADIANT user, you may only see the radiant user's tables.
+
+In order to be able to see what objects (tables) are available in other schemas, the DBA will need to grant the USAGE permission to the Radiant user on the target schema to see tables in those schemas.  However, when the Radiant user tries to select data from those tables, they will generally be given a permission denied (unless the user has admin rights).  In addition to the USAGE permission on the target schema, the radiant user must be given SELECT/INSERT/UPDATE/DELETE privileges on the tables (as required).
+
+h3. Search Path
+
+The order in which users look for objects in the PostgreSQL database is based on the schema search path.  The default for all users is $user,public.  That is, they will first check their own schemas and failing that, they will check in the public schema.  Normally this defaults to the public schema unless a user schema is created.  The search path can be set, on a user basis, to look through any arbitrary list of schemas.  For example, the Radiant user would look first through the Radiant schema and then through all other schemas.
+
+h2. Example
+
+Assume we have application A and a radiant instance.  The database user for the application A connection is AUSER and the user for Radiant is RADIANT.  We will assume the schema for AUSER exists and that it is in a schema called 'APP.'  If this is not the case, the DBA will need to move the tables into an appropriate schema.  Log in as the postgres (admin) user into the target database.  As the postgres admin user you will need to accomplish the following tasks:
+
+<pre><code>CREATE USER radiant PASSWORD 'radiant';
+CREATE SCHEMA radiant;
+GRANT ALL ON SCHEMA radiant TO USER radiant;
+ALTER USER radiant SET search_path TO RADIANT,APP,PUBLIC;
+GRANT USAGE ON SCHEMA APP TO RADIANT;
+</code></pre>
+
+At this point we have a user called radiant, with a password of 'radiant.'  (Note that you would need to set whatever names or values you need to conform to your security requirements).  When the database is bootstrapped, the tables will appear as RADIANT.[TABLE NAME] as opposed to PUBLIC.[TABLE NAME].  This includes the SCHEMA_INFO table.  When the user looks for a table not listed in their own schema, the next schema to search is APP.  You can list other schemas in this list as well.
+
+Let's assume that a radiant extension will list some catalog information stored in the database in the APP schema. The involved tables are APP.INVENTORY, APP.PRICING, APP.PAGES, APP.CATALOG, and APP.CATEGORIES.  Note that we have name conflicts with tables in the Radiant user schema.  
+
+<pre><code>GRANT SELECT ON APP.INVENTORY TO radiant
+GRANT SELECT ON APP.PRICING TO radiant
+GRANT SELECT ON APP.CATALOG TO radiant
+GRANT SELECT ON APP.PAGES TO radiant
+GRANT SELECT ON APP.CATEGORIES TO radiant</code></pre>
+
+Now, you should be able to log into the database as the radiant user and execute @SELECT * FROM INVENTORY@ and be able to see the contents of the APP.INVENTORY table.  Generally, you will be able to refer to the tables without the schema prefix.  But what happens when you type @SELECT * FROM PAGES@?  The result is you will get the RADIANT.PAGES table as opposed to the APP.PAGES table.  In order to specify the APP.PAGES table, you must use the full name, including the schema, in your SQL (@SELECT * FROM APP.PAGES@).  If you are creating models to access the INVENTORY, PRICING, CATALOG, PAGES and CATEGORIES tables, you will only need to explicitly set the table name in the PAGES model.
+
+h2. Limitations
+
+There's the issue with JRuby and the JDBC Postgres driver inserting the user's name as the table's schema name.  For example, you may run into problems if your Radiant username is not 'radiant,' but something like 'cms_user.'  We're still experimenting with this setup but it appears to work at some level.  We have done something similar with SQL Server, but instead of using the schema search paths, we used synonyms.  Your comments and observations are welcome.

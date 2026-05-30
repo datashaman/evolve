@@ -1,0 +1,93 @@
+h2. 32-bit Windows
+
+These instructions include a few assumptions and limitations:
+
+* Radiant doesn't work so well under Ruby 1.9.1 p378 (RC2).
+* Using the latest RubyInstaller for Ruby 1.8.7 p249 (RC2), everything works out great, including native extensions.
+* SQLite3 is used as the database here. This assumes that @sqlite3.dll@ is installed in @C:\windows\system32@ or somewhere else in the %%PATH%%.
+* Thin is used as the web server here.
+
+h3. Update RubyGems
+
+First thing is to grab all of the necessary gems. Some of these include native extensions, which should build just fine if using the latest RubyInstaller:
+
+<pre><code>gem update --system
+gem install rails
+gem install cucumber --version "< 0.4"  # Cucumber 0.4.0 through 0.6.3 have an
+                                        # incompatibility with Radiant.
+gem install sqlite3  # Or a database that works for you
+gem install thin  # Or a web server that works for you
+gem install radiant</code></pre>
+
+note: thin would not install on windows, and I had to run: "gem install RedCloth -v 4.2 --platform=x86-mswin32-60" before being able to get radiant to install.
+
+h3. Application Server
+
+This demonstration assumes you are using Thin. You can also try:
+
+h4. Mongrel or Webrick
+
+Install the Mongrel Gem and of course Ruby comes with the Webrick server, either of which work fine with Radiant. If you're going to use Mongrel make sure you have the latest version:
+
+<pre><code>sudo gem update mongrel</code></pre>
+
+h4. Apache with Passenger
+
+This may be more advanced. Maybe not.
+
+h3. Setup a new site
+
+Now you can use the @radiant@ command to generate a new site by running:
+
+<pre><code>  radiant --database sqlite3 example_application
+  cd example_application
+  rake db:bootstrap
+</code></pre>
+
+When asked if you want to destroy any data in the database enter @y@ and press return, you don't even have a database yet so there is nothing to worry about being destroyed. Enter your name (i.e. Joe Smith), username (i.e. joe) and password when prompted. If you intend to follow along with the [[Getting Started]] article you should choose the "Empty" template by entering @1@ and pressing return, otherwise enter the number corresponding to the template you'd like to use.
+
+h3. Start Radiant
+
+If you're using Mongrel or Webrick run:
+
+<pre><code>ruby script\server</code></pre>
+
+If you're using Thin run:
+
+<pre><code>thin start</code></pre>
+
+Visit "http://localhost:3000/":http://localhost:3000/
+
+h2. Radiant Extensions
+
+Radiant has developed an incredible extension platform, complete with an installer that fetches extensions, unpacks them, and installs them using one of several methods (git, copy, svn). However, it is not compatible with Windows yet. You can temporarily fix it in two perhaps complicated steps:
+
+h4. Modify the Registry::Extensions classes
+
+The Radiant file @C:\Ruby\lib\ruby\gems\1.8\gems\radiant-0.8.1\lib\radiant\extension\script.rb@ contains a handful of @system()@ calls as well as @``@ calls. Each of these which includes a @;@ needs to be modified. I did so like in this example:
+
+<pre><code>    def checkout
+      self.path = File.join(Dir.tmpdir, name)
+      system "cd #{Dir.tmpdir}; #{checkout_command}"
+    end</code></pre>
+
+changes to
+
+<pre><code>    def checkout
+      self.path = File.join(Dir.tmpdir, name)
+      if RUBY_PLATFORM =~ /mingw/i
+        system "cd #{Dir.tmpdir} & #{checkout_command}"
+      else
+        system "cd #{Dir.tmpdir}; #{checkout_command}"
+      end
+    end</code></pre>
+
+Or you could just change each @;@ in a system or back tick call into @&@.
+
+h4. Granting cmd.exe access to Git
+
+Lots of the system and back tick calls in this file reference git. In order to use git to install extensions as submodules, cmd.exe needs a valid @git@ command. If you are using the msys-based Git from "http://code.google.com/p/msysgit/":http://code.google.com/p/msysgit/ , then you can allow git commands to be executed from cmd.exe (or the calls in that Ruby code) via adding a tiny @git.bat@ file into @C:\Ruby\bin@:
+
+<pre><code>C:\WINDOWS\system32\cmd.exe /c ""C:\Program Files\Git\bin\sh.exe" --login -i -c "git %*""</code></pre>
+
+Change the path to Git Bash (@C:\Program Files\Git\bin\sh.exe@) if you need.

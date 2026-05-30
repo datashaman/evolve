@@ -1,0 +1,7 @@
+It is recommended to use the Gentoo package management system to install radiant.
+
+$ sudo emerge radiant
+
+You will also need to install support for the specific database you want to use, for example in the case of sqlite3:
+
+$ sudo emerge sqlite3-ruby

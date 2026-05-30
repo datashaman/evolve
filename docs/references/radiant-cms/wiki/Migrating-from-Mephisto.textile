@@ -1,0 +1,43 @@
+There is an extension called "import_mephisto":http://github.com/martinbtt/radiant-import-mephisto/tree/master which handles the migration. Here are step-by-step instructions:
+
+h2. 1. Setup a clean install of Radiant and freeze to the Edge version
+
+Note from page editor: I've used this extension twice. Once to test it and that was with the Roasters template and second time, when I was sure it was good to use, with my site on a clean install with empty template.
+
+h2. 2. Install the comments extension.
+
+This extension requires "will_paginate Rails plugin":http://github.com/mislav/will_paginate/tree/master (check the "installation page":http://wiki.github.com/mislav/will_paginate/installation) and "fastercsv 1.2.3":http://fastercsv.rubyforge.org/ or greater.
+
+If you have will_paginate installed already, add the following at the very bottom of @config/environment.rb@ after the end of the Initializer block:
+
+<pre><code>require "will_paginate"</code></pre>
+
+Next up,
+
+<pre><code>./script/extension install comments</code></pre>
+
+
+h2. 3. Install the import_mephisto extension
+
+<pre><code>./script/extension install import_mephisto</code></pre>
+
+h2. 4. Update your @database.yml@ to include an entry for 'mephisto:' with details of your Mephisto database.
+
+<pre><code>mephisto:
+  adapter: mysql
+  database: database_name
+  username: user_name
+  password: password
+  host: localhost</code></pre>
+
+h2. 5. Duplicate your @config/environments/development.rb@ and rename it @mephisto.rb@
+
+<pre><code>cp config/environments/development.rb config/environments/mephisto.rb</code></pre>
+
+h2. 6. And finally
+
+<pre><code>rake radiant:extensions:import_mephisto:run</code></pre>
+
+Note from page editor: All my posts (and comments) were transferred from Mephisto but I couldn't see the posts in the Admin area. This was because all the posts were transfered with @parent_id@'s value of @NULL@. I had to update the @parent_id to be the same as the Articles page's id and all is good.
+
+All other assets, such as images were not transferred. Even though, this extension can save you heaps of time and effort :)

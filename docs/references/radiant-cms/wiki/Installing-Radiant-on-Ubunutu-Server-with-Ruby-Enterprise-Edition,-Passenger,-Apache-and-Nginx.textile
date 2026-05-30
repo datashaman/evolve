@@ -1,0 +1,260 @@
+h2. Table of contents
+
+# "Introduction":#intro
+# "Getting ready":#ready
+# "Ruby Enterprise Edition installation":#ree
+# "Nginx & Apache installation":#nginx-apache
+# "Passenger installation":#passenger
+# "Radiant setup":#radiant
+# "Apache mod_xsendfile setup":#xsendfile
+# "Nginx reverse proxy setup":#nginx-proxy
+# "Miscellaneous configuration options":#misc
+
+h2(#intro). Introduction
+
+This is an overview of installing Radiant with the focus being on putting Apache+Passenger behind Nginx which serves requests for static files and leaves only dynamic requests to the backend.
+
+It may be helpful if you don't have your real domain name setup to point at your Radiant site to setup *example.com* to point at it. Open your @/etc/hosts@ file and add:
+
+<pre><code>123.45.67.890 example.com</code></pre>
+
+You'd want to use your slice's IP address.
+
+h2(#ready). Getting ready
+
+Before you begin it's a good idea to ensure your system is completely up to date. To do this run:
+
+  aptitude update
+  aptitude -y full-upgrade
+
+If there were upgrades you may need to restart the system before they take effect. If that's the case run:
+
+  shutdown -r now
+
+h2(#ree). Ruby Enterprise Edition installation
+
+Installing Ruby Enterprise Edition is pretty simple. Start by installing the packages REE depends on:
+
+    aptitude -y install build-essential zlib1g-dev libssl-dev libreadline5-dev libsqlite3-dev
+
+Although REE doesn't actually depend on @libsqlite3-dev@ I threw it in so that when the REE installer gets to the "installing useful libraries" phase it will be able to successfully install the @sqlite3-ruby@ Gem.
+
+Now we're ready to download and install REE. *20090610* is the current release, but make sure you check the "Phusion website for a more recent release":ree_download it appears a new release is coming up soon.
+
+  cd /usr/local/src
+  wget http://www.rubyenterpriseedition.com/ruby-enterprise-1.8.6-20090610.tar.gz
+  tar xzvf ruby-enterprise-1.8.6-20090610.tar.gz
+  cd ruby-enterprise-1.8.6-20090610
+  ./installer
+
+I install REE into @/opt/ree@ and will assume that location for the rest of the article. Now we need to tell the system to look in the REE @bin@ directory.
+
+  nano /etc/environment
+  PATH="/opt/ree/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:..."
+
+Now just reload the @environment@ file and you should be all set.
+
+  source /etc/environment
+  which ruby
+
+If you don't see @/opt/ree/bin/ruby@ after that last command something went wrong. Barring some kind of typo you may want to try following the installation instructions from the "official documentation":ree_document.
+
+[ree_download]http://www.rubyenterpriseedition.com/download.html
+[ree_document]http://www.rubyenterpriseedition.com/documentation.html
+
+h2(#nginx-apache). Nginx &amp; Apache installation
+
+Next, we're just going to get Nginx and Apache installed and serving their default pages. The actual configurations will come later as we're setting up the Radiant site.
+
+  aptitude -y install nginx apache2-mpm-worker apache2-threaded-dev
+
+For whatever reason Ubuntu decides to start Apache as soon as it's installed and not Nginx, so Apache will now be running on port 80 where we want Nginx to be. Fixing that is as easy as telling Apache to run on some other port, I'll use 8000:
+
+Stop the Apache currently running on port 80:
+
+  /etc/init.d/apache2 stop
+
+Edit the Apache port configuration:
+
+<pre><code>nano /etc/apache2/ports.conf
+NameVirtualHost *:8000
+Listen 8000</code></pre>
+
+Edit the default site configuration:
+
+<pre><code>nano /etc/apache2/sites-available/default
+<VirtualHost *:8000></code></pre>
+
+Restart Apache now running on port 800 and start Nginx:
+
+<pre><code>/etc/init.d/apache2 start
+/etc/init.d/nginx start</code></pre>
+
+Now you should be able to access your "Welcome to nginx!":n1 and "It works!":a1 default server pages.
+
+[n1]http://example.com/
+[a1]http://example.com:8000/
+
+h2(#passenger). Passenger installation
+
+Of course, the REE installer already provided us with the Passenger Gem, but I prefer to use a direct checkout of the Git repository instead, this way I can set my @PassengerRoot@ once and forget about it. If you use the Gem version you have to update the @PassengerRoot@ each time you update the Gem. You can still use the release versions from the Git clone so not using the Gem doesn't necessarily mean you have to run the edge version.
+
+If you don't already have Git installed first run:
+
+  aptitude -y install git-core
+
+Now clone Passenger:
+
+  git clone git://github.com/FooBarWidget/passenger.git /opt/passenger
+
+If you don't want to use the edge version you can switch to release versions by checking out the different tags. For example if you wanted to run the 2.1.3 release you would run:
+
+    cd /opt/passenger
+    git checkout -b 2.1.3 release-2.1.3
+    ./bin/passenger-install-apache2-module
+
+As you probably read in the installer you need to add a few lines to your global Apache configuration.
+
+  nano /etc/apache2/httpd.conf
+  LoadModule passenger_module /opt/passenger/ext/apache2/mod_passenger.so
+  PassengerRoot /opt/passenger
+  PassengerRuby /opt/ree/bin/ruby
+  PassengerDefaultUser www-data
+
+I added the @PassengerDefaultUser www-data@ line because I was getting some weird errors that apparently had to do with Passenger running by default as @nobody@ which didn't have a @home@.
+
+h2(#radiant). Radiant setup
+
+Start by installing the Radiant Gem:
+
+  gem install radiant
+
+Finally setup a Radiant site, I use the "Styled Blog" template for testing. If you plan on going through the [[Getting Started]] article you should use the "Empty" template.
+
+  radiant --database sqlite3 /var/www/radiant
+  cd /var/www/radiant
+  rm public/.htaccess
+  rake production db:bootstrap
+
+Next we need to create a virtual host file for the site, we'll start simple.
+
+<pre><code>nano /etc/apache2/sites-available/radiant
+<VirtualHost *:8000>
+  ServerName example.com
+  DocumentRoot /var/www/radiant/public
+</VirtualHost></code></pre>
+
+Enable it and reload Apache.
+
+  a2ensite radiant
+  chown -R www-data /var/www/radiant
+  /etc/init.d/apache2 reload
+
+Now you should be able to see your "Radiant site":a1 directly in Apache.
+
+h2(#xsendfile). Apache mod_xsendfile setup
+
+As of version 0.7.0 Radiant comes with support for X-Sendfile headers. By enabling it you should get some positive bump in performance. In my limited testing on one fairly large Radiant site there has been a perceptible increase in responsiveness, if you are unpersuaded by anecdotal evidence this step is completely optional. First we'll need to install the @mod_xsendfile@ module.
+
+  cd /usr/local/src
+  wget http://tn123.ath.cx/mod_xsendfile/mod_xsendfile.c
+  apxs2 -cia mod_xsendfile.c
+
+If you get some errors messages like:
+
+  apxs:Error: Activation failed for custom /etc/apache2/httpd.conf file..
+  apxs:Error: At least one `LoadModule' directive already has to exist..
+
+You can just manually add the line it failed to add.
+
+  nano /etc/apache2/httpd.conf
+  LoadModule passenger_module /opt/passenger/ext/apache2/mod_passenger.so
+  LoadModule xsendfile_module /usr/lib/apache2/modules/mod_xsendfile.so
+
+Add a couple of lines to the virtual host file.
+
+  nano /etc/apache2/sites-available/radiant
+  DocumentRoot /var/www/radiant/public
+  XSendfile on
+  XSendFileAllowAbove on
+
+The last change is needed in your @environment.rb@ file. You're looking for the @config.after_initialize@ block, it's near the bottom of the file.
+
+  nano /var/www/radiant/config/environment.rb
+  ResponseCache.defaults[:logger]    = ActionController::Base.logger
+  ResponseCache.defaults[:use_x_sendfile] = true
+
+Restart Apache to load the x-sendfile module and restart Passenger to enable Radiant to @:use_x_sendfile@.
+
+  /etc/init.d/apache2 restart
+  mkdir /var/www/radiant/tmp
+  touch /var/www/radiant/tmp/restart.txt
+
+Click through your "test site":a1. On a simple site like the "Styled Blog" the perceivable differences may be smaller or nonexistent, but I feel like it's something you'd want to enable in a production environment whenever possible.
+
+h2(#nginx-proxy). Nginx reverse proxy setup
+
+Now that the test site is running it's time to put Nginx in front of it. The configuration is pretty straightforward.
+
+<pre><code>
+  nano /etc/nginx/sites-available/radiant
+  server {
+    listen                80;
+    server_name           example.com;
+    root                  /var/www/radiant/public;
+    location ~* \.(jpg|jpeg|gif|css|png|js|ico)$ {
+      access_log          off;
+      expires             max;
+    }
+    location / {
+      access_log          off;
+      proxy_pass          http://localhost:8000;
+      proxy_set_header    X-Real-IP $remote_addr;
+      proxy_set_header    Host $host;
+      proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+  }
+</code></pre>
+
+
+Notice Nginx serves all requests for static files, if you're serving other kinds of files just add them to the list; and just to squeeze every bit of speed out of Nginx we've disabled logging. If you're prefer to log requests for static files edit as you see fit. On the other hand, I don't see any reason to log requests to Apache in both the Nginx and Apache logs so enabling logging on proxy requests doesn't seem useful.
+
+Enable the site and reload Nginx.
+
+  ln -sv /etc/nginx/sites-available/radiant /etc/nginx/sites-enabled/radiant
+  /etc/init.d/nginx force-reload
+
+You should now be able to remove the @:8000@ from the URI and "view your site as intended":n1.
+
+If you've been using the "Styled Blog" template or any other template that links to stylesheets as Radiant pages ending with @.css@ you're probably noticing that your stylesheet is now "404ing". That means Nginx is working, the 404 is Nginx seeing a request for a file type in the list we gave it, i.e. @styles.css@ in the "Styled Blog", and never giving Apache+Passenger an opportunity to serve the file. The solution is simple, remove the @.css@ from the stylesheet page's slug and alter the @<link rel='stylesheet'>@ bit in the site wide header.
+
+Of course the *more performant solution* is to move the stylesheet out into the filesystem in @public/stylesheets/styles.css@ so Nginx can serve it at lightening speed; it also removes unnecessary requests to Passenger letting it handle the request that is *has* to serve more efficiently. If you move your styles and scripts into the filesystem you can link to them in your layouts just like any file, @/stylesheets/styles.css@ or @/javascripts/application.js@. Having Nginx serve static files saves you from having to go through the Rails stack and possibly reduces Passenger's memory usage at least slightly.
+
+h2(#misc). Miscellaneous configuration options
+
+As we've been going along the idea has been to do the least possible to get things going, including leaving out useful configuration options in order to keep a focused view of the task at hand. Now that we have the basic setup humming along here are some more options you might want to consider.
+
+In addition to what Nginx will compress by default you may want to add other text formats your site uses.
+
+  nano /etc/nginx/nginx.conf
+  gzip on;
+  gzip_types application/atom+xml application/x-javascript text/css text/html text/plain text/xml;
+  charset utf-8;
+
+I like requests that come back from Radiant to include the content language as well. You'll need the Headers module enabled, if you haven't already done so, run @a2enmod headers@.
+
+  nano /etc/apache2/sites-available/radiant
+  DocumentRoot /var/www/radiant/public
+  Header set Content-Language en-us
+
+Since Radiant doesn't use any Rewrite rules and as far as I can tell plays nicely with Passenger's "smart" spawning mode it's safe to enable these higher performance options, how much they actually help is debatable.
+
+  nano /etc/apache2/sites-available/radiant
+  XSendFileAllowAbove on
+  RailsSpawnMethod smart
+  PassengerHighPerformance on
+
+As usual after you make changes restart the servers.
+
+  /etc/init.d/nginx restart
+  /etc/init.d/apache2 restart

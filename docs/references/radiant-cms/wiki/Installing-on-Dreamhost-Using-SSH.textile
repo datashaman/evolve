@@ -1,0 +1,202 @@
+h2. The easy way.
+
+This tutorial will guide you through the least complex way of installing Radiant on Rails. This assumes that your are going to be using existing extensions. 
+
+If you need to write your own extensions, I suggest that you have an independent installation of Radiant on your development machine and develop it there. When you're ready to deploy your extension live, then you should make sure its on GitHub and then deploy it in the same fashion as any other extension. 
+
+h3. Why not use Capistrano?
+
+Frankly I don't quite get it, DreamHost apparently doesn't have a latest version available any more (you can install it as your own GEM though), I think its overkill (unless you have multiple servers, but then you wouldn't be on DreamHost) and, frankly, neither Radiant nor many of its extensions seem to be well suited to deployment over Capistrano (I think a Cap recipe that does very much the same thing as "Ray":http://github.com/johnmuhl/radiant-ray-extension would go a long way to addressing that).
+
+h2. Before you begin
+
+*Don't create your domain yet!*  This is a flaw in the DreamHost scripts; if you point a domain at a non-existant directory, it is created, if it has to create more than one directory (like if you point your domain to /mydomain.com/public as you would for a Passenger app) it seems that the directory in your home directory is owned by root. Last time I created a Radiant app on DreamHost I ended up with a directory owned by root that I couldn't do anything in. This may have been solved by DreamHost already but I'm not going to risk it ;)
+
+We're going to install and configure radiant before we setup the domain. 
+
+h2. Create your Database
+
+The first thing you're going to do is create the database on which Radiant will run. Its pretty common to have a subdomain like @mysql.example.com@ but obviously you can do it any way you want. If you're not sure about how to setup a database on DreamHost, they have an "excellent wiki article on it":http://wiki.dreamhost.com/Mysql so start there. 
+
+I am going to assume that you'll be using @example-radiant@ as your database name. You will also want to keep track of the user and password to access the database. Make sure you have a strong password (I prefer a 30 character password; its going into a config file so a long password is probably better)
+
+Remember it takes several minutes for your database to be installed. Be patient. 
+
+h2. Install RubyGems
+
+I like to have control so installing my own copy of RubyGems is beneficial. I could use DH's copy and simply keep my own repository of Gems but I'm going to  do it the "hard" way. 
+
+*Note that DreamHost does not support this.* I'm only following their "Wiki entry":http://wiki.dreamhost.com/RubyGems describing how to do it (ok, I'm copying almost verbatim) but to some extent we're on our own. 
+
+The first time I tried this I had trouble but that may be because the shell user I was working in had a lot of extra garbage from when I was trying all sorts of different things before I came upon Radiant. If you're having trouble, try creating a new shell user and working _there_. All the monospace text below can simply be copied into the command line of your terminal. 
+
+*NOTE:* As of Jan 7, 2009, Radiant 0.6.9 is one of the installed gems so this step _may_ not be necessary. YMMV.
+
+<ol>
+<li><p> Log into your shell account (change the user and domain to match your settings):</p>
+<pre><code>ssh user@dreamhosters.com</code></pre>
+</li>
+<li><p> Create the necessary directories:
+<pre><code>cd ~
+  mkdir .gems bin lib src</code></pre>
+</li>
+<li><p> We need to setup a bunch of paths so that each time you log in everything is setup:</p>
+<pre><code>echo 'export PATH="$HOME/bin:$HOME/.gems/bin:$PATH"' >> .bash_profile
+echo 'export RUBYLIB="$HOME/lib:$RUBYLIB"' >> .bash_profile
+echo 'export GEM_HOME="$HOME/.gems"' >> .bash_profile
+echo 'export GEM_PATH="/usr/lib/ruby/gems/1.8:$GEM_HOME"' >> .bash_profile
+echo 'alias gem="nice -n19 ~/bin/gem"' >> .bash_profile
+source ~/.bash_profile
+</code></pre>
+</li>
+<li><p> Next we need to install the latest version of RubyGems and configure it properly:</p>
+<pre><code>cd ~/src
+wget http://rubyforge.org/frs/download.php/43985/rubygems-1.3.0.tgz
+tar xzvf rubygems-1.3.0.tgz
+cd rubygems-1.3.0
+ruby setup.rb --prefix=$HOME
+cd ~/bin
+ln -s gem1.8 gem
+cd ~
+</code></pre>
+</li>
+<li><p>Now we need to test that gem is installed:</p>
+<pre><code>which gem   # should return /home/USERNAME/bin/gem
+gem -v      # should return 1.3.0
+</code></pre>
+</li>
+<li><p>The gems may have been updated since this article was written so lets update RubyGems</p>
+<pre><code>gem update --system</code></pre>
+</li>
+<li><p>Install Rails and Radiant, until dreamhost fixes their issues with rails 3 use -v option.</p>
+<pre><code>gem install rails -v 2.3.8
+gem install radiant
+</code></pre>
+</li>
+</ol>
+
+h2. Creating your radiant installation
+
+Now that we have all the starting bits in place, we can go ahead and create our radiant instance:
+
+<pre><code>radiant my_site_name</code></pre>
+
+At this point you need to edit the configuration file @config/database.yml@. 
+
+<pre><code>cd radiant my_site_name
+vim conf/database.yml</code></pre>
+
+Change the production settings to match the following template:
+
+<pre><code>development:
+  adapter: sqlite3
+  database: db/development.sqlite3.db
+test:
+  adapter: sqlite3
+  database: db/test.sqlite3.db
+production:
+  adapter: mysql
+  database: *example-radiant*
+  username: *example-database*
+  password: *password*
+  host: *mysql.example.com*</code></pre>
+
+All we care about is the production environment but having the other two as sqlite databases allows tests to pass and avoid potential problems if you forget to specify production when installing extensions. 
+
+Because we're working from the command line you'll need to edit @config/database.yml@ using something like vim or emacs. If you feel more comfortable you can use FTP to get and edit the file locally.
+
+Once your configuration is setup we can bootstrap the site. For me, radiant didn't work well as a gem so I always freeze radiant:
+
+<pre><code>rake radiant:freeze:gems
+rake production db:bootstrap</code></pre>
+
+*or if you like living on the edge:*
+
+<pre><code>rake radiant:freeze:edge
+rake production db:bootstrap</code></pre>
+
+Create your initial user and choose an a template.
+
+h2. Fix problem with Dreamhost Passenger config
+
+In */dh/passenger/lib/passenger/railz/application_spawner.rb* line 265, it checks for the existence of *app/controllers/application_controller.rb*. If it doesn't find this, passenger attempts to require *application.rb*. Because Radiant's directory structure is different, *app/controllers/application_controller.rb* does not exist, which causes a non-existent file to be required. This causes a 500 error. To fake out passenger and make it work, do the following in your radiant root directory:
+
+<pre><code>mkdir -p app/controllers
+touch app/controllers/application_controller.rb</code></pre>
+
+h2. Go create your domain... sorta
+
+If you're migrating a site then pointing to Radiant now will only make your site unavailable for a while. If you're creating a new site, you've probably already told friends and they've already tried to find it. I've also had Google index my template site (the one that is generated when you choose something other than empty during the bootstrap). 
+
+For these reasons, I suggest that you create a domain like dev.example.com and point it at our radiant installation for now. When we finish installing Radiant, style things and create some initial content then we'll delete dev.example.com and point example.com to our radiant site. 
+
+h2. Core Extensions
+
+The following extensions are those that I think should make their way into every installation. 
+
+I tend towards pathological paranoia. You _could_ install all your extensions at once and see what happens but I prefer to install 1 extension, then go check to see if it installed properly. When you're checking things, always go and make sure you can add things, edit things and see everything you expect. I've had a migrations not run completely. In that case you'll want to run the migrations yourself. Worst case, you uninstall the extension and then reinstall it. 
+
+h3. Ray
+
+"Ray":http://github.com/johnmuhl/radiant-ray-extension lets you install extensions using @rake@ rather than @script/extension@ and will install extensions that are not registered with the "Radiant Extensions Site":http://ext.radiantcms.org. It has the added benefit of automatically restarting your application when necessary as well as disabling and enabling already installed extensions. In my experience, this was a far more reliable way to install extensions on DreamHost. Previously I had spent hours installing extensions, only to have one fail for some reason and have to delete the whole installation and start all over again. 
+
+<pre><code>script/extension install ray
+rake ray:setup:restart server=passenger</code></pre>
+
+There is nothing in the UI that changes from this plugin so just go onto the next extension
+
+h3. Dashboard
+
+Jim Gay (Partner at Saturn Flyer) has a number of very useful extensions, many of which I think are indispensible. Dashboard is one of them, it provides a place where you can see a summary of the latest changes to your site. As the extension becomes more common, I expect other extensions to leverage this. For example, if there was an extension that added a review process (author -> review -> edit -> publish) then I would expect the dashboard to have a list of the articles that are awaiting your approval. Right out of the box, it gives you a list of the current draft articles, the latest changes to your pages and snippets. Its a great starting point.
+
+<pre><code>rake production ray:extension:install name=dashboard</code></pre>
+
+h3. User Home
+
+This is a really simple extension that goes well with Dashboard. It adds a field to the administrator's view of users to allow you to specify where they should be directed to when they login. Make sure you send all your users are directed to the Dashboard when they login and as new extensions leverage the dashboard this will become more useful
+
+<pre><code>rake production ray:extension:install name=user_home</code></pre>
+
+h3. Paperclipped
+
+There is also the page_attachments extension but I prefer Paperclipped for one reason: centrally managed assets. I'm also going to suggest using SNS (Scripts 'N Styles) and if you use page_attachments its very hard, or counter-intuitive to figure out where to add your style assets. You end up putting them on the root page or somewhere similar. There is also some hope that we'll see direct support for some Paperclipped tags in SNS so that we can include images more easily (currently you have to figure out what the URL to the image is and put that directly into the script). 
+
+<pre><code>rake production ray:extension:install name=paperclipped</code></pre>
+
+If this fails with ray, try the "instructions":https://github.com/tricycle/radiant-page-preview-extension on their github page.
+
+h3. Page preview
+
+Unless you can visualize textile in your head, you're going to want to look at your pages before you publish them this is where page preview comes in. It lets you view fully rendered pages even though they aren't published. 
+
+<pre><code>rake production ray:extension:install name=page_preview</code></pre>
+
+h3. Reorder and copy-move
+
+Radiant takes an "order of creation" approach to listing your children. Frequently thats not useful. Alphabetical ordering is also not often useful. The reorder extension lets you move pages up and down among its siblings. This can simplify your navigation, for example. 
+
+At the same time, you often want to shuffle pages around, perhaps someone put an article in the wrong category or you're doing some A/B testing. Copy-move allows you to copy and move pages into other locations making this a snap. 
+
+<pre><code>rake production ray:extension:install name=reorder
+rake production ray:extension:install name=copy-move</code></pre>
+
+h3. Settings
+
+Radiant, wisely IMHO, moves much of the configuration out of the config/envronment.rb file into the database. Unfortunately it doesn't provide any way to set those properties; a lot of early tutorials and current README instructions encourage you to pop open a rails console and execute the necessary commands to set property values. My goal is to access the shell user as infrequently as possible and for that I need a UI to access settings. This is exactly what settings does; its a simple list of the configuration properties and provides ways to edit them. 
+
+<pre><code>rake production ray:extension:install name=settings</code></pre>
+
+h3. SNS
+
+In the default Radiant setup, style sheets and JavaScript are created and maintained as pages. This creates a number of odd consequences, like the list of children belonging to the home page includes the CSS and JavaScript. It also allows _any_ author to edit the style of your site. Given that *many* of us are using Radiant to give clients (who are not familiar with web development) the opportunity to manage their own site, letting them "tweak" the CSS is a good way to spend sleepless nights trying to figure out how _"you"_ screwed up the site. 
+
+SNS solves this problem by giving you dedicated tabs for CSS and JavaScript and lets you add those independantly, including support for uploading files (to save copy and pasting). 
+
+In addition there are two related extensions that are useful. sns_minifier will apply CSS and JavaScript compression to your CSS and JavaScript to save on download times and bandwidth. sns_sass_filter lets you use the SASS language for your CSS. In my opinion minimizing your CSS and JavaScript is critical, but SASS is only a matter of preference. 
+
+<pre><code>rake production ray:extension:install name=sns
+rake production ray:extension:install name=sns-minifier</code></pre>
+
+h2. Other Extensions
+
+You can go and find the other extensions that you want to install. Ray can only install from github so you should "use the extensions found there":http://github.com/search?q=radiant+extension. If there is an extension from the "original list of extensions":http://wiki.radiantcms.org/Thirdparty_Extensions that you really want to use but can't find on GitHub, you _could_ go through the hassle of installing it directly using SVN or what ever process that is listed. Instead try to contact the author and ask them to put in on github or offer to mirror the extension on github if they are unwilling. 

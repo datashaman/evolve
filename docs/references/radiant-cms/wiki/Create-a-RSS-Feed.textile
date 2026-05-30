@@ -1,0 +1,66 @@
+To create an RSS feed in Radiant, you'll need to make both a new Layout and Page.
+
+h2. RSS Layout
+
+In Radiant, go to the Layouts tab and click 'New Layout'. Fill in the sections as follows and click 'Create Layout' when you're done:
+
+* *Name:* RSS
+* *Content-Type (click the 'More' link):* application/rss+xml
+
+Fill in *Content* with the following code:
+
+<pre><code><r:content /></code></pre>
+
+h2. RSS Page
+
+Go to the Pages tab and click the 'Add Child' link next to your Home Page (top row). Fill in the sections as follows and click 'Create Page' when you're done:
+
+* *Page Title:* RSS
+* *Slug (click the 'More' link):* rss
+* *Layout:* RSS
+
+Now fill in the *Body content* with the following code:
+
+<pre><code><?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel>
+  <title>WEBSITE-TITLE</title>
+  <description>WEBSITE-DESCRIPTION</description>
+  <link>WEBSITE-URL<r:url /></link>
+  <language>en-us</language>
+  <ttl>40</ttl>
+  <r:find url="/PAGE-WITH-CHILDREN-TO-AGGREGATE/">
+  <r:children:each by="published_at" order="desc" limit="10">
+    <item>
+      <title><r:escape_html><r:title /></r:escape_html></title>
+      <description><r:escape_html><r:content /></r:escape_html></description>
+      <pubDate><r:rfc1123_date /></pubDate>
+      <guid>WEBSITE-URL<r:url /></guid>
+      <link>WEBSITE-URL<r:url /></link>
+    </item>
+  </r:children:each>
+  </r:find>
+</channel>
+</rss></code></pre>
+
+The next step is to replace all the CAPITALIZED terms in the code with content specific to your website. For example, if your website was fakeradiantwebsite.com, you might do the following:
+
+* *WEBSITE-TITLE:* Fake Radiant Website
+* *WEBSITE-DESCRIPTION:* A fake website about Radiant CMS
+* *WEBSITE-URL (no trailing slash!):* http://fakeradiantwebsite.com
+* */PAGE-WITH-CHILDREN-TO-AGGREGATE/:* /news/
+
+Then, http://fakeradiantwebsite.com/rss/ will pull in the 10 newest sub-pages of http://fakeradiantwebsite.com/news/ as an RSS feed.
+
+To make your RSS feed fancier, you can add other RSS tags inside the @<item>@ tag -- just be sure to wrap them in @<r:escape_html>@ tags to prevent RSS readers from choking on symbols (apostrophes, quotes, etc.) in your content.
+
+You can also modify the @<r:children:each>@ tag per Radiant standards to change the number of pages aggregated, the order the pages are retrieved in, etc..
+
+h2. More Info
+
+* "Feed Validator":http://feedvalidator.org/
+* "RSS tag reference":http://www.w3schools.com/rss/rss_reference.asp
+* "Radiant RSS feed creation":http://www.ruby-forum.com/topic/129935
+* [[Create an Atom Feed]]
+
+*Thanks to Andrew Neil and Sean Santry for publishing the initial code on which this wiki page was based.*

@@ -1,0 +1,121 @@
+The Heroku blog has an "article":a covering the few simple steps it takes to get Radiant 0.7.1 running there.
+
+[a]http://blog.heroku.com/archives/2009/3/26/radiant_cms_in_5_minutes_or_less/
+
+h2. Radiant Edge on the Bamboo Ruby Enterprise Edition 1.8.7 stack
+
+The following instructions assume you already have a working Ruby environment and your Heroku account setup. For more information on installing Ruby refer to "http://www.ruby-lang.org/en/downloads/":http://www.ruby-lang.org/en/downloads/ and "http://api.heroku.com/signup":http://api.heroku.com/signup and "http://docs.heroku.com/quickstart":http://docs.heroku.com/quickstart for setting up your Heroku account.
+
+First install the necessary Rubygems and perform the basic Radiant setup:
+
+<pre><code>gem install rack --version 1.0.1
+gem install radiant sqlite3-ruby heroku taps compass
+radiant -d sqlite3 heroku_radiant
+cd heroku_radiant
+git clone git://github.com/radiant/radiant.git vendor/radiant
+cd vendor/radiant
+git submodule init
+git submodule update
+rm -rf `find . -name .git`
+rm .gitmodules
+cd ../../
+rake gems:install
+rake radiant:update
+rake db:bootstrap
+</code></pre>
+
+
+Start your server with @./script/server@ and confirm everything is working locally. If it is shutdown your local application server and start it in production mode by running @./script/server -e production@. Now go to "http://localhost:3000/admin":http://localhost:3000/admin. By visiting this URL the @all.js@ file will be created (@all.js@ contains all of the javascript required for the Radiant admin UI concatenated into a single file). Don't worry about bootstrapping the production database; it isn't necessary in order for the @all.js@ file to be created. If you don't do this you'll get an application error when you deploy to Heroku because the read-only file system restriction won't allow Radiant to create the file on Heroku's servers.
+
+Now create a @.gitignore@ file in the root of your Radiant project which contains the following:
+
+<pre><code>db/*.sqlite3.db
+log
+tmp
+</code></pre>
+
+Then initialize a new git repository and perform your initial commit:
+
+<pre><code>git init
+git add .
+git commit -m 'initial commit'
+</code></pre>
+
+Now you're ready to prepare your application for deployment to Heroku. Start by creating a @.gems@ file in the root of your project which includes the following (note: the Rails gem is not actually needed for Radiant but Heroku's Bamboo stack currently requires it to be listed in your manifest or else your push will be rejected):
+
+<pre><code>rails --version 2.3.5
+RedCloth
+will_paginate --version '~> 2.3.11'
+</code></pre>
+
+Then commit your @.gems@ file to your repository by running:
+
+<pre><code>git add .gems
+git commit -m 'add gem manifest file'
+</code></pre>
+
+Finally you need to create your Heroku application and push your Radiant project for deployment by running:
+
+<pre><code>heroku create --stack bamboo-ree-1.8.7
+heroku db:push
+git push heroku master
+</code></pre>
+
+Now you can visit your deployed Radiant project by running @heroku open@.
+
+h2. Radiant 0.9.1 (gem) on the Bamboo Ruby Enterprise Edition 1.8.7 stack
+
+The following instructions extracted from the *Radiant Edge on the Bamboo Ruby Enterprise Edition 1.8.7 stack* (read it first, pls.) and describing the different steps only.
+
+Install the necessary Rubygems and perform the basic Radiant setup:
+
+<pre><code>gem install radiant
+gem install sqlite3-ruby heroku taps rack
+radiant -d sqlite3 heroku_radiant
+cd heroku_radiant
+rake db:bootstrap
+</code></pre>
+
+Creating a @.gems@ file in the root of your project which includes the following:
+
+<pre><code>rails --version 2.3.8
+RedCloth
+will_paginate --version '~> 2.3.11'
+radiant --version 0.9.1
+</code></pre>
+
+h2. Radiant 0.8.1
+
+You can omit RSpec from your @.gems@ manifest file.
+
+The advice in the Heroku article about putting your cache into @tmp@ no longer applies: as of 234a33c7592e536431625bcc0e82d939d8fb83cb, the default cache location *is* in @tmp@.
+
+h2. Radiant 0.8.0
+
+You can omit RSpec from your @.gems@ manifest file.
+
+The advice in the Heroku article about putting your cache into @tmp@ doesn't work exactly the same. Instead edit your @environment.rb@ file like:
+
+<pre><code>config.middleware.use ::Radiant::Cache,
+  :entitystore => "radiant:tmp/cache/entity",
+  :metastore => "radiant:tmp/cache/meta"</code></pre>
+
+Also if you want the page cache to be cleared on page save (or ever really) you'll also need to hack on @RADIANT_ROOT/lib/radiant/cache.rb@ search for the lines:
+
+<pre><code>def initialize(root="#{Rails.root}/cache/entity")
+def initialize(root="#{Rails.root}/cache/meta")</code></pre>
+
+and change them to:
+
+<pre><code>def initialize(root="#{Rails.root}/tmp/cache/entity")
+def initialize(root="#{Rails.root}/tmp/cache/meta")</code></pre>
+
+h2. RDiscount
+
+**Note:** If you use the Markdown or SmartyPants text filters you might also want to consider adding RDiscount to your @.gems@ manifest file. RDiscount is considerably faster and less error prone than BlueCloth.
+
+@rdiscount --version '>= 1.3.5'@
+
+h2. Note if you use pow on development.
+
+If you use "pow":http://pow.cx on development with a custom @config.ru@ file, don't push the @config.ru@ file or you will have problems with your static assets returning a 404 error.

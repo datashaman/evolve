@@ -1,0 +1,273 @@
+h2. Extension Registry
+
+The latest version of Radiant has the ability to install extensions with @script/extension install extension_name@. This will look to "http://ext.radiantcms.org":ext to find the extension you need.
+
+*All extension developers are encouraged to list their extensions at "http://ext.radiantcms.org":ext instead of, or in addition, to this page*.
+
+[ext]http://ext.radiantcms.org
+
+Refer to the [[Extension Registry]] page for more information.
+
+*This page is obsolete, extension authors are encouraged to register their extensions at the [[Extension Registry]]*. The following list is left in place during the transition to the Extension Registry.
+
+h2. Extensions from the Radiant GitHub Repository
+
+There are several extensions contributed by different core team members in the "Radiant GitHub repository":http://github.com/radiant:
+
+<dl>
+<dt>Aggregation</dt>
+<dd>Collects the children of multiple pages to be treated as one for iteration using r:children:each. Compatibility: 0.6.1+.</dd>
+
+<dt>Event Calendar</dt>
+<dd>Create calendars in Radiant admin which have iCal subscriptions attached to them. Retrieve events to each calendar through refreshes from the iCal subscription. Works best when used in conjunction with an iCal publishing front-end app like Google Calendars or .Mac and a cron job setup on your server to run the refresh automatically every hour or more.</dd>
+
+<dt>Import Export</dt>
+<dd>Uses Rake to export your Radiant database to a .yml file that can be later reloaded. Compatibility: 0.6.1</dd>
+
+<dt>LDAP</dt> 
+<dd>Edit and test LDAP queries from the admin interface, you can also use LDAP query results from a Radius tag in a page. Compatibility: 0.6.1+</dd>
+
+<dt>Mailer</dt> 
+<dd>Sends email from Radiant pages.</dd>
+
+<dt>Multi Site</dt>
+<dd>Allows you to host multiple sites with separate domain names in a single Radiant installation.</dd>
+
+<dt>Page Attachments <small>([[installation|How to use the Page Attachments extension]])</small></dt>
+<dd>Adds support for file uploads realized as attachments to individual pages. For a newer option with more features also see "Paperclipped":#pprclp </dd>
+
+<dt>Reorder</dt> 
+<dd>Adds order attributes to the Page model and allows you to reorder pages underneath their parent.  Requires Shards extension. Compatibility: 0.6.3+</dd>
+
+<dt>Scheduler</dt>
+<dd>Limits viewing and finding of pages by specified publish and expiration dates, which are configurable from the page-edit interface. Requires the Shards extension. Compatibility: 0.6.2+</dd>
+
+<dt>Search</dt>
+<dd>Adds tags for a site search box and a tag set and Page Type for a results page.  Compatibility: 0.6.1+</dd>
+
+<dt>Shards</td>
+<dd>Adds flexibility to mutate the administration UI in a similar fashion to what was attempted in the "facets" branch.  Compatibility: 0.6.2 to 0.6.6. Has been integrated into 0.6.7+.</dd>
+
+<dt>Share layouts</dt>
+<dd>Allows you to use Radiant layouts as if they were Rails layouts in your extension controllers. Compatibility: 0.6.2+</dd>
+</dl>
+
+h2. Extensions at Github
+
+There are several extensions over on Github. You might see other non-extension radiant bits as well: "http://github.com/search?q=radiant":http://github.com/search?q=radiant
+
+h2. Other Extensions
+
+<dt>AAF Search <small>("docs":http://projects.barnard-engineering.com/doc/aaf_search/index.html, "svn":http://projects.barnard-engineering.com/svn/tags/radiant-extensions/aaf_search/REL-0.1/)</small></dt>
+<dd>Adds tags for a site search box and a tag set and Page Type for a results page. Extends Page to use acts_as_ferret plugin.</dd>
+
+<dt>Alias Page <small>("home":http://silverinsanity.com/~benji/radiant/)</small></dt>
+<dd>An extension to make a page give another page's content</dd>
+
+<dt>Archieve Hacks <small>("Github":http://github.com/alno/radiant-archive-hacks-extension/tree/master)</small></dt>
+<dd>Some hacks for standard archive extensions, improving its usability</dd>
+
+<dt>Back Door <small>("docs":http://backdoor.rubyforge.org, "svn":http://backdoor.rubyforge.org/svn/trunk)</small></dt>
+<dd>Allows executing Ruby code directly inside Radiant templates</dd>
+
+<dt>Blog Tags <small>("github":http://github.com/santry/blog_tags)</small></dt>
+<dd>Provides useful tags for blogs, like getting the next and previous articles or showing the post time in words (eg, "Posted by Sean 2 days ago")</dt>
+
+<dt>Code <small>("Github":http://github.com/alno/radiant-code-extension/tree/master)</small></dt>
+<dd>Adds support for code highlighting using different engines</dd>
+
+<dt>Comments <small>("Github":http://github.com/artofmission/radiant-comments/tree/master)</small></dt>
+<dd>Adds blog-like comment functionality to Radiant (still very alpha)</dd>
+
+<dt>Concurrent Draft <small>("Github":http://github.com/avonderluft/radiant-concurrent_draft-extension/tree/master)</small></dt>
+<dd>Enables default draft versions of pages, snippets and layouts, which can be scheduled for 
+promotion to Production.  Requires radiant edge as of rel. 0.6.9</dd>
+
+<dt>Configuration <small>("docs":http://radiant-configuration-extension.googlecode.com/, "svn":http://radiant-configuration-extension.googlecode.com/svn/trunk/)</small></dt>
+<dd>Adds a configuration page to the Radiant backend to edit the Radiant configuration. Compatibility 0.6.7.</dd>
+
+<dt>Copy Move <small>("home":http://gravityblast.com/projects/radiant-copymove-extension/, "git":http://github.com/pilu/radiant-copy-move/tree/master)</small></dt>
+<dd>It allows for a page to be copied (or moved) under a new parent.</dt>
+
+<dt>CSS <small>("download":http://www.sharedhostlogic.com/css.tar.gz)</small></dt>
+<dd>Allows pages to be rendered as CSS</dd>
+
+<dt>Dashboard <small>("git":http://github.com/saturnflyer/radiant-dashboard-extension/)</small></dt>
+<dd>Adds a view of recent activity and provides regions upon which other extension may build.</dd>
+
+<dt>Database Form <small>("home":http://github.com/zapnap/database_form)</small></dt>
+<dd>Provides a page type and tags for constructing contact and request info forms that will save user responses to a database table. Those responses can then be exported for consumption in some other application (CRM, etc). Similar to and based on the mailer extension.</dd>
+
+<dt>Data Pages <small>("home":http://code.google.com/p/data-pages-extension/, "svn":http://data-pages-extension.googlecode.com/svn/trunk/, "archive":http://data-pages-extension.googlecode.com/files/data_pages.tgz)</small></dt>
+<dd>Provides page types and tags that can pull in external JSON data and apply a template.</dd>
+
+<dt>Default Page Parts <small>("svn":http://dev.gravityblast.com/svn/projects/radiant/extensions/default_page_parts/)</small></dt>
+<dd>With this extension you can create a page of !DefaultPageParts type and specify the default parts of all its children.</dd>
+
+<dt>DragOrder <small>("Github":http://github.com/bright4/radiant-drag-order/)</small></dt>
+<dd>This extension allows pages to be moved to any arbitrary (valid) place in the document tree structure by dragging the page to its new position and dropping it there.</dd>
+
+<dt>Dynamic <small>("svn":http://dev.gravityblast.com/svn/projects/radiant/extensions/dynamic/)</small></dt>
+<dd>With this extension you can create a page of Dynamic type that will be updated every time that one of its children will be created/saved/destroyed.</dd>
+
+<dt>Edit Pages <small>("mercurial":http://mat.cc/dev/index.cgi/page_edit_dates/)</small></dt>
+<dd>Allows to edit the published date of a page.</dd>
+
+<dt>Enkoder Tags <small>("github":http://github.com/santry/enkoder_tags)</small></dt>
+<dd>Provides tags for enkoding email addresses (or arbitrary content) using "Dan Benjamin's Enkoder":http://hivelogic.com/enkoder to block spam harvesters</dd>
+
+<dt>Fast Snippet<small>("git":http://github.com/AndrewO/fast_snippet/tree/master)</small></dt>
+<dd>Speeds up the <r:snippet/> tag whenever you call the same snippet more than 15 or so times in a page.</dd>
+
+<dt>Featured Pages <small>("git":http://github.com/saturnflyer/radiant-featured_pages-extension/)</small></dt>
+<dd>Provides the <r:featured_pages> tag and Featured Page checkbox to the page edit screen. This allows the listing of featured pages without regard to their nested level within the page tree.</dd>
+
+<dt>File Based Layout <small>("svn":http://svn.casperfabricius.com/extensions/file_based_layout/)</small></dt>
+<dd>Allows pages served by Radiant to share a standard file-based Rails layout with Rails-generated pages</dd>
+
+<dt>Flickr Tags <small>("github":http://github.com/santry/flickr_tags)</small></dt>
+<dd>Provides a tag for embedding a Flickr slideshow like the one in "my portfolio":http://seansantry.com/portfolio.</dd>
+
+<dt>Gallery <small>("home":http://gravityblast.com/projects/radiant-gallery/, "git":http://github.com/hairballopolis/radiant-gallery/)</small></dt>
+<dd>The Gallery extension allows Radiant to manage galleries of images.</dd>
+
+<dt>Guestbook <small>("home":http://www.alchemy25.de/projects/guestbook/)</small></dt>
+<dd>A simple guestbook for the Radiant CMS, allows multiple guestbooks, comments and blocking of IP addresses - it doesn't seem to work fine as it says...</dd>
+
+<dt>Help <small>("git":http://github.com/saturnflyer/radiant-help-extension/)</small></dt>
+<dd>An easy way to provide help to your users</dd>
+
+<dt>Help Use Cases <small>("git":http://github.com/saturnflyer/radiant-help_use_cases-extension/)</small></dt>
+<dd>Extra details for Help</dd>
+
+<dt>Help Inline <small>("git":http://github.com/saturnflyer/radiant-help_inline-extension/)</small></dt>
+<dd>Provide inline help to your users on (almost) every admin page with the ability to turn it off for each user.</dd>
+
+<dt>HomeDir <small>("home":http://abisso.org/projects/home_dir/, "hg":http://bitbucket.org/nolith/home_dir/)</small></dt>
+<dd>This Radiant extension allow you to define /~user routes like apache userdir module.</dd>
+
+<dt>Language Redirect <small>("git":http://github.com/intinig/radiant_language_redirect_extension/tree/master)</small></dt>
+<dd>Redirects the browser to a different page root based on the accepted locale.</dd>
+
+<dt>Maruku Text Filter <small>("git":http://github.com/michelsen/radiant-maruku/tree/master)</small></dt>
+<dd>A Markdown variant extension for Radiant</dd>
+
+<dt>MetaWeblog API
+<small>("svn":http://feed-me.googlecode.com/svn/trunk/meta_weblog, "docs":http://code.google.com/p/feed-me/wiki/MetaWeblogAPIextension)</small></dt>
+<dd>Allows you to post Pages to Radiant from desktop/web blogging clients (...or from Google Docs)</dd>
+
+<dt>Model Tags <small>("archive-rubyforge":http://rubyforge.org/frs/download.php/25184/model_tags-v2.tar.gz, "archive-sourceforge":http://downloads.sourceforge.net/model-tags/model_tags-v2.tar.gz, "svn-rubyforge":http://model-tags.rubyforge.org/svn/trunk/extensions/model_tags/, "svn-sourceforge":https://model-tags.svn.sourceforge.net/svnroot/model-tags/trunk/extensions/model_tags/, [[docs|Extension - Model Tags]])</small></dt>
+<dd>Goodies for integration of ActiveRecord Models</dd>
+
+<dt>Meta Tags (PageMeta) <small>("svn":https://secure.svnrepository.com/s_swanki/open/radiant/extensions/page_meta/tags/v0.1.5, "readme":https://secure.svnrepository.com/s_swanki/open/radiant/extensions/page_meta/trunk/README)</small></dt>
+<dd>Adds Keywords and Description meta-tag fields to the edit-page form.  Makes it easy to add additional meta-fields (title tag, robots, whatever).</dd>
+
+<dt>Multilingual Pages (Radiant I18N) <small>("git":git://github.com/yeah/radiant-multilingual-pages-extension.git, "readme":http://github.com/yeah/radiant-multilingual-pages-extension/tree)</small></dt>
+<dd>Provides multilingual pages for Radiant. A multilingual page has one slug for every language. Use slugs like about-us-en, about-us-de or about-us, ueber-uns and translate away using &lt;r:translate en="Welcome" de="Willkommen" /&gt; and &lt;r:if_language lang="en"&gt;&lt;p&gt;Some english text&lt;/p&gt;&lt;/r:if_language&gt;. Language selection menus and support for non-multilingual pages included. Cache-safe.</dd>
+
+
+<dt>Nested Layouts <small>("git":http://github.com/moklett/radiant-nested-layouts-extension/tree/master)</small></dt>
+<dd>Provides tags for easily creating nested layouts.  Layouts may be nested to multiple levels.</dd>
+
+<dt>Newsletter <small>("home":http://gravityblast.com/projects/radiant-newsletter-extension/, "git":http://github.com/pilu/radiant-newsletter/tree/master)</small></dt>
+<dd>This extensions adds a newsletter system to RadiantCMS</dd>
+
+<dt>Paginated Archive <small>("home":http://depth-first.com/articles/2007/11/07/paginated-archives-in-radiant-cms-the-power-of-minimal-but-extendable-systems)</small></dt>
+<dd>Paginated Archive is a drop-in replacement for
+Radiant's own Archive Page and is suitable for large
+blog-like archives. In other words, your archive pages
+can now be grouped by date _and_ paginated - just like
+a blog.</dd>
+
+<dt>Page Attributes <small>("svn":https://dev.eyebeam.org/svn/radiant-partatts/radiant/vendor/extensions/, "docs":http://dev.eyebeam.org/projects/radiant-partatts/wiki/radiant-partatts)</small></dt>
+<dd>This extension/hack of Radiant gives all your pages an "attributes" tab where you can add named strings, bools, links, and files...  (and then reference them from r: tags). Note that this cannot be used with current trunk.</dd>
+
+<dt>Page Event - Calendar <small>("git":http://github.com/mghaught/radiant-page-event/tree/master, "docs":http://martyhaught.com/articles/2008/05/03/page-event-extension-released/)</small></dt>
+<dd>A simple page-based event calendar for associating time-based events with your Radiant pages.  The 
+original example was setting up meeting announcements in radiant where the meeting was a page.  Having this meeting show 
+up on a site-wide calendar and having exact information on when the meeting was taking place was important.</dd>
+
+<dt>Page List View <small>("Github":http://github.com/avonderluft/radiant-page_list_view-extension/tree/master)</small></dt>
+<dd>Enables viewing site pages in a list view sortable by attibute</dd>
+
+<dt>Page Group Permissions <small>("svn":svn://furtherin.net/radiant-extensions/page_group_permissions/,
+"readme":http://github.com/freels/radiant-extensions/tree/master/page_group_permissions/README, "git":git://github.com/freels/radiant-extensions.git)</small></dt>
+<dd>Allows you to organize your users into groups and divide up site editing privileges accordingly. (Compatibility 0.6.5)</dd>
+
+<dt>Page Redirect <small>("home":http://www.randomutterings.com/projects/page_redirect/,
+"git":git://github.com/randomutterings/page_redirect.git,
+"readme":http://github.com/randomutterings/page_redirect/tree/master/README)</small></dt>
+<dd>Allows you to redirect pages with valid http status codes. (Compatibility 0.6.4)</dd>
+
+<dt id="pprclp">Paperclipped <small>("git":http://github.com/kbingman/paperclipped/tree/master)</small></dt>
+<dd>Similar to page_attachments, but easier to install with a new tab for the entire assets library, the ability to search for and attach images to individual pages and a bucket along the lines of the one in Mephisto. (Announced 12 June 08 on the mailing list)</dd>
+
+<dt>Quick Publish <small>("svn":svn://svn.seesaw.it/radiant_extensions/trunk/quick_publish, "info":http://blog.seesaw.it/articles/2007/09/13/quickpublish-a-small-radiant-extension-to-quickly-publish-your-pages)</small></dt>
+<dd>This extension gives you a "Quick Publish" tab inside the administration area, where you can quicky hide or publish pages. (Compatibility 0.6.2)</dd>
+
+<dt>Quiz <small>("info & source":http://github.com/ntalbott/radiant-quiz-extension)</small></dt>
+<dd>Allows you to create multiple choice quizzes that users can fill out. The questions are assigned point values, and upon submission the user is redirected to a result page based on their total.</dd>
+
+<dt>RadiantOnRails <small>("docs":http://radiantonrails.rubyforge.org/, "svn":svn://rubyforge.org/var/svn/radiantonrails/trunk)</small></dt>
+<dd>Allows for a Ruby on Rails application to integrate with the features offered by Radiant CMS.</dd>
+
+<dt>Rails Support <small>("docs":http://code.google.com/p/radiant-rails-support, "svn":http://radiant-rails-support.googlecode.com/svn/tags/1.0/extensions/rails_support)</small></dt>
+<dd>Lets your Rails application re-use the Radiant Layouts and Snippet.</dd>
+
+<dt>RBAC Base (Role Based Access Control) <small>("svn":http://www.saturnflyer.com/svn/radiantP/rbac_base/trunk)</small></dt>
+<dd>Gives you the ability to grow beyond the standard roles in Radiant, allowing you to build extensions around your own roles.</dd>
+
+<dt>Record Tags <small>("archive":http://www.boardgamerspastime.com/downloads/radiant/extensions/record_tags.zip, [[docs|Extension - Record Tags]])</small></dt>
+<dd>Adds tags for displaying database records.  A natural front end for custom, back-end models.</dd>
+
+<dt>Rerender Text <small>("git":http://github.com/AndrewO/rerender_text/tree/master)</small></dt>
+<dd>A simple extension that provides a method to easily re-render text within a Radius tag.</dd>
+
+<dt>Resizing Text Area <small>("docs":http://svn.somedutchguy.com/projects/show/3)</small></dt>
+<dd>This extension appears to be defunct</dd>
+
+<dt>RSS Integration <small>("home":http://code.google.com/p/radiant-externalrss-extension/, "packages":http://code.google.com/p/radiant-externalrss-extension/downloads/list, "svn":http://radiant-externalrss-extension.googlecode.com/svn/), [[usage|Using External RSS extension]]</small></dt>
+<dd>Provides a way to integrate external RSS feeds into a site.</dd>
+
+<dt>RSS Reader 0.2a <small>("home":http://jmacaulay.net/2007/11/9/modified-rss_reader-radiant-extension)</small></dt>
+<dd>External RSS/Atom integration.</dd>
+
+<dt>Sibling tags <small>("git":http://github.com/nelstrom/radiant-sibling-tags-extension/tree/master)</small></dt>
+<dd>Allows you to refer to the current page's previous/next sibling.</dd>
+
+<dt>Site Watcher <small>("git":http://github.com/saturnflyer/radiant-site_watcher-extension/)</small></dt>
+<dd>Keeps track of popular pages (with additional details if you use Dashboard)</dd>
+
+<dt>Smooth Gallery <small>("docs":http://svn.somedutchguy.com/projects/show/1)</small></dt>
+<dd>This extension appears to be defunct</dd>
+
+<dt>Snippet Sharing <small>("git":http://github.com/jamesdaniels/radiant-cms-snippet-sharing/tree/master)</small></dt>
+<dd>Extension that saves out snippets (on modification) for 3rd-party consumption</dd>
+
+<dt>Styles 'n Scripts <small>("svn":https://secure.svnrepository.com/s_swanki/open/radiant/extensions/styles_n_scripts/tags, "readme":https://secure.svnrepository.com/s_swanki/open/radiant/extensions/styles_n_scripts/tags/latest/README)</small></dt>
+<dd>Rather than manage your CSS and JS files as Pages, they can now be first class citizens in Radiant.  The SnS extension provides an ideal caching mechanism for performance, a better UI for these files (why do CSS or JS files need a title or breadcrumb, or - better still - a blank Layout?) and it lets other Extensions that deal with Pages just work better (no more searching pages and turning up stylesheets).  Plus, there's a set of tags to help your users access these files and create valid markup using them.</dd>
+
+<dt>Syntax Highlighting <small>("git":http://github.com/marcoow/syntax_highlighting/tree/master)</small></dt>
+<dd>Syntax Highlighting for 30+ languages (wraps "pygments":http://pygments.org/)</dd>
+
+<dt>Translator <small>("svn":http://dev.philburrows.com/svn/radiant-extensions/translator/trunk/)</small></dt>
+<dd>A Localization Extension that renders a different page part depending on the browser's Language-Accept header.</dd>
+
+<dt>VIM <small>("vim file":http://www.raphinou.com/radiant.vim)</small></dt>
+<dd>Allows you to edit Radiant pages from VI.</dd>
+
+<dt>Virtual Domain <small>("svn":http://svn.devjavu.com/lexbrains/radiant_extensions/virtual_domain/tags/rel_1-2-3/)</small></dt>
+<dd>Makes each top-level page the root of a different website (based on the host name).</dd>
+
+<dt>Vapor <small>("git":http://github.com/saturnflyer/radiant-vapor-extension/)</small></dt>
+<dd>User manageable redirects</dd>
+
+<dt>WYSIWYG Text Editor (TinyMCE) <small>("archive":http://blog.brandalism.com/assets/2007/2/23/tiny_mce_extension.zip, "docs":http://blog.brandalism.com/2007/2/24/wysiwyg-editing-for-radiant)</small></dt>
+<dd>A WYSIWYG editor based on the TinyMCE editor</dd>
+
+<dt>WYSIWYG Text Editor (FCKeditor) <small>("home":http://github.com/djcp/radiant-fckeditor/tree/master)</small></dt>
+<dd>A WYSIWYG editor based on FCKeditor - with working file uploads and spell checking. Requires the shards extension for Radiant versions &lt;= 0.6.6</dd>
+
+<dt>WYSIWYM Text Editor (WYMeditor) <small>("home":http://www.gorilla-webdesign.be/artikel/48-WYM+on+Radiant, "svn":svn://zuurstof.openminds.be/home/kaizer/svn/rails_stuff/radiant_extensions/wym_editor_filter)</small></dt>
+<dd>Adds WYMeditor as a text filter. Requires the shards extension for Radiant versions &lt;= 0.6.6</dd>
+</dl>

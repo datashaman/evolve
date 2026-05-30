@@ -1,0 +1,26 @@
+It is sometimes useful to have an index at the top of long pages to allow visitors to quickly navigate to sections within the page. A common example of this is the "Frequently Asked Questions" page. Creating this in Radiant is simple and straightforward.
+
+The structure will consist of a parent page which will dynamically create the index and display the questions and answers, and any number of child pages which will contain the actual questions and answers. In the child pages, the question will be the page title and the answer will be in the page body.
+
+Begin by creating  the parent page. Give it a meaningful title like "Frequently Asked Questions" and perhaps change the slug to something easier to type, like "faq". The body of the page will have code similar to the following:
+
+<pre><code>
+<div class="faqlist">
+  <ol>
+  <r:children:each>
+    <li><a href="#<r:slug />"><r:title /></a></li>
+  </r:children:each>
+  </ol>
+</div>
+
+<r:children:each>
+<div class="faqitem">
+  <a name="<r:slug />"><h3><r:title /></h3></a>
+  <r:content />
+</div>
+</r:children:each>
+</code></pre>
+
+The first piece of code creates the index, an ordered list of links to named anchors in the page, using the slug and title from each of the child pages. The second piece of code produces the content, inserting the named anchors and displaying the question (title) as a heading and the answer using whatever html is in the body of the child page. 
+
+Each question and answer will go into a new child page of the  parent index page. Reorder the child pages as needed using any of the excellent page reordering/copying/moving extensions and navigate to yoursite.com/faq to see the results.

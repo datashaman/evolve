@@ -1,0 +1,87 @@
+Before you can install extensions you have to know what extensions are available. Fortunately, Radiant has a central location where extension authors can register their work, this "Extension Registry":er will often be the best place to go for extensions. Additionally, extensions located in this registry can be easily installed using Radiant's built-in extension management script.
+
+Currently, most extension development happens on "GitHub":gh – so, if possible, you should install Git. Instructions for [[Linux|Git on Linux]], [[Mac OS|Git on Mac]] and [[Windows|Git on Windows]] are available if you need help. Having Git installed is not required, but it gives you access to a wider range of extensions and makes installing them easier. In almost all cases you'll never need to use the Git tools directly, so don't worry that you're suddenly going to need to learn how to use Git just to install an extension, Radiant's extension management tools aim to hide the dirty work behind a few easy-to-remember commands.
+
+GitHub is also a good "secondary source of extensions":gs that aren't yet in the registry, however, if the extension isn't in the registry the built-in extension management scripts can't install it. To ease the installation of extensions directly from GitHub there is the "Ray extension":ry.
+
+h2(#script). Using the built-in scripts
+
+Once you've located the extension you want from the registry installing it as easy as:
+
+<pre><code>cd /path/to/radiant
+./script/extension install extension_name</code></pre>
+
+For example if you wanted the [[Help Extension]] you would run:
+
+<pre><code>cd /path/to/radiant
+./script/extension install help</code></pre>
+
+Then you just restart your application server and you're ready to go.
+
+By default this installs into <code>development</code>, so to install for eg <code>production</code> prefix this command with the RAILS_ENV:
+
+<pre><code>cd /path/to/radiant
+env RAILS_ENV=production script/extension install help</code></pre>
+
+If <code>script/extension install</code> produces errors like
+
+<pre><code>rake aborted!
+Don't know how to build task 'radiant:extensions:help:migrate'</code></pre>
+
+it’s likely that the extension installed fine and just doesn’t actually require <code>migrate</code> or <code>upgrade</code> tasks. If the extension doesn’t actually work check for any extra instructions on the extension’s Github homepage.
+
+h2(#manual). Manual installation
+
+As long as you can find a direct download URL for an extension, you can install it without needing tools such as Git or Subversion. Again as an example we'll use the "help" extension.
+
+<pre><code>cd /path/to/radiant/vendor/extensions
+wget http://github.com/saturnflyer/radiant-help-extension/tarball/master
+tar xzvf saturnflyer-radiant-help-extension-*.tar.gz
+mv saturnflyer-radiant-help-extension-* help
+cd /path/to/radiant
+rake radiant:extensions:help:migrate
+rake radiant:extensions:help:update</code></pre>
+
+Then restart your application server.
+
+*If you're getting @Could not load extension from file@ errors read the "Note on extension naming":#naming below.*
+
+h2(#ray). Using Ray
+
+First you need Ray installed, if you have Git installed run:
+
+<pre><code>cd /path/to/radiant
+./script/extension install ray</code></pre>
+
+If you don't have Git use the "manual installation method":#manual. Once you have Ray installed you could install the help extension by running:
+
+<pre><code>cd /path/to/radiant
+rake ray:extension:install name=help</code></pre>
+
+This will install the extension regardless whether or not you have Git installed.
+
+You can also use Ray to search for extensions on GitHub by running:
+
+<pre><code># Ray's search only accepts a single term
+rake ray:extension:search term=help</code></pre>
+
+h2(#naming). Note on extension directory naming
+
+This section only applies to manual installation. If you used Radiant's built-in @./script/extension install@ command, or Ray, you can ignore the following.
+
+In order to correctly load extensions, Radiant needs the extension's directory name to match the extension's (class) name.
+
+The matching rule is the standard Rails camelcase <-> snakecase rule. For example, for an extension called "Foo" the extension directory name must be named "foo".  And for an extension named "FooBar", the directory name must be "foo_bar".  If you fail to follow this convention, Radiant will fail to load the extension and the application won't start. You'll get an error when migrating the database like:
+
+<pre><code>Could not load extension from file: some_extension.
+#<NameError: uninitialized constant SomeExtension></code></pre>
+
+How to know an extension's real name?  For that look inside the extension directory for a file whose name ends in "_extension.rb".  That's the extension's main load file.  The extension's real name is the name before that ending.  In the previous examples, that file would be called "foo_extension.rb" and "foo_bar_extension.rb" respectively.
+
+[er]http://ext.radiantcms.org/
+[gh]http://github.com/
+[gs]http://github.com/search?q=radiant+extension&type=Repositories
+[os]http://code.google.com/p/git-osx-installer/
+[wn]http://code.google.com/p/msysgit/
+[ry]http://johnmuhl.github.com/radiant-ray-extension/
+[20]http://wiki.github.com/johnmuhl/radiant-ray-extension/installation

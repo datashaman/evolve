@@ -1,0 +1,5 @@
+1st Easy provide a "number of helpful support documents":http://support.1steasy.com/index.php?_a=knowledgebase&_j=subcat&_i=18 to help you get up and running with a Ruby on Rails application.
+
+UPDATE (01/12/09). Below issue has been resolved, please see "this blog post":http://www.1steasy.com/blog/?p=446 for details.
+
+There seems to be one little gotcha to be aware of though; the @/admin@ path "redirects to their server admin control panel":http://support.1steasy.com/index.php?_a=knowledgebase&_j=questiondetails&_i=78&nav=+%26gt%3B+%3Ca+href%3D%27index.php%3F_a%3Dknowledgebase%26_j%3Dsubcat%26_i%3D18%27%3ERuby+on+Rails+%2F+Passenger%3C%2Fa%3E. To view the radiant admin section of your site you'll need to go to a second level page such as @/admin/pages@.

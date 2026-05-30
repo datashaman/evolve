@@ -1,0 +1,7 @@
+<pre><code>./script/extension install blog</code></pre>
+
+(If this fails follow the "manual installation instructions":installing-extensions#manual)
+
+Additionally, with the @blog@ extension you'll have the @siblings:each_before@ and @siblings:each_after@ to loop through only the pages before or after the current page. You can also list other pages by the current author with @pages:each@ to display the latest blog posts for a particular author.
+
+The Blog extension adds more features to the @author@ tag to allow you to output not only the author's name, but email address as well, and provides a @bio@ text field that each author may edit individually without the need to create a page to hold that author's bio.

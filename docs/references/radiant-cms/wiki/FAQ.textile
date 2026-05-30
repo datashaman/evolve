@@ -1,0 +1,25 @@
+h2(#license). What License is Radiant released under?
+
+The current MIT license text can be found at "http://github.com/radiant/radiant/blob/master/LICENSE":http://github.com/radiant/radiant/blob/master/LICENSE
+
+h2(#pro-con). Does Radiant Have what I need?
+
+h3. Pros
+
+* *Stable* - Radiant is very well tested and is used in production on a number of websites.
+* *Flexible* - Radiant can be a blog, a website, a wiki, or anything content related that needs to be easily maintained.
+* *Extensible* - Developers like working with Radiant, and inexpensive customizations are readily available.
+* *Actively Maintained* - Radiant has a dedicated group of core developers and is being constantly improved.
+* *Rails is Vendor'ed* - Radiant comes with the appropriate version of Rails in vendor/rails. The Radiant gem will maintain Rails for you as updates occur.
+* *Easy integration* - Check out the [[Share Layouts Extension]], which allows a Rails app built on top of Radiant to use the dynamic layouts stored in the database for Radiant. Also, look at the [[Import Export Extension]].
+* *Localization support* - Via DB; have a look at the [[Translator Extension]].
+* *WYSIWYG editor* - Radiant extensions exist for FCKeditor, TinyMCE and WMD Editor.
+* *Single sign on* - Radiant's User model is available to the local Rails app. See [[Accessing Radiant's User model]].
+
+h3. Cons
+
+* backend-i18n implemented but not released yet, plugins to be i18n ready and translated
+
+h2(#templates). What are database templates?
+
+They are default options for your database. If you want to see examples of an RSS feed, the "Styled Blog" will give you an example, if you want a look at a full-blown brochure website the "Roasters" template provides an example. If you want to create your [[layouts]], [[snippets]], and [[pages]] from scratch, use "Empty". Whichever you use, they are merely starting points.

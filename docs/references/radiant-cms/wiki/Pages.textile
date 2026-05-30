@@ -1,0 +1,81 @@
+Pages contain the content that fills in the scaffolding created by [[layouts]] and [[snippets]]. The very first parent page you create is the one that gets served by Radiant when you visit the root of your site. Any parent page can have one or more child pages, which in turn can have children. This allows you to structure the layout of your documents for management purposes. There is no necessary direct correlation between the parent and child structure you set up in Radiant and the structure of navigation that you build in the site itself, though if a particular structure makes sense for managing the pages, it usually makes sense for navigating them too.
+
+h2. Edit Page UI
+
+!{max-width:667px}http://img.skitch.com/20090409-xq7en2ins5kkpdtbri2sprdm8f.png!
+
+h2(#attributes). Attributes
+
+h3. Required Attributes
+
+* *Title* - free form text
+* *Slug* - URL for the page, generated from the page title by default
+* *Breadcrumb* - automatically mirrors the page title by default
+
+You can access these page attributes with the @<r:title/>@, @<r:breadcrumb/>@ and @<r:slug/>@ [[Radius Tags]].
+
+h4. Title
+
+The title attribute is the page title, usually used at least to let the web browser know what to show at the top of the window. Often used throughout other pages on a site as the text for a link to that specific page.
+
+h4. Slug
+
+The intriguingly named slug refers to the name used by Radiant in links to your pages. Normally this is derived from the page title automatically. However, underneath the title field of the page editor is a small "More" link. If you click on this, a new section should open where, in the first of the text fields that appear, you can type in different slug text.
+
+For example, a child of the Home page with title "Some source code" would have link "http://myhost.com/some-source-code/" by default. If you change its slug text to "some_strangeLink.html", this becomes "http://myhost.com/some_strangeLink.html/" - note that the trailing "/" is still there. You should really avoid putting in filename extensions because they're more or less meaningless with Radiant. Since the slug forms part of the URL for the page, Radiant limits the range of characters that you can include rather than escaping them. Note in particular that spaces aren’t allowed.
+
+h4. Breadcrumb
+
+Breadcrumb trails are very different. Sites often use these trails to show the user where within the site hierarchy you have gone. The [[Breadcrumbs Tag|Creating Breadcrumb Links]] produces an automatic breadcrumb trail consisting of links to any parent pages above the current page, with the title of the current page tagged on at the end. This is one area where Radiant does expose the structure of the site in an aspect of its user-facing navigation. By default the title of each page in the trail is used as visible text for the contents of the trail, but you may prefer to override this, particularly to produce a more terse entry. That’s what the breadcrumb field is for.
+
+It’s important to remember the distinction that the breadcrumb text changes things the user can see on the page, while the slug text changes the URLs that Radiant generates in order for pages to be fetched by a browser in the first place.
+
+h3. Optional Attributes
+
+* *Description* - a brief description of the page content
+* *Keywords* - a comma separated list of words pertaining to the page content
+
+These attributes can be accessed with the @<r:meta:description/>@ and @<r:meta:keywords/>@ [[Radius Tags]].
+
+These optional attributes are generally used by search engines and other automated software to deduce what your page is about.
+
+h3. Automatically Generated Attributes
+
+* Author
+* Date (published at, updated at)
+
+These attributes can be accessed with the @<r:author/>@ and @<r:date/>@ [[Radius Tags]].
+
+h2(#parts). Page Parts
+
+The special [[Radius tags]] used to include page content within a wider layout, snippet or, indeed, containing page, allow the specification of a named page part. Normally, you edit the body of a page. However, by default there is an extended tab next to the body tab which lets you provide extra content that may be included using a relevant [[Radius Tag|Radius Tags]]. In fact, "body" and "extended" are themselves just named parts within the page; you can even delete them both if you like, though the "body" part is shown by default. Deleting "body" means nothing will show up unless a layout is used which explicitly names the other part(s) you defined. Notice the small green "+" to the far right hand side of the tab bar and gray "x" icons on the name of page parts - these are how you add named parts or delete the current part, as you wish.
+
+h2. Filter
+
+The content filter menu lets you choose a special filter for that "page part's":#parts content. Radiant comes with "Markdown":md, "Smarty Pants":pants and "Textile":txt. Markdown and Textile are especially useful for creating HTML without the hassle of writing HTML; it's recommended to become familiar with at least one. Different page parts within the same page can use different filters.
+
+*Note: The "Filter Reference" link pops up a list of the most common uses for whichever filter you have selected. Likewise, the "Available Tags" link pops up a reference with descriptions and usage tips for all available [[Radius Tags]].*
+
+h2. Layout
+
+The Layout menu lists all available [[Layouts]]. Choosing "inherit" will cause the page to use the Layout from its parent.
+
+h2. Page Type
+
+The Page Type menu is set to "normal" for most cases. However, you can set up blog-style pages using the [[Archive|Archive Extension]] setting, see [[Using Radiant as a Blog]] for more information about setting up archives.
+
+Another page type, "File Not Found", lets you create a [[custom error page|Custom File Not Found Page]] to use whenever a "404 Not Found" error is being raised. Finally, the "Env Dump" page type is special and used for debugging - it dumps the environment variables under which the Radiant application is running rather than rendering the page contents.
+
+Other Page Types may be added as you [[install extensions|Installing Extensions]], refer to that extension's documentation for more information on using those types.
+
+h2. Status
+
+The Status menu determines the page's visibility. You can also set up Radiant tags that iterate over children of a particular page returning only those with a particular status. Only "Published" pages will be visible on the live site by default. "Draft" and "Reviewed" states can be used if you are creating documentation as part of a team to track a page's peer review progress, as well as possibly within the site itself using the aforementioned Radiant tags. "Hidden" pages are, as their name suggests, not visible on the live site and also stand aside from the draft/reviewed/published workflow. All this said, for many sites you probably won't want to do anything except set the page status to "Published" once you've filled in the body text.
+
+If a page isn’t showing up or links to it give a "page not found" response, make sure its status is set to "published"!
+
+See [[Changing a Page's Publication Date]] for adding a "published at" date picker to the Page Edit UI.
+
+[txt]http://www.textism.com/tools/textile/
+[md]http://daringfireball.net/projects/markdown/
+[pants]http://daringfireball.net/projects/smartypants/

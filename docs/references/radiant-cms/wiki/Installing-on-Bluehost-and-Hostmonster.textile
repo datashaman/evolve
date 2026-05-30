@@ -1,0 +1,147 @@
+**** now bluehost propose the installation of radiant directly for al list og gem***
+
+Go to Ruby Gem Installer
+
+cherche radiant
+radiant (0.8.1)  	 
+radiant_helper (1.0.8) 		
+
+Install and....
+
+Installation "radiant" Ruby Gem
+
+INFO:  `gem install -y` is now default and will be removed
+INFO:  use --ignore-dependencies to install only the gems you list
+Successfully installed radiant-0.8.1
+1 gem installed
+Installing ri documentation for radiant-0.8.1...
+Installing RDoc documentation for radiant-0.8.1...
+
+best olivier
+**************************************************
+
+
+
+
+I've noticed a lot of people asking about this one (probable because Bluehost is so cheap :) Its pretty similar to many others, but there are a few tricks.
+
+h2. SSH Access, and installing the gem
+
+Because Bluehost doesn't allow shell access by default, you have to request it. See "this article":http://helpdesk.bluehost.com/kb/index.php?x=&mod_id=2&id=203. You will need to have shell access to install the radiant gem and to run the @rake@ tasks that will get your mysql database ready for action.
+
+Once you have access, set up your bash profile so that it knows where gems go. Open up your root directory via ssh or ftp, and edit your @.bashrc@ file to look like this (you might want to make a backup copy just in case):
+
+<pre><code># .bashrc
+
+# User specific aliases and functions
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+  . /etc/bashrc
+fi
+
+export PATH="$PATH:$HOME/ruby/gems/bin"
+export GEM_HOME="$HOME/ruby/gems"
+export GEM_PATH="$GEM_HOME:/usr/lib/ruby/gems/1.8"
+export GEM_CACHE="$GEM_HOME/cache"
+
+</code></pre>
+
+Then, create a file in that same root directory called @.gemrc@, and give it the following contents, replacing [YOUR_USERNAME] with... your username (the one that is your domain name, or at least the first seven letters of it).
+
+<pre><code>gemhome: /home/[YOUR_USERNAME]/ruby/gems
+gempath:
+- /home/[YOUR_USERNAME]/ruby/gems
+- /usr/lib/ruby/gems/1.8</code></pre>
+
+Now you should be ready to install the Radiant gem. Log in via SSH. ("more on SSH + Bluehost":http://helpdesk.bluehost.com/kb/index.php?mod_id=2&kb_keywords=ssh ) (if you are on a mac, just type @ssh yourusername@yourdomain.com@ into terminal) Once logged in, you can type @gem list@ to see which gems are already installed, and make sure RubyGems is functioning properly. Then do:
+
+<pre><code>gem install radiant</code></pre>
+
+This will install the gem on your account so that it can power your app once you put it on there.
+
+h2. Making your Radiant project
+
+Since Bluehost has restrictions on what you can do with your ssh connection, it's easiest to create your Radiant project locally and then move the files over manually. If you don't have Radiant installed on your machine, install it with "RubyGems":http://www.rubygems.org/ by running the shell command
+
+<pre><code>gem install radiant</code></pre>
+
+or
+
+<pre><code>sudo gem install radiant</code></pre>
+
+(some linux machines restrict access to certain folders if you aren't the root user, and @sudo@ temporarily gives you that status.
+
+Then create your app by doing:
+
+<pre><code>radiant --database mysql WebsiteName</code></pre>
+
+This will create a folder called WebsiteName (call it whatever you want) that contains all of the files for your app. 
+
+h2. Edit the proper files within your app, then upload it
+
+h3. 1. database.yml (in the config folder)
+
+Put your newly created database name, username, and password into database.yml for the Production database. 
+
+h3. 2. environments.rb (in the config folder)
+
+Uncomment the line <code>ENV['RAILS_ENV'] ||= 'production'</code>
+
+h3. 3. .htaccess (in the public folder)
+
+Replace the first four lines with this code: (notice that it says <code>fcgid-script</code>, not <code>fastcgi-script</code> or <code>fcgi-script</code>)
+
+<pre><code># General Apache options
+AddHandler fcgid-script .fcgi
+#AddHandler cgi-script .cgi
+# Options +FollowSymLinks +ExecFCGI</code></pre>
+
+(if you get the "Rails application failed.." when we get to that point, you can also try enabling this handler within cPanel under "Apache handlers.")
+
+h3. 4. dispatch.fcgi (in the public folder)
+
+Change the first line (shebang) to @#!/ramdisk/bin/ruby@ (note: this is not what is listed in their help section for the path to ruby. If you want to be sure you are using the right one, enter @which ruby@ at your ssh prompt.) Then put the following before the require statements, replacing [USER_NAME] with your account user name:
+
+<pre><code>ENV['RAILS_ENV'] = 'production'
+ENV["GEM_HOME"]= "/home/[USER_NAME]/ruby/gems" 
+ENV["GEM_PATH"]= "/home/[USER_NAME]/ruby/gems:/usr/lib/ruby/gems/1.8"</code></pre>
+
+Use your ftp client to transfer the folder that contains your Radiant app into your root directory on Bluehost (NOT in public_html-- we don't want people to see all of these files, especially database.yml). 
+
+h2. Create your MySql database
+
+Go to the "MySql Databases" tab in cPanel, and create a new database. Then create a user and password (with all permissions), and assign it to that database. Note that Bluehost appends your username to these, so you will end up with username_database and username_user. In the past I was only able to access MySql databases with my account username and password, but this appears to be fixed. 
+
+h2. "Unpack the Radiant Gem into your vendor directory"
+
+By unpacking the gem into the vendor directory, we can force Radiant to boot up using that specific version, rather than by loading the gem from the usual path. This workaround has some resemblance to the practice of running Radiant on edge, except we’ll be using a stable version, instead of the bleeding edge.
+
+<pre><code>cd vendor
+gem unpack radiant -v=0.8.1 #or whatever the latest version number is...
+# this creates a directory called radiant-0.8.1
+# rename it
+mv radiant-0.8.1/ radiant/
+</code></pre>
+
+You should now be able to run rake tasks and restart your server without seeing a message about “Missing the Radiant 0.8.1 gem”.
+
+Bluehost won't let you 'gem' radiant. It has to be unpacked into the vendor folder. If there's a better way, edit this document.
+
+h2. Run the rake task
+
+With your ssh connection, navigate into the main directory of your app, and then run:
+
+<pre><code>rake production db:bootstrap</code></pre>
+
+Follow the simple steps to create the first Radiant user and it will deal with creating all of the database tables for you. You can choose to create an empty site or a blog (if you are new to radiant, looking at the default code for the blog is a great way to see how clever you can be with [[Radius Tags]])
+
+h2. Create a "symlink":http://en.wikipedia.org/wiki/Symbolic_link 
+
+In the same ssh window, while in your account's root directory, do
+
+<pre><code>ln -s ~/radiant_app_folder_name/public ~/public_html/website_name</code></pre>
+
+This will place a folder in your public_html folder that will appear to contain what your app's "public" folder contains. You should now be able to navigate to yourdomain.com/website_name and see your brand new Radiant install. 
+
+note: If this doesn't work, let me know: nevin dot freeman at g_mail. It was a headache of trial and error for me, and I want this article to save time for future radiant users.

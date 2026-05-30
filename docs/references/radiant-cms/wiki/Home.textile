@@ -1,0 +1,228 @@
+Radiant is a no-fluff, open source content management system designed for small teams. It is similar to Textpattern or MovableType, but is a general purpose content management system (not just a blogging engine).
+
+# "Installation":#installation
+# "The Basics":#the-basics
+# "Extensions":#extensions
+# "How Tos":#how-tos
+# "Upgrading a Radiant site to a new version":#upgrading-a-radiant-site-to-a-new-version
+# "Troubleshooting":#troubleshooting
+# "Getting Help":#getting-help
+# "Radiant in Action":#radiant-in-action
+# "Radiant Pros":#radiant-pros
+# "Developers":#developers
+# "Releases":#releases
+
+h2. <a name="wiki-install"></a>Installation
+
+If you just want a quick and easy overview of the installation process take a look at the "Installing Radiant Screencast":mov (direct link to QuickTime movie), the "full post":post is on the "Radiant Blog":blog.
+
+[mov]http://radiant.s3.amazonaws.com/screencasts/01_install.mov
+[post]http://radiantcms.org/blog/archives/2008/09/05/first-screencast/
+[blog]http://radiantcms.org/blog/
+
+*Don't want to get into a whole installation just to test it out?* There is a "live demonstration site":demo available for you to experiment with, the "*Username*" is "*admin*" and the "*Password*" is "*radiant*"; and don't worry about breaking anything the entire demo site is reset to a pristine state on the hour.
+
+[demo]http://demo.radiantcms.org/admin/login
+
+* [[Generic Installation Instructions|Installation]]
+* *By Operating System*
+** [[Gentoo|Installing on Gentoo]]
+** [[Mac OS|Installing on Mac OS X]]
+** [[Ubuntu|Installing on Ubuntu]]
+** [[Windows|Installing on Windows]]
+* *By Web Host*
+** [[A Small Orange|Installing on A Small Orange]]
+** [[Bluehost|Installing on Bluehost]]
+** [[Dreamhost Using SSH|Installing on Dreamhost Using SSH]]
+** [[Heroku|Installing on Heroku]]
+** [[HostingRails|Installing on HostingRails]]
+** [[Prime Hosting|Installing on Prime Hosting]]
+** [[Site5|Installing on Site5]]
+** [[Slicehost|Installing on Slicehost]]
+** [[TextDrive|Installing on TextDrive]]
+** "Media Temple":http://kb.mediatemple.net/questions/152/Installing%20Radiant
+** "RoseHosting.com":https://www.rosehosting.com/blog/install-radiant-on-ubuntu-14-04/
+** "Updated Dreamhost Install":http://blog.ajsiegel.com/2009/10/07/setting-up-radiant-cms-0-8-1-on-dreamhost/
+** "RadiantCMS on Dreamhost. Tips to solve will_paginate issues":http://pastebin.com/CXGnVZKa
+** "WebFaction":http://www.ravelrumba.com/blog/install-radiant-cms-webfaction/
+* *Radiant Hosting Providers*
+** "AVLUX":avlux specializes in Radiant hosting, hosts the Radiant site, and includes complete setup and support with all hosting plans.
+** "Radiant CMS Hosting":radiantcmshosting is a small, inexpensive hosting outfit.
+** "RoseHosting.com":https://www.rosehosting.com/ offers fully-managed Radiant CMS hosting with free 24/7 support. They will install and configure Radiant for you for free.
+
+[avlux]http://avlux.net
+[radiantcmshosting]http://radiantcmshosting.com/
+h2(#basics). The Basics
+
+* *[[Getting Started]]*
+* *[[Pages]]*
+* *[[Layouts]]*
+* *[[Snippets]]*
+* *[[Radius Tags]]*
+** [[Tags that Insert Content]]
+** [[Tags that Change Page Context]]
+** [[Tags that Work with Collections]]
+** [[Conditional Tags]]
+** [[Using the Header Tag]]
+** [[Tag Reference|Radiant Tag Reference]]
+* *[[Customizing the Admin UI]]* - see also: [[Settings Extension]]
+** [[Custom File Not Found Page]] (404 response)
+** [[Additional Configuration Options]]
+* *[[FAQs|FAQ]]*
+
+h2(#extensions). Extensions
+
+* *[[What are Extensions?|Extensions]]*
+* *[[Extension Registry]]*
+* *[[Thirdparty Extensions]]*
+* *[[Installing Extensions]]*
+* *[[Uninstalling Extensions]]*
+* *[[Merging Existing Extensions|Merging-Existing-Extensions]]*
+* *[[Using Extensions]]*
+** [[Blog Extension]] - several blogging features in one package
+** [[Blog Tags Extension]] - next/previous page navigation
+** "Chronicle Extension":http://blip.tv/file/3479659/ - page, snippet and layout versioning
+** [[Comments Extension]] - comments for your blog
+** [[Copy Move Extension]] - copy and move pages between parents
+** "Custom Fields Extension":http://blip.tv/file/3383150/ - custom fields for pages
+** [[CyImage Extension]] - automatic resizing of images using ImageMagick directly on Radiant pages
+** "Database Mailer Extension":http://blip.tv/file/3351580/ - database persistence for emailed forms
+** [[Gallery Extension]]
+** "Globalize2 Extension":http://blip.tv/file/2764221/ - page translation ("part two screencast":http://blip.tv/file/2799309/)
+** [[Language Redirect Extension]] - redirect visitors based on language
+** [[Mailer Extension]] - great for "Contact Us" style mail forms
+** [[MailTo Extension]]
+** [[Multi Site Extension]] - host multiple domains with a single Radiant instance - see also: [[vhost extension]]
+** [[Page Attachments Extension]] - upload files to pages - see also: [[Paperclipped Extension]]
+** [[Paperclipped Extension]] - Great for managing assets such as images, movies, pdf, etc.
+** [[Reorder Extension]] - change the order of pages
+** [[Scheduler Extension]] - automated expiration and publishing of pages
+** [[Search Extension]] - let users search the content of your site
+** [[Settings Extension]] - Radiant settings exposed to the admin UI
+** [[Siblings Tags Extension]] - next/previous page navigation
+** [[Simple Password Extension]]  - simple password extension
+** "User Pages Extension":http://github.com/jasiek/radiant-user_pages-extension - introduces page manipulation permissions per user
+** "Sitemap XML Extension":http://blip.tv/file/2744169/  - create and manage xml sitemaps
+** "SNS (Styles 'n' Scripts) Extension":http://blip.tv/file/3448202/  - better stylesheet and javascript management
+** "Stereotype Extension":http://blip.tv/file/3383150/ - inheritable page templates
+** [[Tags Extension]] - page tagging as in "web 2.0"
+* *[[Creating Your Own Extensions|Creating Extensions]]*
+** [[Adding Custom Radius Tags]]
+** [[Creating a Link Roll Extension]]
+** [[Removing the Scaffold from the Link Roll Extension]]
+** [[Altering Tabs in the Admin UI]]
+** [[Modifying the Page UI]]
+** [[Extending and Overriding Radiant Behavior]]
+** [[Creating a Custom Page Type]]
+** [[Using Radiant Layouts to Style Extension Controllers]]
+** [[How-To: Create An Extension]]
+** [[How to enable Travis CI for an extension]]
+
+h2(#howto). How Tos
+
+* [[Accessing Radiant's User Model]]
+* [[Using Radiant as a blog]]
+* [[Hosting Multiple Websites using mod_proxy]] - see also: [[Multi Site Extension]] and [[vhost extension]]
+* [[Making a Sitemap]]
+* [[Elegant Page Level CSS]]
+* [[Output All Page Parts]]
+* [[Reset Your Admin Password]]
+* [[Set a Top Level Page per User]]
+* [[Setup Development Mode]]
+* [[Host a Podcast]]
+* [[Change a Page's Publication Date]]
+* [[Create an Atom Feed]]
+* [[Create a RSS Feed]]
+* [[Make a Template from an existing site]]
+* [[Migrating from Mephisto]]
+* [[Migrating from SQLite to MySQL]]
+* [[Setup a MySQL Database]]
+* [[Setup a PostgreSQL Database]]
+* [[Setup a SQLite Database]]
+* [[Setup a DB2 Database]]
+* [[Setup a SQL Server Database]]
+* [[Using Multiple PostgreSQL Schemas]]
+* [[Running on Edge]]
+* [[Clear the Page Cache]]
+* [[Running on JBoss Rails]]
+* [[Using RubyMine debugger]]
+* [[Using Devise as an authentication system for Radiant end-users]]
+* [[Using cells to render arbitrary Rails views within Radiant pages]]
+* [[Disable caching in a Radiant system ]]
+
+h2(#upgrading). Upgrading a Radiant site to a new version
+
+* [[Updating a site from Radiant 0.6.9 to 0.7.1]]
+
+
+h2(#troubleshooting). Troubleshooting
+
+* [[Index Sitemap Column Headers Error]]
+* [[Undefined Method for Enumerable]]
+* [[Intermittent Errors with SQLite on Windows]]
+* [[No Secret Given to the Protect from Forgery Call]]
+
+h2(#help). Getting Help
+
+Found a bug? Can't get something to work? Having a hard time understanding the documentation on the wiki?
+
+h3. Reporting Bugs or Requesting Features
+
+The best way to report a bug or request a feature is to write the fix or enhancement and then send a "pull request":pull. If you're not that familiar with Git or the Radiant codebase, you can also "file an issue":issue.
+
+[pull]http://github.com/guides/pull-requests
+[issue]http://github.com/radiant/radiant/issues
+
+h3. Radiant Users Mailing List
+
+"The mailing list":list is a great place to ask questions about Radiant.
+
+[list]http://radiantcms.org/mailing-list/
+
+<form method="get" action="http://www.google.com/custom">
+<p>
+<input type="text" name="q" maxlength="255" size="30" />
+<input type="submit" value="Search the archives" />
+
+<input type="hidden" name="cof" value="S:http://radiantcms.org;AH:left;AWFID:58d5d515d673927f;" />
+<input type="hidden" name="domains" value="lists.radiantcms.org" />
+<input type="hidden" name="sitesearch" value="lists.radiantcms.org" value="checked" />
+</p>
+</form>
+
+h3. IRC
+
+Having trouble using or installing Radiant? Want to share a success story? You can chat with members of the user and developer community in real time in the "#radiantcms":radiantcms channel on irc.freenode.net. You'll need an IRC Client. There's a nice "list of them":irc over on the Ruby on Rails wiki. Additionally, there is "Freenode Webchat":webchat which gives you an IRC Client in your web browser.
+
+[radiantcms]irc://irc.freenode.net/#radiantcms
+[irc]http://wiki.rubyonrails.com/rails/pages/IRC
+[webchat]http://webchat.freenode.net/?channels=radiantcms
+
+h2(#users). Radiant in Action
+
+Due to incessant spam the [[Radiant Users]] page has been removed.
+
+h2(#pros). Radiant Pros
+
+Looking for some help with your website? [[Radiant Pros]] can help you get it done.
+
+h2(#dev). Developers
+
+The best way to learn about Radiant, by far, is to read the source. Ruby is extremely easy to read and Radiant is a straight forward Rails application. So don't be afraid of the source, dig in! The "app directory":app is a good place to start.
+
+[app]http://github.com/radiant/radiant/tree/master/app
+
+* [[Contributing Code]]
+* [[The Radiant Ethic]]
+* [[Instance vs. Application mode]]
+
+h2(#releases). Releases
+
+* Radiant 0.9.1 - Refraction Release (Bugfix), "Change Log":http://github.com/radiant/radiant/blob/0.9.1/CHANGELOG
+* Radiant 0.9.0 - Refraction Release, "Release Notes":http://radiantcms.org/blog/archives/2010/06/25/radiant-0-9-0---refraction-release/, "Change Log":http://github.com/radiant/radiant/blob/0.9.0/CHANGELOG, "Upgrade Notes":http://github.com/radiant/radiant/wiki/Developer-Upgrade-Notes#radiant_0_9
+* Radiant 0.8.1 - Luster Release, "Change Log":http://github.com/radiant/radiant/blob/0.8.1/CHANGELOG
+* Radiant 0.8.0 - Asterism Release, "Release Notes":http://radiantcms.org/blog/archives/2009/06/14/radiant-0-8-0---asterism-release/, "Change Log":http://github.com/radiant/radiant/blob/0.8.0/CHANGELOG, "Upgrade Notes":http://github.com/radiant/radiant/wiki/Developer-Upgrade-Notes#radiant_0_8
+* Radiant 0.7.1 - Engraving Release (Bugfix), "Change Log":http://github.com/radiant/radiant/blob/0.7.1/CHANGELOG
+* Radiant 0.7.0 - Intaglio Release, "Release Notes":http://radiantcms.org/blog/archives/2009/02/07/radiant-0-7-0---intaglio-release-final/, "Change Log":http://github.com/radiant/radiant/blob/0.7.0/CHANGELOG, "Upgrade Notes":http://github.com/radiant/radiant/wiki/Developer-Upgrade-Notes#radiant_0_7
+* Radiant 0.6.9 - Etch Release (Bugfix), "Release Notes":http://radiantcms.org/blog/archives/2008/08/01/radiant-0-6-9---etch-release-bugfixes/, "Change Log":http://github.com/radiant/radiant/blob/0.6.9/CHANGELOG
+* Radiant 0.6.8 - Incise Release, "Change Log":http://github.com/radiant/radiant/blob/0.6.8/CHANGELOG

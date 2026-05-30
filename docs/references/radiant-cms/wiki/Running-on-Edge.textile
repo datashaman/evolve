@@ -1,0 +1,16 @@
+<pre><code># Freeze to trunk
+rake radiant:freeze:edge
+
+# Alternatively, you can freeze to a specific revision or branch
+rake radiant:freeze:edge REVISION=123 BRANCH=facets
+
+# or to a specific TAG
+rake radiant:freeze:edge TAG=0.7.1
+
+# Update your install
+rake radiant:update
+
+# Run the migrations
+rake production db:migrate</code></pre>
+
+Note that in order to freeze Radiant your Radiant project needs to be installed via the @radiant@ command. Note that RubyGems:http://rubygems.org is not a requirement for a frozen Radiant application, but you need to use the @radiant@ command that comes with the gem in order to create a fresh Radiant project. However, [[Git]] is required.

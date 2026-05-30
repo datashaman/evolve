@@ -1,0 +1,37 @@
+At the heart of Radiant are Radius tags; sometimes just called tag(s) for brevity. A Radius tag is very similar to an HTML tag, if you're familiar with HTML you'll feel right at home. Here's a simple example that demonstrates using [[tags that insert content]] to retrieve the current page's title and URL.
+
+<pre><code>This page's title is: <r:title/>
+This page's URL is: <r:url/></code></pre>
+
+And here’s the same example except with the addition of a [[tag that changes scope|Tags that Change Page Context]] so that the current page shows the title and URL of it's parent page.
+
+<pre><code><r:parent>
+  My parent's title is: <r:title/>
+  My parent's URL is: <r:url/>
+</r:parent></code></pre>
+
+Radiant comes with a useful selection of Radius [[tags|Radiant Tag Reference]] right out the box and [[adding your own tags|Adding Custom Radius Tags]] is straightforward. As we've already seen in the previous example some tags can [[insert content|Tags that Insert Content]] others can [[change the context we're in|Tags that Change Page Context]], behave like [[conditional statements|Conditional Tags]] or allow you to [[iterate over collections|Tags that Work with Collections]]. Once you understand the basics of Radius, you should find that the [[tags|Radiant Tag Reference]] not covered explicitly are fairly self-explanatory.
+
+h2. Basic Usage
+
+In general, you can use a Radius tag wherever it would be appropriate to use an HTML tag, this means that tags can only be used in [[page|Pages]], [[layout|Layouts]] or [[snippet|Snippets]] content, but not in names or titles.
+
+As the @<r:parent>@ example above shows, it is possible to nest Radius tags *within* other Radius tags, so long as they are separate elements. However, *using a Radius tag as the the attribute of another Radius tag is _NOT ALLOWED_*. For example:
+
+<pre><code><r:if_url matches="<r:parent><r:url/></r:parent>">...</r:if_url>
+                   ^ DON'T DO THIS, it breaks! ^</code></pre>
+
+Now you're probably wondering, "How can I use variables or constants within the attributes of a Radius tag?" The answer is that you can't.
+
+The syntax of Radius is designed so that it fits within the namespace of XML. So if your text editor has syntax highlighting, then the illegal example above will probably *look* wrong.
+
+*Note: You _CAN_ use Radius tags within the attributes of HTML tags.* For example:
+
+<pre><code><body id="<r:slug/>"></code></pre>
+
+*Radius tags fall into four categories:*
+
+* *[[Tags that Insert Content]]* are the self-closing style tags, like @<r:title/>@, and refer to the different "page attributes":pages#attributes or content. @<r:link>@ and @<r:snippet>@ are notable exceptions that can act as both a self-closing and container element, the @<r:navigation>@ tag is always used as a container.
+* *[[Tags that Change Page Context]]* are the container style tags, like @<r:parent>...</r:parent>@, and control from which page the contained tags get their content.
+* *[[Conditional Tags]]* are the container style tags that begin with @<r:if_@ or @<r:unless_@, like, @<r:if_content>we have a body part</r:if_content>@ and only render their containing elements when the condition is successfully met.
+* *[[Tags that Work with Collections]]* are the container style tags that don't fit into another category, like @<r:children>...</r:children>@ and operate on one or more pages at a time.

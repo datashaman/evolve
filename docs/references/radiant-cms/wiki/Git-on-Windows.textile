@@ -1,0 +1,20 @@
+The aim of this article is to give a person unfamiliar with Git a rough guide on how to access extensions, etc. from GitHub.
+
+This guide is based on the "absolutely excellent guide written by Kyle Cordes":1 and that should be the reference you should go to if you need more information. GitHub also has a "useful guide to Git on Windows":2. And, Scott Chacon has made a "Git on Windows":3 screencast over at "GitCasts":4, which demonstrates setting up mSysGit and some basic Git on Windows workflow.
+
+h2. Installing msysgit
+
+For Windows, the client software is called msysgit (Git on MSys) which you can get from "http://code.google.com/p/msysgit/":http://code.google.com/p/msysgit/
+
+# Download the most recent version
+# Run the installer
+# Install it to default location - C:\Program Files\Git
+# Keep the Windows Explorer Integration with options to Add "Git Bash Here" and Add "Git GUI Here"
+# For the option to adjust the path, you can use any of the first two options.  I use the option to 'Run Git from the Windows Command Prompt'
+
+Refer to [[Installing Extensions]] for the details of installing extensions.
+
+[1]http://kylecordes.com/2008/04/30/git-windows-go/
+[2]http://github.com/guides/using-git-and-github-for-the-windows-for-newbies
+[3]http://www.gitcasts.com/posts/11
+[4]http://www.gitcasts.com/

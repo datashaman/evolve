@@ -1,0 +1,124 @@
+This is a simple instruction set, useful as an exercise, that inserts a Rails application into a Radiant project, as an extension.  It's a good basic introduction to generic extension architecture.
+"Your Radiant Application":#radiant
+"Creating the Extension":#creatingextension
+"Linking to Extension":#link
+"Integrating the Look and Feel":#look
+"More Reading":#read
+
+*Demo Information*
+- Sample Radiant appication name: "sample"
+- Sample extension name: "queen"
+- Sample Rails application name: "tmp_app"
+
+Compatible with Radiant 0.8.x, 0.9.0
+Sample extension available at "Queen":git://github.com/banane/queen.git
+
+h2(#radiant). Your Radiant Application
+
+1. For the sake of a complete example we create a Radiant site. If you already have one you'd like to use, skip to "Creating the Extension":#createextension. 
+
+In your web root (@/path/to/project/@), create a new Radiant application by typing:
+
+@radiant --database [yourdbtype] /path/to/project/sample@
+
+If necessary, configure the database in
+
+@/path/to/project/sample/config/database.yml@
+
+2. Enter the Radiant application directory (@/path/to/project/sample@) and type:
+
+@Rake db:bootstrap@
+
+h2(#createextension). Creating the Extension
+
+1. In the Radiant application directory (@/path/to/project/sample@), run the generator to create the extension, which in our case is "queen."
+@script/generate extension queen@
+
+To test, check that the generator created your extension by going to @/path/to/project/sample/vendor/extensions@. The extension directory queen should be there, with subdirectories.
+
+Now, you have a choice to either code your Rails app directly in the extension directory, or make it elsewhere, outside of the Radiant application, and copy it over. We're going to create it elsewhere and copy it into Radiant application. Until there is an extension scaffolding generator, this is an easy way to make an application quickly.
+
+2.  In @/path/to/project/sample@, type @rails new tmp_app@
+
+3. Within that root, type:
+
+@script/generate scaffold queen name:string email:string kingdom:string@
+
+4. Copy the tmp_app files to the Radiant sample app, in the specific "queen" extension directory:
+
+<pre><code>cp -r tmp_app/app/views/*  sample/vendor/extensions/queen/app/views/
+cp tmp_app/db/migrate/*.rb sample/vendor/extensions/queen/db/migrate/
+cp tmp_app/app/controllers/queens_controller.rb sample/vendor/extensions/queen/app/controllers/
+cp tmp_app/app/models/*.rb sample/vendor/extensions/queen/app/models/</code></pre>
+
+5. In your Radiant home directory (@/path/to/project/sample/@)
+
+@rake radiant:extensions:queen:migrate@
+
+and
+
+@rake radiant:extensions:queen:update@
+
+6. In the extension directory (@/sample/vendor/extensions/queen@), edit the @queen_extension.rb@ file, to define the routes to your extension, replace: 
+
+<pre><code># define_routes do |map|
+#   map.namespace :admin, :member => { :remove => :get } do |admin|
+#     admin.resources :queen
+#   end
+# end</code></pre>
+
+with:
+
+<pre><code>define_routes do |map|
+    map.resources :queens
+end</code></pre>
+
+7. In your Radiant application (sample) root, restart the server:
+
+@/path/to/project/sample/script/server@
+
+h2(#link). Linking To the Extension
+
+1. In a browser, go to @http://localhost:3000/admin@. Pick a page to edit, Home Page, for example, and type:
+
+@<a href="http://localhost:3000/queens/new">Create a Queen</a>@
+
+This last bit routes requests to localhost:3000/queens/new to the extension application, to create a new Queen.
+
+2. In a new browser window, test this by going to @http://localhost:3000@. When clicked, the link should go to a new form that you can submit, and view. 
+
+h2(#look). Integrating the Look and Feel
+
+To fully integrate an extension with Radiant you should download the "share_layouts" extension:
+
+1. In @sample/vendor/extensions@, run :
+
+@git clone git://github.com/radiant/radiant-share-layouts-extension.git share_layouts@
+
+2. In @sample/vendor/extensions/queen/app/controllers/@, edit the file: @queen_controllers.rb@. In the beginning of the file, add line:
+
+@radiant_layout '[name of one of your Radiant layouts]'@
+
+(note: In the Radiant Admin window, create a layout if you do not already have one.)
+
+3. Restart the server and test. Your Queen extension should have the look and feel of your other Radiant pages.
+
+h2(#look). Granting public access to your extension functionality
+
+The default behavior for accessing your extension controllers requires a login. So if you want to have public functionality without a registration, add '"no_login_required"' as one of the first lines after the head of your controller.
+
+
+
+h2(#read). More Reading
+
+What can you do with extensions? The popular Radiant extension development is usually around:
+* Altering the Admin interface
+** [[Altering Tabs in the Admin UI]]
+** [[Adding Custom Radius Tags]]
+* Integrating customized applications and databases
+** [[Comments Extension]]
+** [[Creating a Custom Page Type]]
+* Optimizing the interface or performance
+** [[Blog Extension]]
+** [[Language Redirect Extension]]
+** [[Paperclipped Extension]]

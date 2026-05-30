@@ -1,0 +1,104 @@
+h1(#radiant_0_9). Radiant 0.9
+
+h2. define_routes has been deprecated
+
+Radiant Extensions may now create routes in the extension's config/routes.rb file.
+
+h2. AdminUI Tab API has changed
+
+Radiant now supports nested navigation. Selecting a tab in the interface will bring you to the first listed navigation item for that tab. You will no longer just add a single tab for each area you need to add. You may add links to existing tabs, or add your own tabs and add links there.
+Additionally, tab visibility is no longer determined when adding the tab, but the controllers will be checked for a user's access to the path specified. 
+
+*Old:*
+<notextile><pre><code class="ruby">
+def activate
+  admin.tabs.add "Advertisements", "/admin/advertisements", :after => "Layouts", :visibility => [:all]
+end
+</code></pre></notextile>
+*New:*
+<notextile><pre><code class="ruby">def activate
+  tab "Content" do
+    add_item "Advertisements", "/admin/advertisements", :after => "Pages"
+  end
+  tab "Advertisements" do # or, add your own tab
+    add_item "Recently Created", "/admin/advertisements/recent"
+    add_item "Expiring", "/admin/advertisements/expiring"
+  end
+end</code></pre></notextile>
+
+Using the old style "admin.tabs.add" will continue to work in 0.9 (placing links in the "Content" tab) but it is deprecated and will be removed in a future version.
+The default tabs are "Content" (consisting of Pages) and "Design" (consisting of Snippets and Layouts).
+
+Be sure to set "only_allow_acces_to" in your controller if you need to restrict access based on a user's role (see an example "in the layouts controller.":http://github.com/radiant/radiant/blob/master/app/controllers/admin/layouts_controller.rb#L2-L5)
+
+h1(#radiant_0_8). Radiant 0.8.0
+
+h2. 1. The @default_order@ plugin has been removed.
+
+*Old:*
+<notextile><pre><code class="ruby">order_by :name</code></pre></notextile>
+*New:*
+<notextile><pre><code class="ruby">default_scope :order => "name ASC"</code></pre></notextile>
+
+h2. 2. @application.rb@ → @application_controller.rb@
+
+@application.rb@ has changed to @application_controller.rb@ in accordance with Rails convention.
+
+*Old:*
+<notextile><pre><code class="ruby">require_dependency 'application'</code></pre></notextile>
+
+*New:*
+<notextile><pre><code class="ruby">require_dependency 'application_controller'</code></pre></notextile>
+
+h2. 3. @ResponseCache@ → @Radiant::Cache@
+
+Remove all references to @ResponseCache@.
+
+If you want to cache non-page items, simply apply an appropriate @Cache-Control@ header to your response using ActionController's  @expires@ method. Use @expires_now@ to prevent caching.
+
+To manually clear the cache:
+
+<notextile><pre><code class="ruby">Radiant::Cache.clear</code></pre></notextile>
+
+@Radiant::Cache@ is built on top of @Rack::Cache@, which is included in vendor. As a result of this change, @SiteController@ no longer has a @show_uncached_page@ method. All requests to @SiteController@ imply an uncached or expired page.
+
+h2. 4. Testing Frameworks: RSpec 1.2.4, Cucumber 0.3.x, Webrat 0.4.4+
+
+Now uses RSpec 1.2.4 (exact version), any 0.3 family version of Cucumber, and Webrat 0.4.4 or greater (in the same family).  These are added as gem dependencies to @config/environments/test.rb@. @spec_integration@ is no longer used.
+
+h2. 5. Rails 2.3.2
+
+Rails 2.3.2 is included.  Please refer to information on upgrading from Rails 2.1.x for any significant changes there.
+
+h1(#radiant_0_7). Radiant 0.7.x
+
+h2. 1. Update to Controller naming convention
+
+Before 0.7.x Radiant used to have things like Admin::PageController and Admin::SnippetController (i.e. singular controller names). .As of Radiant 0.7.0, Radiant now complies with Rails' naming conventions and uses plural controller names like Admin::PagesController and Admin::SnippetsController. 
+
+h2. 2. Load test data with Datasets, instead of Scenarios
+
+From 0.6.5 to 0.6.9, Radiant used the _scenarios_ gem to load test data. With version 0.7.0, _scenarios_ were replaced with _datasets_, which share a very similar API, but enable the test data to load much faster. If you were using _scenarios_ to load test data in your extension before version 7, you need only make a few small modifications to make the switch to _datasets_.
+
+Look for the following lines in the file @spec/spec_helper@:
+
+<notextile><pre><code class="ruby">require 'scenarios'
+
+if File.directory?(File.dirname(__FILE__) + "/scenarios")
+  Scenario.load_paths.unshift File.dirname(__FILE__) + "/scenarios"
+end
+</code></pre></notextile>
+
+Delete those lines, and replace them with the following line:
+
+<notextile><pre><code class="ruby">Dataset::Resolver.default << (File.dirname(__FILE__) + "/datasets")
+</code></pre></notextile>
+
+You should also replace all references to _scenarios_ with _datasets_. In particular, look out for the following:
+
+* rename the @spec/scenarios@ folder to @spec/datasets@
+* rename all files within the @spec/datasets@ folder ending in @_scenario@ to end with @_dataset@
+* change all classes which inherit from @Scenario::Base@ to inherit instead from @Dataset::Base@. The class name itself may also have to change, e.g. @class UsersScenario < Scenario::Base@ would become @class UsersDataset < Dataset::Base@
+* when loading data into your specs, replace @scenario@ with @dataset@,  e.g. @scenario :users@ would become @dataset :users@
+
+The API for _datasets_ is identical to that of _scenarios_, so you should not have to modify the actual dataset files.

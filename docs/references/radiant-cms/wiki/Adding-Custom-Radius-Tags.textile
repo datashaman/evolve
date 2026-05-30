@@ -1,0 +1,230 @@
+*THIS ARTICLE IS A WORK IN PROGRESS*
+
+h2. Introduction
+
+Radius tags are flexible tools. They allow you to wrap high level logic around content in order to get fine-grained control over your output with minimal effort.
+
+This article will take you through creating an extension where you define a custom radius tag, via spec driven development. It will encapsulate a common task of wrapping a bit content in an HTML block that would be a pain to rewrite over and over again. The basic structure of the output of this tag will look like this:
+
+<pre><code><div class="box">
+  <h2>
+    <img src="/images/icons/happyface.png" />
+    Spiffy box title
+  </h2>
+  <div class="content">
+    This is where the main content of our box will go.  Lots
+    of HTML or radius tags can go here.
+  </div>
+</div></code></pre>
+
+That's a lot of boiler plate HTML that we can encapsulate in a reusable and easy to remember radius tag. We will wrap that all up in a nice clean tag like this:
+
+<pre><code><r:box icon="happyface" title="Spiffy box title">
+  This is where the main content of our box will go. Lots
+  of HTML or radius tags can go here.
+</r:box></code></pre>
+
+h2. Setting up your Extension
+
+Any custom tags you implement will be added to form an extension. This way, if you create a tag that is useful to you, you can just move over the extension into other project very easily.
+
+So let's create the extension skeleton. Type this in a command prompt set to your radiant root directory.
+
+<pre><code>./script/generate extension custom_tags</code></pre>
+
+If you get an error such as "script/generate: Permission denied", make sure the /script/generate file in your project tree has execute permissions (755 should work).
+
+You should see that it created a bunch of files in @vendor/extensions/custom_tags@.  This is where your extension now lives.  Open up your favorite code editor and look around in that directory.  You should see the following items:
+
+* @README@: Contains a description of your extension.  What it does, how you use it, who to thank, that sort of thing.
+* @custom_tags_extension.rb@: Extension initialization file.  All ruby code in here is run when the server starts up.  It's used to load necessary files and inject functionality into Radiant.
+* @app@: Works just like the @app@ folder in any rails application.  It's got @controllers@, @helpers@, @models@ and @views@.  Any classes added to these directories will be loaded and available in your radiant instance.
+* @db@: Stores migrations.  If your extension modifies or adds to the database structure the migrations that make those changes will go in here.
+* @lib@: Any code libraries that dont strictly fit in the Rails model/view/controller approach will go here.  Any rake tasks that your extension may need to add would go in the @lib/tasks@ folder.
+* @spec@: You _should_ be developing your extensions with a spec driven process.  This is where the proof that your extension works as expected should live.
+
+Your first stop should be @custom_tags_extension.rb@.
+
+<pre><code>class CustomTagsExtension < Radiant::Extension
+  version "1.0"
+  description "Describe your extension here"
+  url "http://yourwebsite.com/custom_tags"
+
+  # define_routes do |map|
+  #   map.connect 'admin/custom_tags/:action', :controller => 'admin/custom_tags'
+  # end
+
+  def activate
+    # admin.tabs.add "Custom Tags", "/admin/custom_tags", :after => "Layouts", :visibility => [:all]
+  end
+
+  def deactivate
+    # admin.tabs.remove "Custom Tags"
+  end
+end</code></pre>
+
+* @version@ is the the current version of the extension.  An important value for public extensions.
+* @description@ is some brief text about what your plugin does
+* @url@ is the address of your extension's homepage.
+* @activate@ is the method that is called when your extension turns on.  This is where you can add tabs or do other initialization tasks.
+* @deactivate@ is an artifact of an older version of Radiant where extensions were turned on or off. Turning extensions off didn't work quite right, and there wasn't a compelling reason to keep the functionality (since it's just simpler to remove/uninstall the extension) so it was dropped. The @deactivate@ method is still generated for you, but at no point does the current Radiant call this method. Basically, you can ignore it.
+
+You will also see a commented section showing how you can define custom routes for your extension.  In the case of this tutorial, we only need to set the description in this file for now.  Something like "Adds some useful custom tags for this site." would do it.
+
+Now let's write some code.
+
+h2. Specs First!
+
+Lets write a spec that will outline what we are trying to do.  We have defined a syntax for our radius tag, and we know what the output is supposed to look like.  With those two bits of information, and some snippets from the Radiant spec helpers, we have everything we need to write a spec.
+
+Create a new directory at @spec/lib@ of your extension, and then create a new file in that directory named @custom_tags_spec.rb@.  Here is what the content should look like.
+
+<pre><code>require File.dirname(__FILE__) + '/../spec_helper'
+
+describe 'CustomTags' do
+  dataset :pages
+
+  describe '<r:box>' do
+    it 'should render the correct HTML' do
+      tag = '<r:box icon="happyface" title="Test Title">Content</r:box>'
+
+      expected = %{<div class="box">
+  <h2>
+    <img src="/images/icons/happyface.png" />
+    Test Title
+  </h2>
+  <div class="content">
+    Content
+  </div>
+</div>}
+
+      pages(:home).should render(tag).as(expected)
+    end
+  end
+end</code></pre>
+
+Let's unpack this a bit.
+
+* @require@ grabs and loads the radiant spec framework.  This loads up your radiant instance, and gives you access to all kinds of methods and matchers useful in any specs you may write.
+* @describe CustomTags@ tells us we will be creating a module or class named "CustomTags" (same as our extension name, imagine that).  What goes inside the this describe block are specifications that this class will implement.
+* @dataset :pages@ loads up an RSpec scenario defined by Radiant.  It makes ready a small library of page objects that you can mess around with.  In Radiant a page object is what does the rendering of tags, so we need one if we are going to spec our own tag rendering.
+* @describe '<r:box>'@ sets up a description content for just this tag.  As you implement other tags in the future, they can have their own section too.
+* @tag=@ defines the text we would type into the radiant page administration screen in order to trigger the tag.
+* @expected=@ defines what we want the output of the tag to be.
+* @pages(:home).should render(tag).as(expected)@ performs the test.  @pages@ is a method added by the @:pages@ scenario that allows us access to page object.  The easiest one to find is the @:home@ page object.  Radiant defines a @render(tag).as(expected)@ matcher for testing tag rendering.  All you have to do is plug in the values and it will let you know if your rendering succeeded or failed.
+
+Let's run our spec and see how we did.  To run the specs, go back to your command prompt and change into the root directory of your extension, and simply run rake spec (and if you not already have bootstraped your test db, do that now: rake test db:bootstrap).
+
+<pre><code>cd vendor/extensions/custom_tags
+rake spec</code></pre>
+
+It should fail.  This is good.  In spec (or test) driven development, you implement a specification first, then make sure it fails.  When it fails, you fix what it tells you the problem is, and then you run the spec again.  Repeat this process until your spec passes, and now you know your work is done.
+
+h2. Defining the Radius Tag
+
+The spec failure should say something about "undefined tag 'box'".  So it's time to define our tag.  Our approach will be to create a module that defines the tags, and then include that module into Radiant.  Add a file to @vendor/extensions/custom_tags/lib/custom_tags.rb@ with this content:
+
+<pre><code>module CustomTags
+  include Radiant::Taggable
+
+  desc "Creates an HTML box with a title, icon and body content"
+  tag "box" do |tag|
+    ""
+  end
+end</code></pre>
+
+In order to define tags, you need to include Radiant's @Radiant::Taggable@ module.  This mainly gives you access to the @tag@ method that allows declaration of new radius tags.  The @tag@ method accepts a name for the tag, and a block that defines what the tag does.  For now, just return an empty string, since our spec failures have not told us what to do there yet.  The @desc@ method works like @rake@ tasks; you simply provide a string that details how to use your tag and what it does.
+
+Run your specs again.  The message should be the same.  We have a module that defines a tag, but Radiant doesn't know that.  We need to include our module into Radiant so the tags it defines become usable.  In your initialization file @custom_tags_extension.rb@ add the following line to your @activate@ method.
+
+<pre><code>Page.send :include, CustomTags</code></pre>
+
+This inserts the @CustomTags@ module into the @Page@ model class.  Now tags that we define in @CustomTags@ should be found by Radiant.
+
+Run your specs again. (the following output has been edited slightly so it doesn't cause wrapping problems in the wiki)
+
+<pre><code>
+'CustomTags <r:box> should render the correct HTML' FAILED
+expected "<r:box icon=\"happyface\" title=\"Test Title\">\n
+Content\n</r:box>\n" to render as "<div class=\"box\">\n
+<h2>\n
+<img src=\"/images/icons/happyface.png\" />\n
+Test Title\n
+</h2>\n
+<div class=\"content\">\n
+Content\n
+</div>\n
+</div>\n", but got "\n"
+</code></pre>
+
+The old failure message is gone!  This means it found our tag.  The failure now is that the expected content doesn't match the rendered content.  Let's implement the content the tag renders.  We can simply copy out from the spec the desired result, and paste it in our tag block. Now we can insert some ruby snippets in this string to bring it to life.
+
+<pre><code>module CustomTags
+  include Radiant::Taggable
+
+  desc "Creates an HTML box with a title, icon and body content"
+  tag "box" do |tag|
+%{<div class="box">
+  <h2>
+    <img src="/images/icons/#{tag.attr['icon']}.png" />
+    #{tag.attr['title']}
+  </h2>
+  <div class="content">
+    #{tag.expand}
+  </div>
+</div>}
+  end
+end</code></pre>
+
+When you define a tag, the block yields a @tag@ object.  This object represents the tag that is being rendered, and holds all its content and attributes that were defined by the content author.  It has two useful methods for our goal.
+
+* @tag.attr['attribute_name']@ allows you hash based access to the attributes of the tag.  In this case, we want the @title@ and @icon@ attribtues.
+* @tag.expand@ will render the content of the tag (text between opening and closing tags).  In our case this is just text, but Radiant will render any other radius tags that exist in its content as real radius tags.  This is what allows you to fill radius tags with other radius tags allowing very dynamic content.
+
+Run your specs.
+
+<pre><code>.
+
+Finished in 0.48277 seconds
+
+1 example, 0 failures</code></pre>
+
+Congrats! You should have a new working tag!  Time to boot up radiant and try it out.  Launch your server, and add:
+
+<pre><code><r:box icon="happyface" title="I did it!">Foo</r:box></code></pre>
+
+to some page content.  View the source of the generated page and it should be looking good.
+
+h2. Optional Attributes
+
+You may not always want to specify an icon and a title.  Perhaps your box has a default icon you want to use most of the time, and you want to be able to have a blank title.  This is easy to add.  But first, a spec!
+
+Add this to your existing @custom_tags_spec.rb@
+
+<pre><code>  it "should have a default icon and allow a blank title" do
+    tag = '<r:box>Content</r:box>'
+
+    expected = %{<div class="box">
+  <h2>
+    <img src="/images/icons/sadface.png" />
+
+  </h2>
+  <div class="content">
+    Content
+  </div>
+</div>}
+
+    pages(:home).should render(tag).as(expected)
+  end</code></pre>
+
+*(at least firefox does not render the four spaces in the empty title line, so be sure to include them in your spec test)*
+
+As you can see the tag to be rendered now includes no attributes.  But in the expected output we expect an icon of "sadface" and a blank line for the title.  Run your specs.
+
+Failure, good.  In the rendered output, the tag is returning @/images/icons/.png@ for the image url, and we are expecting @/images/icons/sadface.png@.  Time to updagrade the box tag logic a bit.
+
+<pre><code>module CustomTags
+  include Radiant::Taggable
+
+  desc "Creates an HTML box with a title%
+</code></pre>

@@ -1,0 +1,54 @@
+h2. Installation
+
+h3. ImageMagick
+
+To find out if your system has ImageMagick available run @which convert@, if you see a path returned you're ready, if not use your system's package manager to get a copy. Any modern GNU/Linux distribution should have an ImageMagick package available and MacPorts has one for Mac users.
+
+h3. Settings
+
+The [[Settings extension]] is optional, but recommended if you'd like an easy interface for setting Paperclipped options. 
+
+<pre><code>./script/extension install settings</code></pre>
+
+(If this fails see the "manual installation instructions":installing-extensions#manual)
+
+h3. Paperclipped
+
+<pre><code>./script/extension install paperclipped</code></pre>
+
+(If this fails see the "manual installation instructions":installing-extensions#manual)
+
+Then you need to install and require the ImageSize gem.
+
+<pre><code>sudo gem install imagesize</code></pre>
+
+Then open your @config/environment.rb@ file and add
+
+<pre><code>config.gem 'imagesize', :lib => 'image_size'</code></pre>
+
+inside the @Radiant::Initializer.run@ block.
+
+<pre>rake production db:migrate:extensions
+rake production radiant:extensions:paperclipped:update</pre>
+
+Then restart your application server.
+
+h2. Configuration Options
+
+Note: While you may use [[Settings extension]], you can of course also set these using the console or by editing environment.rb, see: [[Customizing the Admin UI]].
+
+<pre><code>Radiant::Config["assets.additional_thumbnails"] #default: 'normal=normal=640x640>'
+Radiant::Config["assets.storage"]
+Radiant::Config["assets.s3.key"]
+Radiant::Config["assets.s3.secret"]
+Radiant::Config["assets.s3.bucket"]
+Radiant::Config["assets.s3.url"]
+Radiant::Config["assets.s3.path"]
+Radiant::Config["assets.content_types"] #default: 'image/jpeg, image/pjpeg, image/gif, image/png, image/x-png, image/jpg, video/x-m4v, video/quicktime, application/x-shockwave-flash, audio/mpeg, video/mpeg;
+Radiant::Config["assets.display_size"] #default: 'original'
+Radiant::Config["assets.skip_filetype_validation"] #default: true
+Radiant::Config["assets.max_asset_size"] #default: 5</code></pre>
+
+h2. Usage
+
+Check the "Paperclipped README":http://github.com/kbingman/paperclipped/blob/master/README.md for usage details.

@@ -1,0 +1,25 @@
+h2. Symptoms
+
+Note: *This only applies to Windows.*
+
+You create a new Radiant project with SQLite as the database backend. After adjusting the properties in @database.yml@ you try to run @rake production db:bootstrap@ but it randomly crashes with errors about database not being found. When you delete the database file and try again, it does either at the same place or some other place. There appears to be no pattern in the crashes.
+
+h2. The Problem
+
+As pointed out by Stephen Lombardo in "this thread":1 the error might have to do with TortoiseSVN running on your system and interfering with the SQLite database.
+
+[1]http://lists.radiantcms.org/pipermail/radiant/2008-August/009992.html
+
+There was a post to the SQLite list regarding issues with the SQLite database and TortoiseSVN. The @tsvncache@ process was interfering with SQLite's deletion of the transaction journal causing seemingly random errors. See "this thread":2 for more information.
+
+[2]http://www.mail-archive.com/sqlite-users@sqlite.org/msg34453.html
+
+This kind of problem might also be caused by virus scanners or search services that open and scan new files when they are created.
+
+h2. The Solution
+
+If you are running @tsvn@ you could try to configure it to ignore the directory your database file resides in. Or, you could also try to rig up a migration to change the SQLite journal mode so the library will reuse the journal.
+
+*could someone please add some context around the following command, to me at least, it makes no sense and adds no value to the solution as is*
+
+<pre><code>execute "PRAGMA journal_mode = PERSIST"</code></pre>

@@ -1,0 +1,5 @@
+If you create a directory called @sass@ inside your Radiant project's @public/stylesheets@ directory you can easily use those Sass files in your [[Pages]], [[Snippets]] and [[Layouts]]. For example if you created @public/stylesheets/sass/main.sass@ you could use it in your site like:
+
+<pre><code><link rel='stylesheet' href='/stylesheets/main.css'></code></pre>
+
+Note *you _do not_ need the Haml gem installed, Radiant bundles it's own version*.

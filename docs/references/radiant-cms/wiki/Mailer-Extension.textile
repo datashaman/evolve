@@ -1,0 +1,121 @@
+*"There is also a screencast by Cristi Duma covering the mailer extension":http://blip.tv/file/2964289/.*
+
+h2. Installation
+
+From the root of your Radiant project run:
+
+<pre><code>./script/extension install mailer</code></pre>
+
+(If this fails see the "manual installation instructions":installing-extensions#manual)
+
+Then restart your application server.
+
+h2. Introduction
+
+As with many extensions, Mailer is primarily accessed through [[Radius Tags]], these tags roughly correspond to the @form@ and @input@ tags you would use in HTML. Here is a form for a single text input:
+
+<pre><code><r:mailer:form name='simple_text_input'>
+  <r:text name='text'/>
+</r:mailer:form></code></pre>
+
+The @name@ attributes on the @<r:mailer>@ tags are used to refer to the contents of the mailer while you're processing the form, as we'll see later when we start sending mail.
+
+Your Mailer forms can go in any "page part":pages#part that gets used in your layout, @body@, @sidebar@, @my_form@ it doesn't matter. However, the other parts of the Mailer extension require specific page part names. Your configuration must be stored in a part called @mailer@. While your email template can be stored in either an @email@ or @email_html@ part depending on whether you want send plain text or HTML formatted email.
+
+So you need three page parts for a Mailer form; one named @mailer@ that contains your configuration, one named @email@ or @email_html@ that contains your email template, and one named anything you like that contains your actual form tags.
+
+h2. Configuration
+
+Before you can start sending mail there are a couple of adjustments needed in @config/environment.rb@. Find the line @config.frameworks -= [ :action_mailer ]@ and change it to just @config.frameworks -= []@. Then head to the bottom of the file and find the @config.after_initialize@ block. Inside that block add your the email settings for the account you use to send mail. For example here is what it might look like to use authenticated SMTP:
+
+<pre><code>ActionMailer::Base.smtp_settings = {
+  :address => "smtp.example.com",
+  :domain => "example.com",
+  :user_name => "noreply@example.com",
+  :password => "supersecret",
+  :authentication => :login
+}</code></pre>
+
+Save your changes and you're ready to start sending some mail.
+
+h2. A Basic Form
+
+Create a new page at the top level of your site (i.e. a child of your "Home" page) called "Contact"; then add "mailer" and "email" parts, we'll use the "body" part to hold our mailer form.
+
+Let's start in the "email" part. For this demonstration I'll keep the mail template simple, but when you're building your own remember you can create templates as elaborate as your inbox can handle; using a part named "email_html" instead of just "email" enables you to use HTML, Markdown or Textile (and CSS) to create complex templates. Here's my simple template:
+
+<pre><code>from: <r:mailer:get name='name'/>, <r:mailer:get name='email'/>
+
+message:
+<r:mailer:get name='message'/></code></pre>
+
+Again tags are used to generate bits of the final content. As you can probably tell, here we "@:get@" the various pieces of user entered data and insert them into the template. Keep in mind the @name@ of the attribute you @:get@ has to match the values in your mailer form. If your name input was called @full_name@ you'd need to @:get@ the @full_name@ instead.
+
+Your "mailer" part can be as simple as:
+
+<pre><code>subject: "Sent from your mailer form"
+from_field: email
+recipients:
+  - you@example.com</code></pre>
+
+An interesting thing to note here is the @from_field: email@ line which gets the user entered email address.  If the user enters an invalid email address your email will not send.  So, if you are going to use user-entered email data for your email's From address, you should take steps to ensure the entered address is valid (see "A Better Form":#a-better-form below).  Alternatively, just using @from:@ lets you enter an email address.
+
+And the actual mailer:
+
+<pre><code><r:mailer:form name='contact'>
+  <fieldset>
+    <legend>Enter your contact information and message.</legend>
+    <label><r:text name='name'/> Name</label><br>
+    <label><r:text name='email'/> Email</label><br>
+    <r:textarea name='message'/><br>
+    <input type="submit" value="Send">
+  </fieldset>
+</r:mailer:form></code></pre>
+
+Pretty simple but if you set the status to published and save the page, you can go to the "Contact" page on your site you can test it out.
+
+!{max-width:667px}http://img.skitch.com/20090410-x6tqykb2yc53g1wapwww2tag37.png!
+
+If your test emails don't go through double check your "mailer" part and @environment.rb@ ActionMailer settings for typos. You should also ensure your ActionMailer authentication settings match the capabilities of your email server.
+
+You may have noticed after sending your test message you end up a less than optimal URL. You can fix this by adding @Radiant::Config['mailer.post_to_page?'] = true@ as the very last line in your @environment.rb@ file. Now the user will be redirected back to the same URL.
+
+h2(#a-better-form). A Better Form
+
+Of course, simply redirecting the user to a blank form is still less than optimal. Head back to your "mailer" part and add the following line (you can put it anywhere, mine is below "subject"):
+
+<pre><code>redirect_to: /contact/thanks/</code></pre>
+
+Save the page, then add a child to "Contact" called "Thanks" enter a message for the user in the body part set the status to published and create the page. Now go try your mailer again.
+
+That's better, but have you noticed there isn't any validation on this form? I mean you do want to know the person's name right? Head back to the "body" part on your "Contact" page and edit it as follows:
+
+<pre><code><r:mailer:form name='contact'>
+  <fieldset>
+    <legend>Enter your contact information and message.</legend>
+    <r:if_error on='name'><p class="error">Name is required</p></r:if_error>
+    <label><r:text name='name' required='true'/> Name</label><br>
+    <r:if_error on='email'><p class="error">Email is required</p></r:if_error>
+    <label><r:text name='email' required='true'/> Email</label><br>
+    <r:textarea name='message'/><br>
+    <input type="submit" value="Send">
+  </fieldset>
+</r:mailer:form></code></pre>
+
+!{max-width:667px}http://img.skitch.com/20090410-92f5dk6861icfccnwatiywriy.png!
+
+It still doesn't check for properly formatted email addresses but it at least ensures that the fields have some data, and some is bound to be better than none. For extended validation like checking email addresses for proper formatting (and nearly anything you may want) I often use the "jQuery Validation plugin":http://bassistance.de/jquery-plugins/jquery-plugin-validation/, of course it only works for the +90% users with Javascript enabled but since it's only for extra validation I don't feel like it's that big of a problem. Plus it's simple to hook up to your existing mailer form. Just include "jQuery":http://jquery.com/ and the Validation plugin javascripts in your HTML document then edit your form like so:
+
+<pre><code><r:mailer:form name="contact">
+  <fieldset>
+    <legend>Enter your contact information and message.</legend>
+    <r:if_error on='name'><p class="error">Name is required</p></r:if_error>
+    <label><r:text name='name' required='true' class='required'/> Name</label><br>
+    <r:if_error on='email'><p class="error">Email is required</p></r:if_error>
+    <label><r:text name='email' required='true' class='requried email'/> Email</label><br>
+    <r:textarea name='message'/><br>
+    <input type="submit" value="Send">
+  </fieldset>
+</r:mailer:form></code></pre>
+
+This is just the minimum needed to hook into the Validation plugin, have a look at the "demos section":http://jquery.bassistance.de/validate/demo/ on the plugin site for everything you can do with it.

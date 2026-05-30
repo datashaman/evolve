@@ -1,0 +1,44 @@
+<h1>Context</h1>
+The purpose of this page is to document the setup of radiant with multisite. With multi site you can host several websites from 1 radiant instance saving costly memory on your server. I found this very hard to setup and hope this documentation will be completed by others and a good start to setup multi-site with radiant. In addition to multi site this page also explains how you can get a per-site scoped admin, so you can create a user that can login to a certain site.I have commented all steps to set this up locally (in my case OSX)
+
+<h2>Radiant edge installation</h2>
+
+#Install a regular Radiant version 9.x edge latest version and edit database.yml
+
+<code> sudo gem install radiant </code>
+<code> radiant --database [mysql|postresql|sqlite3|sqlserver|db2] path/to/project </code>
+<code> cd /path/to/project </code>
+<code> vi /config/database.yml </code>
+<code> rake development db:bootstrap </code>
+<code> rake radiant:freeze:edge && rake radiant:update && rake db:migrate </code>
+
+<h2> Setup hosts file &amp; Git </h2>
+
+#Edit your hosts file ( on OSX /etc/hosts) and add like below line to add domains 
+
+<code> sudo vi /etc/hosts </code>
+<code>127.0.0.1  domain1 domain2 domain3 admin </code>
+
+#Inside your /path/to/project initialize GIT
+
+<code> git init .</code>
+
+<h2>Multisite and scoped admin extensions</h2>
+#Install spanners multi site extension
+
+<code> git submodule add git://github.com/spanner/radiant-multi-site-extension.git vendor/extensions/multi_site </code> 
+<code> rake radiant:extensions:multi_site:migrate </code> 
+<code> rake radiant:extensions:multi_site:update </code>
+
+#Install spanners scoped admin extension
+
+<code> git submodule add git://github.com/spanner/radiant-scoped-admin-extension.git vendor/extensions/scoped_admin </code> 
+<code> rake radiant:extensions:scoped_admin:migrate</code>
+
+<h2>Setup radiant and create domains</h2>
+Now the basics are setup, we should create our domains inside radiant, first we start the radiant project inside /path/to/project
+
+#Start radiant
+
+<code> /script/server -e production</code>
+#Go to the multisite page

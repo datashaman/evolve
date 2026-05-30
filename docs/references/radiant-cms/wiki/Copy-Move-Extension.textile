@@ -1,0 +1,27 @@
+*Copy/Move* is a very useful extension that allows you to copy and move pages within your site. This is especially useful if you have got a page in the wrong place or needs to be categorized. Also, it comes in handy when you are just trying to create a new page based on an earlier one.
+
+h2. Installation
+
+From the root of your Radiant project run:
+
+<pre><code>./script/extension install copy_move</code></pre>
+
+(If that fails try the "manual installation method":installing-extensions#manual)
+
+To complete installation, you need to 'install' it by using its Rake task - from the root of your Radiant site run:
+
+<pre><code>rake production radiant:extensions:copy_move:update</code></pre>
+
+This copies the images that *Copy/Move* uses to the public folder and runs and migrations necessary. Once this is done, you are restart your application server.
+
+h2. Usage
+
+After installing the extension, log into your Radiant site and go to the *Pages* tab. Click on the new button called *Copy/Move* next to the name of a page.
+
+Using the extension is really simple - in front of any of the pages that you want to copy or move, click on the *Copy/Move* button and it pops up a special interface for telling it what you want to do. Select the appropriate task and the status you want the new or moved page to have and click on *OK*.
+
+!{max-width:667px}http://img.skitch.com/20090410-rc6t4ksawk48jt84fg6re3jq2p.png!
+
+h2. Known Problems
+
+There seems to be a problem with using CopyMove with Radiant 0.6.7 in the *Development* mode. This problem does not occur when in Production mode. A sample screenshot of the problem is at: "http://www.ruby-forum.com/attachment/2380/Picture_2.jpg":http://www.ruby-forum.com/attachment/2380/Picture_2.jpg
