@@ -29,6 +29,10 @@ class EvolvePreviewImpersonationTest extends TestCase
             return response('<!doctype html><html><body><p>hi</p></body></html>')
                 ->header('Content-Type', 'text/html');
         });
+
+        Route::middleware(['web', 'guest'])->get('/test-preview-guest-only', function () {
+            return response('guest-ok');
+        });
     }
 
     public function test_request_without_preview_as_runs_as_session_user(): void
@@ -65,6 +69,34 @@ class EvolvePreviewImpersonationTest extends TestCase
             ->getJson('/test-preview', ['X-Preview-As' => (string) $target->id])
             ->assertOk()
             ->assertJson(['id' => $target->id, 'email' => $target->email]);
+    }
+
+    public function test_preview_as_guest_runs_as_guest_for_one_request(): void
+    {
+        config()->set('evolve.preview.allow_impersonation', true);
+
+        $workbenchUser = User::factory()->create();
+
+        $this->actingAs($workbenchUser)
+            ->getJson('/test-preview?preview_as=guest')
+            ->assertOk()
+            ->assertJson(['id' => null, 'email' => null]);
+
+        $this->getJson('/test-preview')
+            ->assertOk()
+            ->assertJson(['id' => $workbenchUser->id, 'email' => $workbenchUser->email]);
+    }
+
+    public function test_preview_as_guest_allows_guest_only_routes(): void
+    {
+        config()->set('evolve.preview.allow_impersonation', true);
+
+        $workbenchUser = User::factory()->create();
+
+        $this->actingAs($workbenchUser)
+            ->get('/test-preview-guest-only?preview_as=guest')
+            ->assertOk()
+            ->assertSee('guest-ok');
     }
 
     public function test_preview_as_is_rejected_when_impersonation_is_disabled(): void
@@ -152,6 +184,22 @@ class EvolvePreviewImpersonationTest extends TestCase
         $this->assertStringContainsString('data-evolve-preview-hook', $body);
         $this->assertStringContainsString('X-Preview-As', $body);
         $this->assertStringContainsString('var previewAs = "'.$target->id.'"', $body);
+    }
+
+    public function test_guest_html_response_gets_preview_hook_script_injected(): void
+    {
+        config()->set('evolve.preview.allow_impersonation', true);
+
+        $workbenchUser = User::factory()->create();
+
+        $body = $this->actingAs($workbenchUser)
+            ->get('/test-preview-html?preview_as=guest')
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('data-evolve-preview-hook', $body);
+        $this->assertStringContainsString('X-Preview-As', $body);
+        $this->assertStringContainsString('var previewAs = "guest"', $body);
     }
 
     public function test_users_endpoint_returns_users_when_allowed(): void

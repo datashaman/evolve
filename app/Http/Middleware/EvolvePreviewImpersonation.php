@@ -24,6 +24,11 @@ class EvolvePreviewImpersonation
         abort_unless(Auth::check(), 403, 'Preview impersonation requires an authenticated workbench session.');
 
         $workbenchUser = Auth::user();
+
+        if ($previewAs === 'guest') {
+            return $this->handleGuestPreview($request, $next, $workbenchUser);
+        }
+
         $target = User::find($previewAs);
         abort_unless($target, 404, 'Preview target user not found.');
 
@@ -46,6 +51,47 @@ class EvolvePreviewImpersonation
         $response = $next($request);
 
         $this->injectPreviewHook($response, (string) $target->getKey());
+
+        return $response;
+    }
+
+    protected function handleGuestPreview(Request $request, Closure $next, User $workbenchUser): Response
+    {
+        $guard = Auth::guard();
+        $sessionKey = method_exists($guard, 'getName') ? $guard->getName() : null;
+        $session = $request->hasSession() ? $request->session() : null;
+        $hadSessionUser = $sessionKey !== null && $session?->has($sessionKey);
+        $sessionUser = $hadSessionUser ? $session->get($sessionKey) : null;
+
+        if ($sessionKey !== null && $session !== null) {
+            $session->remove($sessionKey);
+        }
+
+        Auth::forgetGuards();
+
+        Log::info('evolve.preview.impersonation', [
+            'workbench_user_id' => $workbenchUser->getKey(),
+            'target_user_id' => null,
+            'target' => 'guest',
+            'ip' => $request->ip(),
+            'path' => $request->path(),
+            'source' => $request->query('preview_as') !== null ? 'query' : 'header',
+        ]);
+
+        try {
+            $response = $next($request);
+        } finally {
+            if ($sessionKey !== null && $session !== null) {
+                $hadSessionUser
+                    ? $session->put($sessionKey, $sessionUser)
+                    : $session->remove($sessionKey);
+            }
+
+            Auth::forgetGuards();
+            Auth::guard()->setUser($workbenchUser);
+        }
+
+        $this->injectPreviewHook($response, 'guest');
 
         return $response;
     }

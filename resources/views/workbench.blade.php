@@ -168,6 +168,7 @@
         Preview as
         <select id="preview-as">
           <option value="">Self</option>
+          <option value="guest">Guest</option>
         </select>
       </label>
     @endif

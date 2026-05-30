@@ -86,19 +86,19 @@ Forms that define a `route` carry `route_name` and `middleware` on the same term
 
 ## Preview impersonation
 
-The workbench preview iframe loads the artifact's real route, so middleware on that route applies. To preview a page as a different identity, the workbench supports `?preview_as={user_id}` on any request in the `web` middleware group. The `EvolvePreviewImpersonation` middleware logs in as the chosen user for that single request (via `Auth::onceUsingId`) without touching the workbench session.
+The workbench preview iframe loads the artifact's real route, so middleware on that route applies. To preview a page as a different identity, the workbench supports `?preview_as={user_id}` on any request in the `web` middleware group. The `EvolvePreviewImpersonation` middleware logs in as the chosen user for that single request (via `Auth::onceUsingId`) without touching the workbench session. Use `?preview_as=guest` to mask the workbench session and run the preview request as an unauthenticated visitor.
 
 Controls:
 
 - `config('evolve.preview.allow_impersonation')` — default `true`, override with `EVOLVE_PREVIEW_ALLOW_IMPERSONATION=false`.
 - `GET /api/preview/users` — returns the list shown in the toolbar picker; 403 when impersonation is disabled.
-- The picker reloads the iframe whenever the selection changes; the same `preview_as` param is carried through when the "Open" button opens the preview in a new tab.
+- The picker reloads the iframe whenever the selection changes; the same `preview_as` param is carried through when the "Open" button opens the preview in a new tab. The built-in choices are Self, Guest, then the first 100 users.
 - Per-target authorization is gated by the `evolve.preview.impersonate` Laravel Gate. The default registration (in `AppServiceProvider::configurePreviewImpersonationGate`) allows any authenticated workbench user to impersonate any user. Override the gate definition to introduce role-aware rules (e.g. block non-admins from impersonating admin users).
-- Every successful impersonation logs `evolve.preview.impersonation` at info level with `workbench_user_id`, `target_user_id`, `ip`, `path`, and whether the swap came from the `preview_as` query or the `X-Preview-As` header.
+- Every successful impersonation logs `evolve.preview.impersonation` at info level with `workbench_user_id`, `target_user_id`, `ip`, `path`, and whether the swap came from the `preview_as` query or the `X-Preview-As` header. Guest preview logs `target_user_id: null` and `target: guest`.
 
 Impersonation requires the requester to already be authenticated to the workbench; an unauthenticated request with `preview_as` is rejected with 403.
 
-The middleware also accepts an `X-Preview-As` header. After the initial preview render, the response (when HTML) gets a small script injected that adds `X-Preview-As: {target_id}` to any subsequent fetch the iframe makes to `/livewire/*`. That keeps Livewire interactions (button clicks, form submits) running as the impersonated user too, not as the workbench user.
+The middleware also accepts an `X-Preview-As` header. After the initial preview render, the response (when HTML) gets a small script injected that adds `X-Preview-As: {target_id}` to any subsequent fetch the iframe makes to `/livewire/*`. That keeps Livewire interactions (button clicks, form submits) running as the impersonated user or guest too, not as the workbench user.
 
 ## View artifacts
 
