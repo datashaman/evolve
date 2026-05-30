@@ -168,6 +168,30 @@ PHP,
         ], $library->pageRoutes());
     }
 
+    public function test_pages_parse_middleware_from_newline_separated_string_preserving_parameters(): void
+    {
+        $library = new EvolveLibrary;
+
+        $library->write([
+            'pages' => [
+                [
+                    'id' => 'throttled',
+                    'name' => 'Throttled',
+                    'path' => 'resources/views/pages/throttled.blade.php',
+                    'route' => '/throttled',
+                    'middleware' => "auth\nthrottle:60,1\nrole:admin,editor",
+                    'php' => $this->componentPhp(),
+                    'blade' => '<div>Throttled</div>',
+                ],
+            ],
+        ]);
+
+        $this->assertSame(
+            ['auth', 'throttle:60,1', 'role:admin,editor'],
+            $library->all()['pages'][0]['middleware'],
+        );
+    }
+
     public function test_pages_keep_tree_metadata_and_are_sorted_by_parent_order(): void
     {
         $library = new EvolveLibrary;

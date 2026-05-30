@@ -91,7 +91,8 @@
     .metadata-field { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; align-items: center; min-width: 0; }
     .metadata-field[hidden] { display: none; }
     .metadata-field label { color: #a1a1aa; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
-    .metadata-field input { width: 100%; padding: 7px 9px; border: 1px solid #3f3f46; border-radius: 6px; background: #27272a; color: #fafafa; font: 13px ui-monospace, "SF Mono", Menlo, monospace; }
+    .metadata-field input, .metadata-field textarea { width: 100%; padding: 7px 9px; border: 1px solid #3f3f46; border-radius: 6px; background: #27272a; color: #fafafa; font: 13px ui-monospace, "SF Mono", Menlo, monospace; resize: vertical; }
+    .meta-hint { color: #71717a; font-weight: 500; text-transform: none; letter-spacing: 0; font-size: 10px; margin-left: 6px; }
     .sidebar li[data-depth="1"] { padding-left: 24px; }
     .sidebar li[data-depth="2"] { padding-left: 36px; }
     .sidebar li[data-depth="3"] { padding-left: 48px; }
@@ -187,7 +188,7 @@
               <div class="metadata-field" data-meta="path"><label for="meta-slug">Path</label><input id="meta-slug"></div>
               <div class="metadata-field" data-meta="route"><label for="meta-route">Route</label><input id="meta-route"></div>
               <div class="metadata-field" data-meta="route-name"><label for="meta-route-name">Route name</label><input id="meta-route-name" placeholder="auto"></div>
-              <div class="metadata-field" data-meta="middleware"><label for="meta-middleware">Middleware</label><input id="meta-middleware" placeholder="auth, verified"></div>
+              <div class="metadata-field" data-meta="middleware"><label for="meta-middleware">Middleware <span class="meta-hint">one per line; supports throttle:60,1 etc.</span></label><textarea id="meta-middleware" rows="3" placeholder="auth&#10;verified&#10;throttle:60,1"></textarea></div>
               <div class="metadata-field" data-meta="parent"><label for="meta-parent">Parent</label><input id="meta-parent" list="page-parent-options"></div>
               <div class="metadata-field" data-meta="order"><label for="meta-order">Order</label><input id="meta-order" type="number" min="0" step="1"></div>
               <datalist id="page-parent-options"></datalist>
@@ -774,7 +775,7 @@
       fields.slug.value = c?.path ?? '';
       fields.route.value = ['form', 'page'].includes(c?.kind) ? c?.route || routeFromPath(c?.path) : '';
       fields.routeName.value = ['form', 'page'].includes(c?.kind) ? c?.route_name || '' : '';
-      fields.middleware.value = ['form', 'page'].includes(c?.kind) ? (Array.isArray(c?.middleware) ? c.middleware.join(', ') : '') : '';
+      fields.middleware.value = ['form', 'page'].includes(c?.kind) ? (Array.isArray(c?.middleware) ? c.middleware.join('\n') : '') : '';
       fields.parent.value = c?.kind === 'page' ? c?.parent_id || '' : '';
       fields.order.value = c?.kind === 'page' ? c?.order ?? 0 : '';
       fields.php.value = c?.php ?? '';
@@ -882,7 +883,7 @@
       if (['form', 'page'].includes(c.kind)) c.path = fields.slug.value || c.path;
       if (['form', 'page'].includes(c.kind)) c.route = fields.route.value || '';
       if (['form', 'page'].includes(c.kind)) c.route_name = fields.routeName.value || '';
-      if (['form', 'page'].includes(c.kind)) c.middleware = fields.middleware.value.split(',').map(s => s.trim()).filter(Boolean);
+      if (['form', 'page'].includes(c.kind)) c.middleware = fields.middleware.value.split(/\r?\n+/).map(s => s.trim()).filter(Boolean);
       if (['form', 'page'].includes(c.kind)) {
         c.id = idFromPath(c.path) || c.id;
         const namespace = c.kind === 'form' ? 'forms' : 'pages';

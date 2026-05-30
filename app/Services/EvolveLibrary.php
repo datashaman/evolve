@@ -776,7 +776,7 @@ class EvolveLibrary
     protected function safeMiddleware(mixed $middleware): array
     {
         if (is_string($middleware)) {
-            $middleware = explode(',', $middleware);
+            $middleware = preg_split('/\R+/', $middleware) ?: [];
         }
 
         if (! is_array($middleware)) {

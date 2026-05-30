@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
@@ -22,6 +24,11 @@ class EvolvePreviewImpersonationTest extends TestCase
                 'email' => optional(Auth::user())->email,
             ]);
         });
+
+        Route::middleware('web')->get('/test-preview-html', function () {
+            return response('<!doctype html><html><body><p>hi</p></body></html>')
+                ->header('Content-Type', 'text/html');
+        });
     }
 
     public function test_request_without_preview_as_runs_as_session_user(): void
@@ -34,7 +41,7 @@ class EvolvePreviewImpersonationTest extends TestCase
             ->assertJson(['id' => $user->id, 'email' => $user->email]);
     }
 
-    public function test_preview_as_swaps_to_target_user_for_the_request(): void
+    public function test_preview_as_via_query_swaps_to_target_user(): void
     {
         config()->set('evolve.preview.allow_impersonation', true);
 
@@ -43,6 +50,19 @@ class EvolvePreviewImpersonationTest extends TestCase
 
         $this->actingAs($workbenchUser)
             ->getJson('/test-preview?preview_as='.$target->id)
+            ->assertOk()
+            ->assertJson(['id' => $target->id, 'email' => $target->email]);
+    }
+
+    public function test_preview_as_via_header_swaps_to_target_user(): void
+    {
+        config()->set('evolve.preview.allow_impersonation', true);
+
+        $workbenchUser = User::factory()->create();
+        $target = User::factory()->create();
+
+        $this->actingAs($workbenchUser)
+            ->getJson('/test-preview', ['X-Preview-As' => (string) $target->id])
             ->assertOk()
             ->assertJson(['id' => $target->id, 'email' => $target->email]);
     }
@@ -80,6 +100,60 @@ class EvolvePreviewImpersonationTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_preview_as_respects_impersonation_gate(): void
+    {
+        config()->set('evolve.preview.allow_impersonation', true);
+
+        $workbenchUser = User::factory()->create();
+        $target = User::factory()->create();
+
+        Gate::define('evolve.preview.impersonate', fn (User $auth, User $candidate): bool => false);
+
+        $this->actingAs($workbenchUser)
+            ->getJson('/test-preview?preview_as='.$target->id)
+            ->assertForbidden();
+    }
+
+    public function test_impersonation_is_logged(): void
+    {
+        config()->set('evolve.preview.allow_impersonation', true);
+
+        $workbenchUser = User::factory()->create();
+        $target = User::factory()->create();
+
+        Log::spy();
+
+        $this->actingAs($workbenchUser)
+            ->getJson('/test-preview?preview_as='.$target->id)
+            ->assertOk();
+
+        Log::shouldHaveReceived('info')
+            ->withArgs(function (string $message, array $context) use ($workbenchUser, $target): bool {
+                return $message === 'evolve.preview.impersonation'
+                    && $context['workbench_user_id'] === $workbenchUser->id
+                    && $context['target_user_id'] === $target->id
+                    && $context['source'] === 'query';
+            })
+            ->once();
+    }
+
+    public function test_html_response_gets_preview_hook_script_injected(): void
+    {
+        config()->set('evolve.preview.allow_impersonation', true);
+
+        $workbenchUser = User::factory()->create();
+        $target = User::factory()->create();
+
+        $body = $this->actingAs($workbenchUser)
+            ->get('/test-preview-html?preview_as='.$target->id)
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('data-evolve-preview-hook', $body);
+        $this->assertStringContainsString('X-Preview-As', $body);
+        $this->assertStringContainsString('var previewAs = "'.$target->id.'"', $body);
+    }
+
     public function test_users_endpoint_returns_users_when_allowed(): void
     {
         config()->set('evolve.preview.allow_impersonation', true);
@@ -106,5 +180,26 @@ class EvolvePreviewImpersonationTest extends TestCase
         $this->actingAs($workbenchUser)
             ->getJson('/api/preview/users')
             ->assertForbidden();
+    }
+
+    public function test_preview_controller_route_carries_impersonation(): void
+    {
+        config()->set('evolve.preview.allow_impersonation', true);
+
+        Route::middleware(['web', 'auth', 'verified'])->get('/test-preview-controller', function () {
+            return response('<!doctype html><html><body data-user="'.Auth::id().'"></body></html>')
+                ->header('Content-Type', 'text/html');
+        });
+
+        $workbenchUser = User::factory()->create(['email_verified_at' => now()]);
+        $target = User::factory()->create(['email_verified_at' => now()]);
+
+        $body = $this->actingAs($workbenchUser)
+            ->get('/test-preview-controller?preview_as='.$target->id)
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('data-user="'.$target->id.'"', $body);
+        $this->assertStringContainsString('X-Preview-As', $body, 'expected fetch hook to be injected');
     }
 }

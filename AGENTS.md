@@ -75,7 +75,7 @@ Pages support:
 - `path`: filesystem location
 - `route`: public route, including dynamic segments such as `/resources/{resource}`
 - `route_name`: named-route alias used in views (`route('users.profile')`). Optional. When omitted, evolve derives a stable name from the route (`/` → `home`; `/users/{id}` → `users.id`) and persists it on the artifact.
-- `middleware`: optional array of middleware aliases applied to the generated route (e.g. `['auth', 'verified']`). Empty means no extra middleware beyond the framework default.
+- `middleware`: optional array of middleware aliases applied to the generated route (e.g. `['auth', 'verified', 'throttle:60,1']`). Empty means no extra middleware beyond the framework default. In the workbench UI the input is one entry per line so parameterized middleware (`throttle:60,1`, `role:admin,editor`) survives intact.
 - `parent_id`: logical parent page id
 - `order`: order within the parent
 - `metadata`: optional custom metadata
@@ -93,8 +93,22 @@ Controls:
 - `config('evolve.preview.allow_impersonation')` — default `true`, override with `EVOLVE_PREVIEW_ALLOW_IMPERSONATION=false`.
 - `GET /api/preview/users` — returns the list shown in the toolbar picker; 403 when impersonation is disabled.
 - The picker reloads the iframe whenever the selection changes; the same `preview_as` param is carried through when the "Open" button opens the preview in a new tab.
+- Per-target authorization is gated by the `evolve.preview.impersonate` Laravel Gate. The default registration (in `AppServiceProvider::configurePreviewImpersonationGate`) allows any authenticated workbench user to impersonate any user. Override the gate definition to introduce role-aware rules (e.g. block non-admins from impersonating admin users).
+- Every successful impersonation logs `evolve.preview.impersonation` at info level with `workbench_user_id`, `target_user_id`, `ip`, `path`, and whether the swap came from the `preview_as` query or the `X-Preview-As` header.
 
 Impersonation requires the requester to already be authenticated to the workbench; an unauthenticated request with `preview_as` is rejected with 403.
+
+The middleware also accepts an `X-Preview-As` header. After the initial preview render, the response (when HTML) gets a small script injected that adds `X-Preview-As: {target_id}` to any subsequent fetch the iframe makes to `/livewire/*`. That keeps Livewire interactions (button clicks, form submits) running as the impersonated user too, not as the workbench user.
+
+## Linting
+
+`php artisan evolve:lint` audits the manifest for:
+
+- duplicate `route_name` values across page/form artifacts
+- artifact route names that shadow framework-registered routes (`dashboard`, `home`, etc.)
+- middleware aliases that are not registered in the kernel and are not resolvable class names
+
+Use `--json` for machine-readable output. Non-zero exit when findings exist; suitable for CI.
 
 ## Content Helpers
 
