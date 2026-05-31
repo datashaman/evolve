@@ -1,5 +1,11 @@
 {
-    "styles": [],
+    "styles": [
+        {
+            "id": "blog",
+            "name": "Blog",
+            "path": "resources/css/blog.css"
+        }
+    ],
     "components": [
         {
             "id": "app-logo-icon",
@@ -48,6 +54,30 @@
             "name": "Placeholder Pattern",
             "path": "resources/views/components/placeholder-pattern.blade.php",
             "usage": ""
+        },
+        {
+            "id": "blog/hero",
+            "name": "Blog Hero",
+            "path": "resources/views/components/blog/hero.blade.php",
+            "usage": "<livewire:blog.hero />"
+        },
+        {
+            "id": "blog/post-card",
+            "name": "Blog Post Card",
+            "path": "resources/views/components/blog/post-card.blade.php",
+            "usage": "<livewire:blog.post-card :post=\"$post\" />"
+        },
+        {
+            "id": "blog/post-grid",
+            "name": "Blog Post Grid",
+            "path": "resources/views/components/blog/post-grid.blade.php",
+            "usage": "<livewire:blog.post-grid />"
+        },
+        {
+            "id": "blog/article",
+            "name": "Blog Article",
+            "path": "resources/views/components/blog/article.blade.php",
+            "usage": "<livewire:blog.article />"
         }
     ],
     "forms": [],
@@ -93,6 +123,12 @@
             "name": "Split",
             "path": "resources/views/layouts/auth/split.blade.php",
             "usage": ""
+        },
+        {
+            "id": "blog",
+            "name": "Blog",
+            "path": "resources/views/layouts/blog.blade.php",
+            "usage": "<x-layouts::blog></x-layouts::blog>"
         }
     ],
     "pages": [
@@ -298,6 +334,30 @@
             "order": 15,
             "usage": "",
             "depth": 0
+        },
+        {
+            "id": "blog",
+            "name": "Blog",
+            "path": "resources/views/pages/blog.blade.php",
+            "route": "/",
+            "route_name": "home",
+            "middleware": [],
+            "parent_id": "",
+            "order": 20,
+            "usage": "<livewire:pages::blog />",
+            "depth": 0
+        },
+        {
+            "id": "blog/show",
+            "name": "Blog Article",
+            "path": "resources/views/pages/blog/show.blade.php",
+            "route": "/blog/{post}",
+            "route_name": "blog.show",
+            "middleware": [],
+            "parent_id": "blog",
+            "order": 21,
+            "usage": "<livewire:pages::blog.show />",
+            "depth": 1
         }
     ],
     "snippets": [],
@@ -382,8 +442,8 @@
             "name": "Welcome",
             "path": "resources/views/welcome.blade.php",
             "usage": "@include('welcome')",
-            "route": "/",
-            "route_name": "home",
+            "route": "/welcome",
+            "route_name": "welcome",
             "middleware": []
         }
     ]
