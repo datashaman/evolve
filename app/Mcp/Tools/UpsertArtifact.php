@@ -40,6 +40,7 @@ class UpsertArtifact extends Tool
         $artifact = $this->normalizedArtifact($data);
         $existingId = (string) ($data['id'] ?? $artifact['id']);
         $existing = $this->artifact($library, $data['kind'], $existingId);
+        $artifact = $this->hydrateOmittedContentFields($artifact, $existing, $data);
         $dryRun = (bool) ($data['dry_run'] ?? true);
 
         if (! $dryRun) {

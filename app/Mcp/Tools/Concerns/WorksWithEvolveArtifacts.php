@@ -70,6 +70,36 @@ trait WorksWithEvolveArtifacts
         ];
     }
 
+    protected function hydrateOmittedContentFields(array $artifact, ?array $existing, array $payload): array
+    {
+        foreach (['php', 'blade', 'style'] as $field) {
+            if (array_key_exists($field, $payload)) {
+                continue;
+            }
+
+            $artifact[$field] = $existing[$field] ?? $this->defaultContentField((string) $artifact['kind'], $field);
+        }
+
+        return $artifact;
+    }
+
+    protected function defaultContentField(string $kind, string $field): string
+    {
+        if ($field === 'php' && in_array($kind, ['component', 'form', 'page'], true)) {
+            return "use Livewire\\Component;\n\nnew class extends Component {\n    //\n};";
+        }
+
+        if ($field === 'blade') {
+            return match ($kind) {
+                'layout', 'snippet' => '{{ $slot }}',
+                'component', 'form', 'page', 'view' => '<div></div>',
+                default => '',
+            };
+        }
+
+        return '';
+    }
+
     protected function idFromPath(string $path): string
     {
         $path = preg_replace('#\.(blade\.php|css)$#', '', str_replace('\\', '/', trim($path)));

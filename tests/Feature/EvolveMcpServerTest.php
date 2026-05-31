@@ -325,6 +325,187 @@ class EvolveMcpServerTest extends TestCase
         $this->assertSame('<h1>Landing</h1>', trim(File::get(resource_path('views/marketing/landing.blade.php'))));
     }
 
+    public function test_mcp_metadata_only_updates_preserve_existing_view_content(): void
+    {
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'view',
+            'name' => 'Landing',
+            'path' => 'resources/views/marketing/landing.blade.php',
+            'route' => '/landing',
+            'route_name' => 'landing',
+            'blade' => '<h1>Landing</h1>',
+            'dry_run' => false,
+        ])->assertOk();
+
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'view',
+            'id' => 'marketing/landing',
+            'name' => 'Landing',
+            'path' => 'resources/views/marketing/landing.blade.php',
+            'route' => '/renamed-landing',
+            'route_name' => 'renamed.landing',
+        ])->assertOk()
+            ->assertStructuredContent(fn ($json) => $json
+                ->where('dry_run', true)
+                ->where('artifact.blade', File::get(resource_path('views/marketing/landing.blade.php')))
+                ->etc()
+            );
+
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'view',
+            'id' => 'marketing/landing',
+            'name' => 'Landing',
+            'path' => 'resources/views/marketing/landing.blade.php',
+            'route' => '/renamed-landing',
+            'route_name' => 'renamed.landing',
+            'dry_run' => false,
+        ])->assertOk();
+
+        $this->assertSame('<h1>Landing</h1>', trim(File::get(resource_path('views/marketing/landing.blade.php'))));
+    }
+
+    public function test_mcp_metadata_only_updates_preserve_existing_sfc_content(): void
+    {
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'page',
+            'name' => 'Landing',
+            'path' => 'resources/views/pages/landing.blade.php',
+            'route' => '/landing',
+            'route_name' => 'landing',
+            'php' => $this->componentPhp(),
+            'blade' => '<div>Landing</div>',
+            'style' => '.landing { color: red; }',
+            'dry_run' => false,
+        ])->assertOk();
+
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'page',
+            'id' => 'landing',
+            'name' => 'Landing',
+            'path' => 'resources/views/pages/landing.blade.php',
+            'route' => '/home',
+            'route_name' => 'pages.home',
+        ])->assertOk()
+            ->assertStructuredContent(fn ($json) => $json
+                ->where('dry_run', true)
+                ->where('artifact.php', $this->componentPhp())
+                ->where('artifact.blade', '<div>Landing</div>')
+                ->where('artifact.style', '.landing { color: red; }')
+                ->etc()
+            );
+
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'page',
+            'id' => 'landing',
+            'name' => 'Landing',
+            'path' => 'resources/views/pages/landing.blade.php',
+            'route' => '/home',
+            'route_name' => 'pages.home',
+            'dry_run' => false,
+        ])->assertOk();
+
+        $source = File::get(resource_path('views/pages/landing.blade.php'));
+
+        $this->assertStringContainsString($this->componentPhp(), $source);
+        $this->assertStringContainsString('<div>Landing</div>', $source);
+        $this->assertStringContainsString('.landing { color: red; }', $source);
+    }
+
+    public function test_mcp_metadata_only_updates_preserve_layout_snippet_and_style_content(): void
+    {
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'layout',
+            'name' => 'Marketing',
+            'path' => 'resources/views/layouts/marketing.blade.php',
+            'blade' => '<main>{{ $slot }}</main>',
+            'style' => '.marketing { display: grid; }',
+            'dry_run' => false,
+        ])->assertOk();
+
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'snippet',
+            'name' => 'Badge',
+            'path' => 'resources/views/snippets/badge.blade.php',
+            'blade' => '<span>Badge</span>',
+            'dry_run' => false,
+        ])->assertOk();
+
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'style',
+            'name' => 'Theme',
+            'path' => 'resources/css/theme.css',
+            'style' => ':root { --accent: teal; }',
+            'dry_run' => false,
+        ])->assertOk();
+
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'layout',
+            'id' => 'marketing',
+            'name' => 'Marketing Layout',
+            'path' => 'resources/views/layouts/marketing.blade.php',
+            'dry_run' => false,
+        ])->assertOk();
+
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'snippet',
+            'id' => 'badge',
+            'name' => 'Badge Snippet',
+            'path' => 'resources/views/snippets/badge.blade.php',
+            'dry_run' => false,
+        ])->assertOk();
+
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'style',
+            'id' => 'theme',
+            'name' => 'Theme Tokens',
+            'path' => 'resources/css/theme.css',
+            'dry_run' => false,
+        ])->assertOk();
+
+        $this->assertSame('<main>{{ $slot }}</main>', trim(File::get(resource_path('views/layouts/marketing.blade.php'))));
+        $this->assertSame('.marketing { display: grid; }', trim(File::get(resource_path('css/layouts/marketing.css'))));
+        $this->assertSame('<span>Badge</span>', trim(File::get(resource_path('views/snippets/badge.blade.php'))));
+        $this->assertSame(':root { --accent: teal; }', trim(File::get(resource_path('css/theme.css'))));
+    }
+
+    public function test_mcp_upsert_distinguishes_omitted_content_from_explicit_empty_content(): void
+    {
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'view',
+            'name' => 'Landing',
+            'path' => 'resources/views/marketing/landing.blade.php',
+            'route' => '/landing',
+            'route_name' => 'landing',
+            'blade' => '<h1>Landing</h1>',
+            'dry_run' => false,
+        ])->assertOk();
+
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'view',
+            'id' => 'marketing/landing',
+            'name' => 'Landing',
+            'path' => 'resources/views/marketing/landing.blade.php',
+            'route' => '/landing',
+            'route_name' => 'landing',
+            'blade' => '',
+            'dry_run' => false,
+        ])->assertOk();
+
+        $this->assertSame('', trim(File::get(resource_path('views/marketing/landing.blade.php'))));
+
+        EvolveServer::tool(UpsertArtifact::class, [
+            'kind' => 'component',
+            'name' => 'Empty Defaults',
+            'path' => 'resources/views/components/empty-defaults.blade.php',
+            'dry_run' => false,
+        ])->assertOk();
+
+        $source = File::get(resource_path('views/components/empty-defaults.blade.php'));
+
+        $this->assertStringContainsString('use Livewire\Component;', $source);
+        $this->assertStringContainsString('<div></div>', $source);
+    }
+
     public function test_content_tools_list_rows_and_upsert_granularly(): void
     {
         $fixture = $this->fixtureModelClass();
