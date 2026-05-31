@@ -11,6 +11,8 @@ use App\Mcp\Tools\ListContentRows;
 use App\Mcp\Tools\ReadArtifact;
 use App\Mcp\Tools\ReorderStyles;
 use App\Mcp\Tools\RestoreArtifact;
+use App\Mcp\Tools\SendFeedback;
+use App\Mcp\Tools\TriageFeedback;
 use App\Mcp\Tools\UpsertArtifact;
 use App\Mcp\Tools\UpsertContentRow;
 use Laravel\Mcp\Server;
@@ -35,6 +37,8 @@ class EvolveServer extends Server
         UpsertContentRow::class,
         DeleteContentRow::class,
         CreateContentModel::class,
+        SendFeedback::class,
+        TriageFeedback::class,
     ];
 
     protected array $resources = [
