@@ -2,6 +2,8 @@
 
 namespace App\Mcp\Servers;
 
+use App\Mcp\Prompts\EvolveClientSetup;
+use App\Mcp\Resources\EvolveWorkflowGuide;
 use App\Mcp\Tools\CreateContentModel;
 use App\Mcp\Tools\DeleteArtifact;
 use App\Mcp\Tools\DeleteContentRow;
@@ -22,7 +24,7 @@ use Laravel\Mcp\Server\Attributes\Version;
 
 #[Name('Evolve')]
 #[Version('0.1.0')]
-#[Instructions('Use these tools to inspect and safely update Evolve workbench artifacts and content. Mutating tools default to dry_run and destructive tools require confirm_id.')]
+#[Instructions('Use the evolve-client-setup prompt before editing. These tools inspect and safely update Evolve workbench artifacts, content, and developer feedback. Mutating tools default to dry_run and destructive tools require confirm_id.')]
 class EvolveServer extends Server
 {
     protected array $tools = [
@@ -42,10 +44,10 @@ class EvolveServer extends Server
     ];
 
     protected array $resources = [
-        //
+        EvolveWorkflowGuide::class,
     ];
 
     protected array $prompts = [
-        //
+        EvolveClientSetup::class,
     ];
 }

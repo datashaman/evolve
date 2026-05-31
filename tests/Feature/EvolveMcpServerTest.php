@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Mcp\Prompts\EvolveClientSetup;
+use App\Mcp\Resources\EvolveWorkflowGuide;
 use App\Mcp\Servers\EvolveServer;
 use App\Mcp\Tools\CreateContentModel;
 use App\Mcp\Tools\DeleteArtifact;
@@ -23,6 +25,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Laravel\Mcp\Server\Transport\FakeTransporter;
 use Tests\TestCase;
 
 class EvolveMcpServerTest extends TestCase
@@ -67,6 +70,37 @@ class EvolveMcpServerTest extends TestCase
         File::deleteDirectory($this->testBasePath);
 
         parent::tearDown();
+    }
+
+    public function test_guidance_prompt_and_resource_are_discoverable(): void
+    {
+        $context = (new EvolveServer(new FakeTransporter))->createContext();
+
+        $this->assertSame('evolve-client-setup', $context->prompts()->first()?->name());
+        $this->assertSame('Evolve Client Setup', $context->prompts()->first()?->title());
+        $this->assertSame('evolve://guides/workflow', $context->resources()->first()?->uri());
+        $this->assertStringContainsString('evolve-client-setup', $context->instructions);
+    }
+
+    public function test_guidance_prompt_and_resource_explain_safe_tool_use(): void
+    {
+        EvolveServer::prompt(EvolveClientSetup::class)
+            ->assertOk()
+            ->assertSee([
+                'Use `list-artifacts` and `read-artifact` before changing workbench files.',
+                'Mutating tools default to `dry_run: true`',
+                'Use `send-feedback` and `triage-feedback` only for developer/agent process feedback',
+                'evolve://guides/workflow',
+            ]);
+
+        EvolveServer::resource(EvolveWorkflowGuide::class)
+            ->assertOk()
+            ->assertSee([
+                '# Evolve MCP Workflow Guide',
+                'Run mutating tools in dry-run mode first.',
+                'Destructive and restorative operations require `confirm_id`',
+                'Direct artifact file edits should be a last resort',
+            ]);
     }
 
     public function test_artifact_tools_list_read_and_dry_run_without_writing(): void
