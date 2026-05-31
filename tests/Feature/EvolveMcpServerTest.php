@@ -12,6 +12,8 @@ use App\Mcp\Tools\ListContentRows;
 use App\Mcp\Tools\ReadArtifact;
 use App\Mcp\Tools\ReorderStyles;
 use App\Mcp\Tools\RestoreArtifact;
+use App\Mcp\Tools\SendFeedback;
+use App\Mcp\Tools\TriageFeedback;
 use App\Mcp\Tools\UpsertArtifact;
 use App\Mcp\Tools\UpsertContentRow;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -398,6 +400,100 @@ class EvolveMcpServerTest extends TestCase
             ->assertSee('field_notes');
 
         $this->assertFalse(File::exists(app_path('Models/FieldNote.php')));
+    }
+
+    public function test_feedback_tools_send_and_triage_developer_agent_feedback(): void
+    {
+        EvolveServer::tool(SendFeedback::class, [
+            'id' => 'fb-test-1',
+            'type' => 'bug',
+            'message' => 'Preview feedback should not write.',
+        ])->assertOk()
+            ->assertStructuredContent(fn ($json) => $json
+                ->where('dry_run', true)
+                ->where('feedback.id', 'fb-test-1')
+                ->where('feedback.status', 'new')
+                ->where('would_write', true)
+                ->etc()
+            );
+
+        $this->assertDatabaseMissing('evolve_feedback', ['id' => 'fb-test-1']);
+
+        EvolveServer::tool(SendFeedback::class, [
+            'id' => 'fb-test-1',
+            'type' => 'bug',
+            'message' => 'Persist this for developer and agent triage.',
+            'source' => 'agent',
+            'artifact_kind' => 'page',
+            'artifact_id' => 'home',
+            'context' => ['route' => '/'],
+            'dry_run' => false,
+        ])->assertOk()
+            ->assertStructuredContent(fn ($json) => $json
+                ->where('dry_run', false)
+                ->where('created', true)
+                ->where('feedback.id', 'fb-test-1')
+                ->where('feedback.source', 'agent')
+                ->where('feedback.context.route', '/')
+                ->etc()
+            );
+
+        $this->assertDatabaseHas('evolve_feedback', [
+            'id' => 'fb-test-1',
+            'status' => 'new',
+            'source' => 'agent',
+        ]);
+
+        EvolveServer::tool(TriageFeedback::class, [
+            'id' => 'fb-test-1',
+            'status' => 'accepted',
+            'priority' => 'high',
+            'labels' => ['process', 'agent'],
+            'assignee' => 'developer',
+            'notes' => 'Handle in the local feedback channel.',
+        ])->assertOk()
+            ->assertStructuredContent(fn ($json) => $json
+                ->where('dry_run', true)
+                ->where('feedback.status', 'accepted')
+                ->where('feedback.priority', 'high')
+                ->where('feedback.labels.0', 'process')
+                ->etc()
+            );
+
+        $this->assertDatabaseHas('evolve_feedback', [
+            'id' => 'fb-test-1',
+            'status' => 'new',
+            'priority' => null,
+        ]);
+
+        EvolveServer::tool(TriageFeedback::class, [
+            'id' => 'fb-test-1',
+            'status' => 'accepted',
+            'priority' => 'high',
+            'labels' => ['process', 'agent'],
+            'assignee' => 'developer',
+            'notes' => 'Handle in the local feedback channel.',
+            'dry_run' => false,
+        ])->assertOk()
+            ->assertStructuredContent(fn ($json) => $json
+                ->where('dry_run', false)
+                ->where('updated', true)
+                ->where('feedback.status', 'accepted')
+                ->where('feedback.assignee', 'developer')
+                ->etc()
+            );
+
+        $this->assertDatabaseHas('evolve_feedback', [
+            'id' => 'fb-test-1',
+            'status' => 'accepted',
+            'priority' => 'high',
+            'assignee' => 'developer',
+        ]);
+    }
+
+    public function test_growth_sync_workflow_has_been_removed(): void
+    {
+        $this->assertFalse(File::exists($this->originalBasePath.'/.github/workflows/growth-sync.yml'));
     }
 
     private function fixtureModelClass(): string
