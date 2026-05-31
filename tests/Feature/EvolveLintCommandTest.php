@@ -137,6 +137,29 @@ class EvolveLintCommandTest extends TestCase
         $this->assertContains('shadows-static-route', $codes);
     }
 
+    public function test_root_artifact_route_does_not_collide_with_its_registered_route(): void
+    {
+        Route::get('/', fn () => null)->name('blog.index');
+
+        (new EvolveLibrary)->write([
+            'pages' => [
+                [
+                    'id' => 'blog',
+                    'name' => 'Blog',
+                    'path' => 'resources/views/pages/blog.blade.php',
+                    'route' => '/',
+                    'route_name' => 'blog.index',
+                    'php' => $this->componentPhp(),
+                    'blade' => '<div>Blog</div>',
+                ],
+            ],
+        ]);
+
+        $payload = $this->runLintJson();
+
+        $this->assertSame([], $payload['findings']);
+    }
+
     public function test_exit_code_is_nonzero_when_findings_exist(): void
     {
         (new EvolveLibrary)->write([

@@ -81,10 +81,10 @@ class EvolveLintCommand extends Command
                 continue;
             }
 
-            $expectedUri = ltrim($route['route'], '/');
+            $expectedUri = $this->normalizeRouteUri((string) $route['route']);
             $colliders = collect($router->getRoutes())
                 ->filter(fn ($registered): bool => $registered->getName() === $route['route_name'])
-                ->reject(fn ($registered): bool => $registered->uri() === $expectedUri || '/'.$registered->uri() === $route['route']);
+                ->reject(fn ($registered): bool => $this->normalizeRouteUri($registered->uri()) === $expectedUri);
 
             if ($colliders->isNotEmpty()) {
                 $findings[] = [
@@ -97,6 +97,11 @@ class EvolveLintCommand extends Command
         }
 
         return $findings;
+    }
+
+    protected function normalizeRouteUri(string $uri): string
+    {
+        return trim($uri, '/');
     }
 
     protected function checkUnknownMiddleware(array $artifactRoutes, Router $router): array

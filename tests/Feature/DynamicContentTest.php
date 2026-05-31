@@ -25,6 +25,8 @@ class DynamicContentTest extends TestCase
     {
         parent::setUp();
 
+        $this->withoutVite();
+
         $this->originalBasePath = app()->basePath();
         $this->testBasePath = storage_path('framework/testing/evolve-content-'.Str::random(8));
 
